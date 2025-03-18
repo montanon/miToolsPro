@@ -4,4 +4,5 @@ from mitoolspro.exceptions.custom_exceptions import (
     ArgumentTimeoutError,
     ArgumentTypeError,
     ArgumentValueError,
+    AxesComposerException,
 )

@@ -28,6 +28,10 @@ class ArgumentTimeoutError(Exception):
         super().__init__(self.message)
 
 
+class AxesComposerException(ArgumentStructureError):
+    pass
+
+
 class WebScraperError(ArgumentValueError):
     pass
 
