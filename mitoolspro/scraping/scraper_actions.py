@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Optional
 from selenium.webdriver.remote.webelement import WebElement
 from seleniumbase import SB
 
-from mitoolspro.utils.contexts import retry_action
+from mitoolspro.utils.contexts import retry
 
 logger = logging.getLogger("mtp")
 
@@ -15,7 +15,6 @@ class ScraperActions:
         sb: SB,
         selectors_config: Dict[str, str],
         on_action: Optional[Callable] = None,
-        logger: Optional[logging.Logger] = None,
     ) -> None:
         self.sb = sb
         self.selectors = selectors_config
@@ -25,7 +24,7 @@ class ScraperActions:
         if self.on_action:
             self.on_action()
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def click(self, key: str, formatting: Optional[str] = None) -> None:
         selector = self.selectors.get(key)
         if not selector:
@@ -36,7 +35,7 @@ class ScraperActions:
         self.sb.click(selector)
         self._on_action()
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def click_if_visible(self, key: str, formatting: Optional[str] = None) -> None:
         selector = self.selectors.get(key)
         if not selector:
@@ -47,7 +46,7 @@ class ScraperActions:
         self.sb.click_if_visible(selector)
         self._on_action()
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def press_keys(self, key: str, keys: str, formatting: Optional[str] = None) -> None:
         selector = self.selectors.get(key)
         if not selector:
@@ -58,7 +57,7 @@ class ScraperActions:
         self.sb.cdp.press_keys(selector, keys)
         self._on_action()
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def find_elements_by_text(
         self, key: str, formatting: Optional[str] = None
     ) -> List[any]:
@@ -72,7 +71,7 @@ class ScraperActions:
         self._on_action()
         return elements
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def find_element_by_text(
         self, key: str, formatting: Optional[str] = None
     ) -> WebElement:
@@ -86,7 +85,7 @@ class ScraperActions:
         self._on_action()
         return element
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def find_element(
         self, key: str, best_match: bool = True, formatting: Optional[str] = None
     ) -> WebElement:
@@ -100,7 +99,7 @@ class ScraperActions:
         self._on_action()
         return element
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def find_elements(
         self, key: str, formatting: Optional[str] = None
     ) -> List[WebElement]:
@@ -114,13 +113,13 @@ class ScraperActions:
         self._on_action()
         return elements
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def click_element(self, element: WebElement) -> None:
         logger.info(f"Clicking element: {element}")
         element.click()
         self._on_action()
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def get_attribute(
         self, key: str, attribute: str, formatting: Optional[str] = None
     ) -> str:
@@ -134,7 +133,7 @@ class ScraperActions:
         self._on_action()
         return element
 
-    @retry_action(max_attempts=3, delay_seconds=2)
+    @retry(max_attempts=3, delay_seconds=2)
     def select_option_by_text(
         self, key: str, option: str, formatting: Optional[str] = None
     ) -> None:
@@ -147,10 +146,11 @@ class ScraperActions:
         self.sb.cdp.select_option_by_text(selector, option)
         self._on_action()
 
-    @retry_action(max_attempts=3, delay_seconds=2)
-    def type(self, key: str, text: str, formatting: Optional[str] = None) -> None:
-        if not isinstance(text, str):
-            text = str(text)
+    @retry(max_attempts=3, delay_seconds=2)
+    def type(
+        self, key: str, text: str | int | float, formatting: Optional[str] = None
+    ) -> None:
+        text = str(text)
         selector = self.selectors.get(key)
         if not selector:
             raise ValueError(f"No selector defined for key: {key}")
