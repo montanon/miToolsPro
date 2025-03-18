@@ -50,33 +50,6 @@ class Scraper(ABC):
         with open(selectors_file, "r") as f:
             return json.load(f)
 
-    def _update_activity(self) -> None:
-        self.last_activity = datetime.now()
-
-    def is_stuck(self) -> bool:
-        return self.queue.qsize() != 0 and (
-            self._is_stuck
-            or datetime.now() - self.last_activity > self.activity_timeout
-        )
-
-    def stop(self) -> None:
-        logger.info("Stopping scraper...")
-        self.running = False
-        try:
-            while True:
-                self.queue.get_nowait()
-                self.queue.task_done()
-        except Empty:
-            pass
-
-    def add_scrape_request(self, scrape_input: Any) -> None:
-        logger.info(f"Adding scrape request: {scrape_input}")
-        self.queue.put((2, scrape_input))
-
-    def add_priority_scrape_request(self, scrape_input: Any) -> None:
-        logger.info(f"Adding priority scrape request: {scrape_input}")
-        self.queue.put((1, scrape_input))
-
     def _initialize_scraper_actions(self) -> Dict[str, Type["ScraperActions"]]:
         if all(isinstance(selector, dict) for selector in self.selectors.values()):
             return {
@@ -143,35 +116,44 @@ class Scraper(ABC):
             logger.critical(f"Traceback: {traceback.format_exc()}")
             self._is_stuck = True
 
+    def add_scrape_request(self, scrape_input: Any) -> None:
+        logger.info(f"Adding scrape request: {scrape_input}")
+        self.queue.put((2, scrape_input))
+
+    def add_priority_scrape_request(self, scrape_input: Any) -> None:
+        logger.info(f"Adding priority scrape request: {scrape_input}")
+        self.queue.put((1, scrape_input))
+
+    def _update_activity(self) -> None:
+        self.last_activity = datetime.now()
+
+    def is_stuck(self) -> bool:
+        return self.queue.qsize() != 0 and (
+            self._is_stuck
+            or datetime.now() - self.last_activity > self.activity_timeout
+        )
+
+    def stop(self) -> None:
+        logger.info("Stopping scraper...")
+        self.running = False
+        try:
+            while True:
+                self.queue.get_nowait()
+                self.queue.task_done()
+        except Empty:
+            pass
+
     def _capture_debug_info(self) -> None:
-        self.debug_counter += 1
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        screenshot_path = f"logs/debug/screenshot_{timestamp}_{self.debug_counter}.png"
+        screenshot_path = f"logs/debug/screenshot_{timestamp}.png"
         self.sb.save_screenshot(screenshot_path)
         logger.info(f"Saved screenshot to {screenshot_path}")
 
-        html_path = f"logs/debug/page_source_{timestamp}_{self.debug_counter}.html"
+        html_path = f"logs/debug/page_source_{timestamp}.html"
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(self.sb.get_page_source())
         logger.info(f"Saved page source to {html_path}")
 
         current_url = self.sb.get_current_url()
         logger.info(f"Current URL when stuck: {current_url}")
-
-
-def main():
-    scraper = Scraper(
-        url="https://www.google.com",
-        selectors_file=Path("selectors.json"),
-        cdp_mode=True,
-        headless=False,
-        timer_multiplier=1.0,
-    )
-
-    scraper.scrape()
-    scraper.timer.sleep("short")
-
-
-if __name__ == "__main__":
-    main()
