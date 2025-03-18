@@ -1,0 +1,6 @@
+[submodule "mitoolspro/src/miScraperPro"]
+	path = mitoolspro/src/miScraperPro
+	url = git@github.com:montanon/miScraperPro.git
+[submodule "mitoolspro/src/miScraper"]
+	path = mitoolspro/src/miScraper
+	url = git@github.com:montanon/miScraper.git
