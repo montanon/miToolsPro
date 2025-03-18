@@ -1,0 +1,73 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+      "simple": {
+        "format": "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s",
+        "datefmt": "%Y-%m-%dT%H:%M:%S%z"
+      },
+      "json": {
+        "()": "mitools.logger.logger_formatter.MiJSONFormatter",
+        "fmt_keys": {
+          "level": "levelname",
+          "message": "message",
+          "timestamp": "timestamp",
+          "logger": "name",
+          "module": "module",
+          "function": "funcName",
+          "line": "lineno",
+          "thread_name": "threadName"
+        }
+      }
+    },
+    "handlers": {
+      "stderr": {
+        "class": "logging.StreamHandler",
+        "level": "WARNING",
+        "formatter": "json",
+        "stream": "ext://sys.stderr"
+      },
+      "debug_file": {
+        "class": "logging.handlers.RotatingFileHandler",
+        "level": "DEBUG",
+        "formatter": "json",
+        "filename": "logs/debug/debug.log.jsonl",
+        "maxBytes": 10000000,
+        "backupCount": 1
+      },
+      "critical_file": {
+        "class": "logging.handlers.RotatingFileHandler",
+        "level": "CRITICAL",
+        "formatter": "json",
+        "filename": "logs/critical/critical.log.jsonl",
+        "maxBytes": 10000000,
+        "backupCount": 1
+      },
+      "info_file": {
+        "class": "logging.handlers.RotatingFileHandler",
+        "level": "INFO",
+        "formatter": "json",
+        "filename": "logs/info.log.jsonl",
+        "maxBytes": 1000000,
+        "backupCount": 10
+      },
+      "queue_handler": {
+        "class": "logging.handlers.QueueHandler",
+        "handlers": [
+          "stderr",
+          "debug_file",
+          "info_file",
+          "critical_file"
+        ],
+        "respect_handler_level": true
+      }
+    },
+    "loggers": {
+      "root": {
+        "level": "DEBUG",
+        "handlers": [
+          "queue_handler"
+        ]
+      }
+    }
+  }
