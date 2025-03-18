@@ -3,7 +3,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-import openai
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
@@ -12,7 +11,6 @@ from mitoolspro.llms.objects import (
     LLMModel,
     PersistentTokensCounter,
     Prompt,
-    TokensCounter,
     TokenUsageStats,
 )
 
