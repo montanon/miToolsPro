@@ -21,7 +21,7 @@ from mitoolspro.files import (
     read_json,
     write_json,
 )
-from mitoolspro.notebooks import recreate_notebook_structure, save_notebook_as_ipynb
+from mitoolspro.project.project_notebook import ProjectNotebook
 
 PROJECT_FILENAME = Path("project.json")
 PROJECT_FOLDER = Path(".project")
@@ -371,9 +371,9 @@ class Project:
         self.store_project()
 
     def add_var(
-        self, key: str, value: Any, overwrite: bool = False, exist_ok: bool = False
+        self, key: str, value: Any, update: bool = False, exist_ok: bool = False
     ) -> None:
-        if key in self.vars and not overwrite:
+        if key in self.vars and not update:
             if not exist_ok:
                 raise ProjectError(
                     f"Key '{key}' already exists in self.vars. Use update_var() to modify existing variables."
@@ -401,7 +401,7 @@ class Project:
         print(f"Updated '{key}' of project variables and stored the project.")
 
     def add_path(
-        self, key: str, path: Path, overwrite: bool = False, exist_ok: bool = False
+        self, key: str, path: Path, update: bool = False, exist_ok: bool = False
     ) -> None:
         current_version_folder = (self.folder / self.version).resolve()
         path_resolved = path.resolve()
@@ -409,7 +409,7 @@ class Project:
         if is_version_child:
             if self.version not in self.version_paths:
                 self.version_paths[self.version] = {}
-            if key in self.version_paths[self.version] and not overwrite:
+            if key in self.version_paths[self.version] and not update:
                 if not exist_ok:
                     raise ProjectError(
                         f"Key '{key}' already exists in version '{self.version}' version_paths. "
@@ -420,7 +420,7 @@ class Project:
             relative_path = path_resolved.relative_to(current_version_folder)
             self.version_paths[self.version][key] = str(relative_path)
         else:
-            if key in self.paths and not overwrite:
+            if key in self.paths and not update:
                 if not exist_ok:
                     raise ProjectError(
                         f"Key '{key}' already exists in global 'paths'. Use overwrite=True to replace it."
@@ -436,7 +436,7 @@ class Project:
             self.version in self.version_paths
             and key in self.version_paths[self.version]
         ) or key in self.paths:
-            self.add_path(key, new_path, overwrite=True)
+            self.add_path(key, new_path, update=True)
         else:
             raise ProjectError(
                 f"Cannot update '{key}' because it does not exist in version '{self.version}' or global paths."
@@ -476,9 +476,9 @@ class Project:
         )
 
     def create_project_notebook(self) -> None:
-        notebook = recreate_notebook_structure()
+        notebook = ProjectNotebook(self.name).notebook()
         if not self.project_notebook.exists():
-            save_notebook_as_ipynb(notebook, self.project_notebook)
+            notebook.write(self.project_notebook)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
