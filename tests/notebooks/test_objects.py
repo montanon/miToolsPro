@@ -1,3 +1,4 @@
+import json
 import unittest
 from dataclasses import dataclass
 from typing import Any, Dict, List
@@ -299,27 +300,93 @@ class TestNotebook(TestCase):
         self.assertEqual(self.notebook.notebook_id, "1234567890abcdef")
         self.assertEqual(self.notebook._section_indices, [(0, 2), (2, 4)])
 
+    def test_sections_property(self):
+        sections = self.notebook.sections
+        self.assertEqual(len(sections), 2)
+        self.assertEqual(len(sections[0].cells), 2)
+        self.assertEqual(len(sections[1].cells), 2)
+        self.assertEqual(sections[0].cells[0].cell_type, self.title_cell1.cell_type)
+        self.assertEqual(sections[0].cells[0].source, self.title_cell1.source)
+        self.assertEqual(sections[1].cells[0].cell_type, self.title_cell2.cell_type)
+        self.assertEqual(sections[1].cells[0].source, self.title_cell2.source)
+
+    def test_sections_property_empty_indices(self):
+        notebook = Notebook(
+            cells=NotebookCells(cells=[self.title_cell1, self.code_cell1]),
+            metadata=self.metadata,
+            nbformat=4,
+            nbformat_minor=5,
+            name="Test Notebook",
+            notebook_id="1234567890abcdef",
+            _section_indices=[],
+        )
+        self.assertEqual(len(notebook.sections), 0)
+
     def test_get_sections(self):
         sections = self.notebook.get_sections()
         self.assertEqual(len(sections), 2)
         self.assertEqual(len(sections[0].cells), 2)
         self.assertEqual(len(sections[1].cells), 2)
-        self.assertEqual(sections[0].cells[0], self.title_cell1)
-        self.assertEqual(sections[1].cells[0], self.title_cell2)
+        self.assertEqual(sections[0].cells[0].cell_type, self.title_cell1.cell_type)
+        self.assertEqual(sections[0].cells[0].source, self.title_cell1.source)
+        self.assertEqual(sections[1].cells[0].cell_type, self.title_cell2.cell_type)
+        self.assertEqual(sections[1].cells[0].source, self.title_cell2.source)
 
     def test_to_dict(self):
         nb_dict = self.notebook.to_dict()
+
         self.assertEqual(nb_dict["nbformat"], 4)
         self.assertEqual(nb_dict["nbformat_minor"], 5)
         self.assertEqual(nb_dict["name"], "Test Notebook")
         self.assertEqual(nb_dict["notebook_id"], "1234567890abcdef")
-        self.assertEqual(len(nb_dict["cells"]), 4)
+        self.assertEqual(nb_dict["path"], "")
+
+        cells = nb_dict["cells"]
+        self.assertEqual(len(cells), 4)
+        self.assertEqual(cells[0]["cell_type"], "markdown")
+        self.assertEqual(cells[0]["source"], ["# Section 1"])
+        self.assertEqual(cells[1]["cell_type"], "code")
+        self.assertEqual(cells[1]["source"], ["print('hello')"])
+        self.assertEqual(cells[2]["cell_type"], "markdown")
+        self.assertEqual(cells[2]["source"], ["# Section 2"])
+        self.assertEqual(cells[3]["cell_type"], "code")
+        self.assertEqual(cells[3]["source"], ["print('world')"])
+
+        metadata = nb_dict["metadata"]
+        self.assertEqual(metadata["kernelspec"]["display_name"], "Python 3")
+        self.assertEqual(metadata["kernelspec"]["language"], "python")
+        self.assertEqual(metadata["kernelspec"]["name"], "python3")
+        self.assertEqual(metadata["language_info"]["name"], "python")
+        self.assertEqual(metadata["language_info"]["version"], "3.8.0")
+        self.assertEqual(metadata["language_info"]["file_extension"], ".py")
+        self.assertEqual(metadata["language_info"]["mimetype"], "text/x-python")
+        self.assertEqual(metadata["language_info"]["nbconvert_exporter"], "python")
+        self.assertEqual(metadata["language_info"]["pygments_lexer"], "ipython3")
+        self.assertEqual(metadata["language_info"]["codemirror_mode"]["name"], "python")
+        self.assertEqual(metadata["language_info"]["codemirror_mode"]["version"], 4)
 
     def test_to_json(self):
-        json_str = self.notebook.to_json()
+        json_str = self.notebook.to_json(indent=4)
         self.assertIsInstance(json_str, str)
-        self.assertIn('"nbformat": 4', json_str)
-        self.assertIn('"name": "Test Notebook"', json_str)
+
+        try:
+            parsed = json.loads(json_str)
+            self.assertEqual(parsed["nbformat"], 4)
+            self.assertEqual(parsed["nbformat_minor"], 5)
+            self.assertEqual(parsed["name"], "Test Notebook")
+            self.assertEqual(parsed["notebook_id"], "1234567890abcdef")
+            self.assertEqual(parsed["path"], "")
+
+            cells = parsed["cells"]
+            self.assertEqual(len(cells), 4)
+            self.assertEqual(cells[0]["cell_type"], "markdown")
+            self.assertEqual(cells[0]["source"], ["# Section 1"])
+
+            metadata = parsed["metadata"]
+            self.assertEqual(metadata["kernelspec"]["display_name"], "Python 3")
+            self.assertEqual(metadata["language_info"]["name"], "python")
+        except json.JSONDecodeError as e:
+            self.fail(f"Invalid JSON: {e}")
 
 
 class TestNotebookMetadata(TestCase):
