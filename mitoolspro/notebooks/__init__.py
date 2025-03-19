@@ -5,12 +5,12 @@ from mitoolspro.notebooks.functions import (
     create_language_info,
     create_notebook,
     create_notebook_cell,
-    create_notebook_cell_id,
     create_notebook_metadata,
+    create_notebook_section,
+    create_notebook_sections,
     custom_notebook_to_notebooknode,
     notebooknode_to_custom_notebook,
     read_notebook,
-    validate_hex_string,
     validate_notebook,
 )
 from mitoolspro.notebooks.objects import (
@@ -23,6 +23,10 @@ from mitoolspro.notebooks.objects import (
     Notebook,
     NotebookCell,
     NotebookCellFactory,
+    NotebookCells,
     NotebookMetadata,
     NotebookSection,
+    NotebookSections,
+    create_notebook_cell_id,
+    validate_hex_string,
 )
