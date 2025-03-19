@@ -1578,6 +1578,7 @@ dependencies = [
     { name = "torchvision" },
     { name = "tqdm" },
     { name = "transformers" },
+    { name = "treelib" },
     { name = "umap" },
     { name = "xlsxwriter" },
 ]
@@ -1617,6 +1618,7 @@ requires-dist = [
     { name = "torchvision", specifier = ">=0.21.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
     { name = "transformers", specifier = ">=4.49.0" },
+    { name = "treelib", specifier = ">=1.7.1" },
     { name = "umap", specifier = ">=0.1.1" },
     { name = "xlsxwriter", specifier = ">=3.2.2" },
 ]
@@ -3598,6 +3600,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/79/50/46573150944f46df8ec968eda854023165a84470b42f69f67c7d475dabc5/transformers-4.49.0.tar.gz", hash = "sha256:7e40e640b5b8dc3f48743f5f5adbdce3660c82baafbd3afdfc04143cdbd2089e", size = 8610952 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/20/37/1f29af63e9c30156a3ed6ebc2754077016577c094f31de7b2631e5d379eb/transformers-4.49.0-py3-none-any.whl", hash = "sha256:6b4fded1c5fee04d384b1014495b4235a2b53c87503d7d592423c06128cbbe03", size = 9970275 },
+]
+
+[[package]]
+name = "treelib"
+version = "1.7.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ad/e2/aae318906d39f160eb5b1046119da6706588d14f0a2d0fe202c9a0db46dd/treelib-1.7.1.tar.gz", hash = "sha256:a2b57ba38290f7da6af97b41de8ff7be98e7a8c00815f95d0782241f77503952", size = 26014 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/da/66fb7b0f91a4329d5e0dd49a7464a1ced62a9d495362ae4c5cc055f268ba/treelib-1.7.1-py3-none-any.whl", hash = "sha256:69aa12559c603273c77580cc86089021756654a754a7c674038de20f9daeafde", size = 19339 },
 ]
 
 [[package]]
