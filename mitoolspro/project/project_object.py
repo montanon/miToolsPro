@@ -22,9 +22,6 @@ PROJECT_FOLDER = Path(".project")
 PROJECT_NOTEBOOK = "Project.ipynb"
 PROJECT_ARCHIVE = ".archive"
 PROJECT_BACKUP = ".backup"
-NOT_IN_NOTEBOOK = (
-    "Project object can only be initialized inside the respective Project Notebook={}."
-)
 
 
 class VersionState(Enum):

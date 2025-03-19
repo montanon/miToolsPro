@@ -5,4 +5,7 @@ from mitoolspro.exceptions.custom_exceptions import (
     ArgumentTypeError,
     ArgumentValueError,
     AxesComposerException,
+    ProjectError,
+    ProjectFolderError,
+    ProjectVersionError,
 )
