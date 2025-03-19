@@ -17,6 +17,22 @@ from mitoolspro.notebooks.objects import (
 )
 
 
+def read_notebook(notebook_path: str) -> Notebook:
+    with open(notebook_path, "r", encoding="utf-8") as f:
+        nb = nbformat.read(f, as_version=4)
+    return notebooknode_to_custom_notebook(nb)
+
+
+def write_notebook(notebook: Notebook, notebook_path: str) -> None:
+    validate_notebook(notebook)
+    with open(notebook_path, "w", encoding="utf-8") as f:
+        nbformat.write(notebooknode_to_custom_notebook(notebook), f)
+
+
+def validate_notebook(notebook: Notebook) -> None:
+    nbformat.validate(notebooknode_to_custom_notebook(notebook))
+
+
 def custom_notebook_to_notebooknode(custom_nb: Notebook) -> NotebookNode:
     nb_dict = custom_nb.to_dict()
     return from_dict(nb_dict)
