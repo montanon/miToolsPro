@@ -24,6 +24,19 @@ class TestRegressionModel(BaseRegressionModel):
         )()
 
 
+class TestPanelRegressionModel(BasePanelRegressionModel):
+    def fit(self, *args, **kwargs):
+        self.fitted = True
+        self.results = type(
+            "Results",
+            (),
+            {
+                "predict": lambda self, new_data=None: np.array([1, 2, 3, 4, 5, 6]),
+                "summary": lambda self: "Test Panel Summary",
+            },
+        )()
+
+
 class TestBaseRegressionModel(TestCase):
     def setUp(self):
         self.data = pd.DataFrame(
@@ -160,7 +173,7 @@ class TestBasePanelRegressionModel(TestCase):
         )
 
     def test_init_with_valid_panel_data(self):
-        model = BasePanelRegressionModel(
+        model = TestPanelRegressionModel(
             self.data, dependent_variable="y", independent_variables=["x1", "x2"]
         )
         self.assertEqual(model.dependent_variable, "y")
@@ -171,12 +184,12 @@ class TestBasePanelRegressionModel(TestCase):
     def test_init_with_invalid_panel_data(self):
         invalid_data = pd.DataFrame({"y": [1, 2, 3], "x1": [1, 2, 3]})
         with self.assertRaises(ArgumentValueError):
-            BasePanelRegressionModel(
+            TestPanelRegressionModel(
                 invalid_data, dependent_variable="y", independent_variables=["x1"]
             )
 
     def test_init_with_formula(self):
-        model = BasePanelRegressionModel(self.data, formula="y ~ x1 + x2")
+        model = TestPanelRegressionModel(self.data, formula="y ~ x1 + x2")
         self.assertEqual(model.formula, "y ~ x1 + x2")
         self.assertEqual(model.dependent_variable, "")
         self.assertEqual(model.independent_variables, [])
@@ -184,7 +197,7 @@ class TestBasePanelRegressionModel(TestCase):
         self.assertIsNone(model.variables)
 
     def test_init_with_control_variables(self):
-        model = BasePanelRegressionModel(
+        model = TestPanelRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -195,9 +208,47 @@ class TestBasePanelRegressionModel(TestCase):
     def test_validate_data(self):
         invalid_data = pd.DataFrame({"y": [1, 2, 3], "x1": [1, 2, 3]})
         with self.assertRaises(ArgumentValueError):
-            BasePanelRegressionModel(
+            TestPanelRegressionModel(
                 invalid_data, dependent_variable="y", independent_variables=["x1"]
             )
+
+    def test_predict_before_fit(self):
+        model = TestPanelRegressionModel(
+            self.data, dependent_variable="y", independent_variables=["x1"]
+        )
+        with self.assertRaises(ArgumentValueError):
+            model.predict()
+
+    def test_predict_after_fit(self):
+        model = TestPanelRegressionModel(
+            self.data, dependent_variable="y", independent_variables=["x1"]
+        )
+        model.fit()
+        predictions = model.predict()
+        np.testing.assert_array_equal(predictions, np.array([1, 2, 3, 4, 5, 6]))
+
+    def test_predict_with_new_data(self):
+        model = TestPanelRegressionModel(
+            self.data, dependent_variable="y", independent_variables=["x1"]
+        )
+        model.fit()
+        new_data = pd.DataFrame({"x1": [6, 7, 8, 9, 10, 11]})
+        predictions = model.predict(new_data)
+        np.testing.assert_array_equal(predictions, np.array([1, 2, 3, 4, 5, 6]))
+
+    def test_summary_before_fit(self):
+        model = TestPanelRegressionModel(
+            self.data, dependent_variable="y", independent_variables=["x1"]
+        )
+        with self.assertRaises(ArgumentValueError):
+            model.summary()
+
+    def test_summary_after_fit(self):
+        model = TestPanelRegressionModel(
+            self.data, dependent_variable="y", independent_variables=["x1"]
+        )
+        model.fit()
+        self.assertEqual(model.summary(), "Test Panel Summary")
 
 
 if __name__ == "__main__":
