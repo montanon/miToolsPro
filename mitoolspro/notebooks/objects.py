@@ -142,6 +142,14 @@ class ImportCell(NotebookCell):
             )
         object.__setattr__(self, "cell_type", "code")
 
+        source = object.__getattribute__(self, "source")
+        for line in source:
+            line = line.strip()
+            if line and not (line.startswith("import ") or line.startswith("from ")):
+                raise ValueError(
+                    f"ImportCell can only contain import statements or empty lines, got: {line}"
+                )
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
