@@ -212,6 +212,22 @@ def create_notebook_section(
     return NotebookSection(cells=section_cells)
 
 
+def create_notebook_sections(
+    sections: list[tuple[str, list[NotebookCell]]],
+    notebook_seed: str,
+) -> NotebookSections:
+    notebook_sections = []
+    for i, (title, cells) in enumerate(sections):
+        section = create_notebook_section(
+            title=title,
+            cells=cells,
+            notebook_seed=notebook_seed,
+            section_seed=f"section_{i}",
+        )
+        notebook_sections.append(section)
+    return NotebookSections(sections=notebook_sections)
+
+
 def create_notebook_cell(
     cell_type: str,
     execution_count: None,
