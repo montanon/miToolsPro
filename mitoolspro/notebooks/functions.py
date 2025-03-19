@@ -22,6 +22,53 @@ def custom_notebook_to_notebooknode(custom_nb: Notebook) -> NotebookNode:
     return from_dict(nb_dict)
 
 
+def notebooknode_to_custom_notebook(nb_node: NotebookNode) -> Notebook:
+    cells = [
+        NotebookCellFactory.create_cell(
+            cell_type=cell["cell_type"],
+            execution_count=cell.get("execution_count"),
+            cell_id=cell.get("cell_id", ""),
+            metadata=cell.get("metadata", {}),
+            outputs=cell.get("outputs", []),
+            source=cell.get("source", []),
+        )
+        for cell in nb_node["cells"]
+    ]
+
+    metadata = NotebookMetadata(
+        kernelspec=KernelSpec(
+            display_name=nb_node["metadata"]["kernelspec"]["display_name"],
+            language=nb_node["metadata"]["kernelspec"]["language"],
+            name=nb_node["metadata"]["kernelspec"]["name"],
+        ),
+        language_info=LanguageInfo(
+            codemirror_mode=CodeMirrorMode(
+                name=nb_node["metadata"]["language_info"]["codemirror_mode"]["name"],
+                version=nb_node["metadata"]["language_info"]["codemirror_mode"][
+                    "version"
+                ],
+            ),
+            file_extension=nb_node["metadata"]["language_info"]["file_extension"],
+            mimetype=nb_node["metadata"]["language_info"]["mimetype"],
+            name=nb_node["metadata"]["language_info"]["name"],
+            nbconvert_exporter=nb_node["metadata"]["language_info"][
+                "nbconvert_exporter"
+            ],
+            pygments_lexer=nb_node["metadata"]["language_info"]["pygments_lexer"],
+            version=nb_node["metadata"]["language_info"]["version"],
+        ),
+    )
+
+    return Notebook(
+        cells=cells,
+        metadata=metadata,
+        nbformat=nb_node["nbformat"],
+        nbformat_minor=nb_node["nbformat_minor"],
+        name=nb_node.get("name", ""),
+        notebook_id=nb_node.get("notebook_id", ""),
+    )
+
+
 def clear_notebook_output(notebook_path: str, clean_notebook_path: str) -> None:
     with open(notebook_path, "r", encoding="utf-8") as f:
         nb = nbformat.read(
