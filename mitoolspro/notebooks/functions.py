@@ -145,8 +145,8 @@ def create_notebook(
         List[Union[NotebookCell, NotebookCells, NotebookSection, NotebookSections]],
     ],
     metadata: NotebookMetadata,
-    nbformat: int,
-    nbformat_minor: int,
+    nbformat: int = 4,
+    nbformat_minor: int = 0,
     name: Optional[str] = "",
     notebook_id: Optional[str] = "",
 ) -> Notebook:

@@ -1,6 +1,7 @@
 from mitoolspro.notebooks.functions import (
     clear_notebook_output,
     create_code_mirror_mode,
+    create_default_metadata,
     create_kernel_spec,
     create_language_info,
     create_notebook,
@@ -12,6 +13,7 @@ from mitoolspro.notebooks.functions import (
     notebooknode_to_custom_notebook,
     read_notebook,
     validate_notebook,
+    write_notebook,
 )
 from mitoolspro.notebooks.objects import (
     CodeCell,
