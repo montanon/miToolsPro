@@ -1,10 +1,23 @@
+import hashlib
 import json
+import re
 import uuid
 from dataclasses import asdict, dataclass, field, is_dataclass, replace
 from os import PathLike
 from typing import Any, Dict, Iterator, List, Optional
 
-from mitoolspro.notebooks.functions import create_notebook_cell_id, validate_hex_string
+
+def validate_hex_string(value: str) -> str:
+    if not re.match(r"^[0-9a-fA-F]{16}$", value):
+        raise ValueError(f"The value {value} is not a valid hex string.")
+    return value
+
+
+def create_notebook_cell_id(notebook_seed: str, cell_seed: str) -> str:
+    seed = notebook_seed + cell_seed
+    hasher = hashlib.sha256(seed.encode())
+    hash_str = hasher.hexdigest()
+    return hash_str[:16]
 
 
 @dataclass(frozen=True)

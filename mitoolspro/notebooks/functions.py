@@ -1,5 +1,3 @@
-import hashlib
-import re
 from os import PathLike
 from typing import List, Optional, Union
 
@@ -18,6 +16,7 @@ from mitoolspro.notebooks.objects import (
     NotebookMetadata,
     NotebookSection,
     NotebookSections,
+    create_notebook_cell_id,
 )
 
 
@@ -235,13 +234,6 @@ def create_notebook_cell(
     return cell
 
 
-def create_notebook_cell_id(notebook_seed: str, cell_seed: str) -> str:
-    seed = notebook_seed + cell_seed
-    hasher = hashlib.sha256(seed.encode())
-    hash_str = hasher.hexdigest()
-    return hash_str[:16]
-
-
 def create_code_mirror_mode(name: str, version: int) -> CodeMirrorMode:
     return CodeMirrorMode(name=name, version=version)
 
@@ -268,9 +260,3 @@ def create_language_info(
 
 def create_kernel_spec(display_name: str, language: str, name: str) -> KernelSpec:
     return KernelSpec(display_name=display_name, language=language, name=name)
-
-
-def validate_hex_string(value: str) -> str:
-    if not re.match(r"^[0-9a-fA-F]{16}$", value):
-        raise ValueError(f"The value {value} is not a valid hex string.")
-    return value
