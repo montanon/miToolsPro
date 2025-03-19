@@ -66,6 +66,10 @@ class TestNotebookCell(TestCase):
         self.assertIn('"cell_type": "code"', json_str)
         self.assertIn('"execution_count": 1', json_str)
 
+    def test_nbformat_abstract(self):
+        with self.assertRaises(TypeError):
+            NotebookCell(cell_type="code").nbformat()
+
 
 class TestMarkdownCell(TestCase):
     def setUp(self):
@@ -98,6 +102,14 @@ class TestMarkdownCell(TestCase):
         }
         self.assertEqual(self.cell.to_dict(), expected)
 
+    def test_nbformat(self):
+        expected = {
+            "cell_type": "markdown",
+            "metadata": {"key": "value"},
+            "source": ["# Title"],
+        }
+        self.assertEqual(self.cell.nbformat(), expected)
+
 
 class TestCodeCell(TestCase):
     def setUp(self):
@@ -118,6 +130,16 @@ class TestCodeCell(TestCase):
     def test_invalid_cell_type(self):
         with self.assertRaises(ValueError):
             CodeCell(cell_type="markdown")
+
+    def test_nbformat(self):
+        expected = {
+            "cell_type": "code",
+            "execution_count": 1,
+            "metadata": {"key": "value"},
+            "outputs": ["output"],
+            "source": ["print('hello')"],
+        }
+        self.assertEqual(self.cell.nbformat(), expected)
 
 
 class TestImportCell(TestCase):
@@ -145,6 +167,16 @@ class TestImportCell(TestCase):
                 cell_type="code",
                 source=["import numpy as np", "print('hello')"],
             )
+
+    def test_nbformat(self):
+        expected = {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {"key": "value"},
+            "outputs": [],
+            "source": ["import numpy as np", "from pandas import DataFrame"],
+        }
+        self.assertEqual(self.cell.nbformat(), expected)
 
 
 class TestNotebookCells(TestCase):
@@ -391,6 +423,42 @@ class TestNotebook(TestCase):
             self.assertEqual(metadata["language_info"]["name"], "python")
         except json.JSONDecodeError as e:
             self.fail(f"Invalid JSON: {e}")
+
+    def test_nbformat(self):
+        nb_dict = self.notebook.nbformat()
+
+        self.assertEqual(nb_dict["nbformat"], 4)
+        self.assertEqual(nb_dict["nbformat_minor"], 5)
+
+        cells = nb_dict["cells"]
+        self.assertEqual(len(cells), 4)
+        self.assertEqual(cells[0]["cell_type"], "markdown")
+        self.assertEqual(cells[0]["source"], ["# Section 1"])
+        self.assertEqual(cells[1]["cell_type"], "code")
+        self.assertEqual(cells[1]["source"], ["print('hello')"])
+        self.assertEqual(cells[2]["cell_type"], "markdown")
+        self.assertEqual(cells[2]["source"], ["# Section 2"])
+        self.assertEqual(cells[3]["cell_type"], "code")
+        self.assertEqual(cells[3]["source"], ["print('world')"])
+
+        metadata = nb_dict["metadata"]
+        self.assertEqual(metadata["kernelspec"]["display_name"], "Python 3")
+        self.assertEqual(metadata["kernelspec"]["language"], "python")
+        self.assertEqual(metadata["kernelspec"]["name"], "python3")
+        self.assertEqual(metadata["language_info"]["name"], "python")
+        self.assertEqual(metadata["language_info"]["version"], "3.8.0")
+        self.assertEqual(metadata["language_info"]["file_extension"], ".py")
+        self.assertEqual(metadata["language_info"]["mimetype"], "text/x-python")
+        self.assertEqual(metadata["language_info"]["nbconvert_exporter"], "python")
+        self.assertEqual(metadata["language_info"]["pygments_lexer"], "ipython3")
+        self.assertEqual(metadata["language_info"]["codemirror_mode"]["name"], "python")
+        self.assertEqual(metadata["language_info"]["codemirror_mode"]["version"], 4)
+
+        # Verify custom attributes are not included
+        self.assertNotIn("name", nb_dict)
+        self.assertNotIn("notebook_id", nb_dict)
+        self.assertNotIn("path", nb_dict)
+        self.assertNotIn("_section_indices", nb_dict)
 
 
 class TestNotebookMetadata(TestCase):
