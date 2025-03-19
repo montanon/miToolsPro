@@ -62,7 +62,7 @@ class Notebook:
 
     def nbformat(self) -> dict[str, Any]:
         nb_dict = {
-            "cells": [cell.nbformat() for cell in self.cells],
+            "cells": self.cells.nbformat()["cells"],
             "metadata": self.metadata.to_dict(),
             "nbformat": self.nbformat,
             "nbformat_minor": self.nbformat_minor,
@@ -119,6 +119,9 @@ class NotebookSection:
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
+    def nbformat(self) -> dict[str, Any]:
+        return {"cells": self.cells.nbformat()["cells"]}
+
 
 @dataclass(frozen=True)
 class NotebookCells:
@@ -138,6 +141,9 @@ class NotebookCells:
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
+
+    def nbformat(self) -> dict[str, Any]:
+        return {"cells": [cell.nbformat() for cell in self.cells]}
 
 
 @dataclass(frozen=True)
