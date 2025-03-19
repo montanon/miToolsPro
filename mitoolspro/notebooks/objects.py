@@ -2,6 +2,7 @@ import hashlib
 import json
 import re
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field, is_dataclass, replace
 from os import PathLike
 from typing import Any, Dict, Iterator, List, Optional
@@ -58,6 +59,15 @@ class Notebook:
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
+
+    def nbformat(self) -> dict[str, Any]:
+        nb_dict = {
+            "cells": [cell.nbformat() for cell in self.cells],
+            "metadata": self.metadata.to_dict(),
+            "nbformat": self.nbformat,
+            "nbformat_minor": self.nbformat_minor,
+        }
+        return nb_dict
 
 
 class NotebookEncoder(json.JSONEncoder):
@@ -131,7 +141,7 @@ class NotebookCells:
 
 
 @dataclass(frozen=True)
-class NotebookCell:
+class NotebookCell(ABC):
     cell_type: str
     execution_count: Optional[int] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -146,6 +156,10 @@ class NotebookCell:
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
+
+    @abstractmethod
+    def nbformat(self) -> dict[str, Any]:
+        pass
 
 
 @dataclass(frozen=True)
@@ -163,6 +177,15 @@ class MarkdownCell(NotebookCell):
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
+    def nbformat(self) -> dict[str, Any]:
+        metadata = self.metadata.update({"editable": self.editable})
+        metadata = metadata.update({"deletable": self.deletable})
+        return {
+            "cell_type": "markdown",
+            "metadata": metadata,
+            "source": self.source,
+        }
+
 
 @dataclass(frozen=True)
 class CodeCell(NotebookCell):
@@ -178,6 +201,17 @@ class CodeCell(NotebookCell):
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
+
+    def nbformat(self) -> dict[str, Any]:
+        metadata = self.metadata.update({"editable": self.editable})
+        metadata = metadata.update({"deletable": self.deletable})
+        return {
+            "cell_type": "code",
+            "execution_count": self.execution_count,
+            "metadata": metadata,
+            "outputs": self.outputs,
+            "source": self.source,
+        }
 
 
 @dataclass(frozen=True)
@@ -202,6 +236,17 @@ class ImportCell(NotebookCell):
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
+
+    def nbformat(self) -> dict[str, Any]:
+        metadata = self.metadata.update({"editable": self.editable})
+        metadata = metadata.update({"deletable": self.deletable})
+        return {
+            "cell_type": "code",
+            "execution_count": self.execution_count,
+            "metadata": metadata,
+            "outputs": self.outputs,
+            "source": self.source,
+        }
 
 
 @dataclass(frozen=True, init=True)
