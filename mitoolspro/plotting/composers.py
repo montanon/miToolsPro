@@ -21,27 +21,23 @@ class PlotComposerException(Exception):
 def _get_plotter_types() -> Dict[str, Type[Plotter]]:
     plotter_types = {}
     plots_module = importlib.import_module("mitoolspro.plotting.plots")
-    for module_name in [
-        "line_plotter",
-        "scatter_plotter",
-        "bar_plotter",
-        "box_plotter",
-        "histogram_plotter",
-        "pie_plotter",
-        "distribution_plotter",
-    ]:
+    plots_dir = Path(plots_module.__file__).parent
+
+    for file_path in plots_dir.glob("*_plotter.py"):
         try:
-            importlib.import_module(f"mitoolspro.plotting.plots.{module_name}")
+            module_name = file_path.stem
+            module = importlib.import_module(f"mitoolspro.plotting.plots.{module_name}")
+            for name, obj in inspect.getmembers(module):
+                if (
+                    inspect.isclass(obj)
+                    and issubclass(obj, Plotter)
+                    and obj != Plotter
+                    and not inspect.isabstract(obj)
+                ):
+                    plotter_types[obj.__name__] = obj
         except ImportError:
             continue
-    for name, obj in inspect.getmembers(plots_module):
-        if (
-            inspect.isclass(obj)
-            and issubclass(obj, Plotter)
-            and obj != Plotter
-            and not inspect.isabstract(obj)
-        ):
-            plotter_types[obj.__name__] = obj
+
     return plotter_types
 
 
