@@ -143,7 +143,7 @@ class TestWriteNotebook(TestCase):
                     version="",
                 ),
             ),
-            nbformat=4,
+            nbformat=3,  # Invalid nbformat version
             nbformat_minor=5,
             name="Test Notebook",
         )
@@ -191,13 +191,13 @@ class TestValidateNotebook(TestCase):
                     codemirror_mode=CodeMirrorMode(name="", version=4),
                     file_extension="",
                     mimetype="",
+                    name="",
                     nbconvert_exporter="",
                     pygments_lexer="",
-                    name="",
                     version="",
                 ),
             ),
-            nbformat=4,
+            nbformat=3,  # Invalid nbformat version
             nbformat_minor=5,
             name="Test Notebook",
         )
