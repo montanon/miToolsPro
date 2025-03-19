@@ -52,7 +52,9 @@ class Notebook:
         return NotebookSections(sections=self.sections)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        nb_dict = asdict(self)
+        nb_dict["cells"] = [cell.to_dict() for cell in self.cells]
+        return nb_dict
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
