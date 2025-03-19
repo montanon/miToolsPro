@@ -2,10 +2,29 @@ import os
 import shutil
 from os import PathLike
 from pathlib import Path
-from typing import Callable, List, Union
+from typing import Callable, List, Optional, Union
+
+from treelib import Tree
 
 from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.utils.functions import remove_characters_from_string
+
+
+def build_dir_tree(
+    directory: PathLike, tree: Optional[Tree] = None, parent: Optional[PathLike] = None
+) -> Tree:
+    if tree is None:
+        tree = Tree()
+        tree.create_node(directory.name, str(directory))
+        parent = str(directory)
+    for item in sorted(directory.iterdir()):
+        node_id = str(item)
+        if item.is_dir():
+            tree.create_node(item.name, node_id, parent=parent)
+            build_dir_tree(item, tree, parent=node_id)
+        else:
+            tree.create_node(item.name, node_id, parent=parent)
+    return tree
 
 
 def folder_is_subfolder(root_folder: PathLike, folder_to_check: PathLike) -> bool:
