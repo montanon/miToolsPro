@@ -13,13 +13,15 @@ from mitoolspro.exceptions import (
     ProjectFolderError,
     ProjectVersionError,
 )
-from mitoolspro.files.file_handlers import (
+from mitoolspro.files import (
+    build_dir_tree,
     file_in_folder,
     folder_in_subtree,
     folder_is_subfolder,
+    read_json,
+    write_json,
 )
 from mitoolspro.notebooks import recreate_notebook_structure, save_notebook_as_ipynb
-from mitoolspro.utils import build_dir_tree, read_json_file, write_json_file
 
 PROJECT_FILENAME = Path("project.json")
 PROJECT_FOLDER = Path(".project")
@@ -264,7 +266,7 @@ class Project:
     def store_project(self) -> None:
         self.update_info()
         project_data = self.as_dict()
-        write_json_file(
+        write_json(
             project_data, self.project_file, ensure_ascii=False, encoding="utf-8"
         )
 
@@ -306,7 +308,7 @@ class Project:
         project_path = cls.find_project(
             project_folder=project_folder, max_depth=max_depth, auto_load=auto_load
         )
-        project_json = read_json_file(project_path)
+        project_json = read_json(project_path)
         obj = cls.from_dict(project_json)
         obj.update_info()
         current_path = Path.cwd().resolve()
