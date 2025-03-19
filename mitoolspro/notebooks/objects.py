@@ -44,17 +44,17 @@ class NotebookEncoder(json.JSONEncoder):
 
 
 @dataclass(frozen=True)
-class NotebookCells:
-    cells: list["NotebookCell"]
+class NotebookSections:
+    sections: list["NotebookSection"]
 
-    def __iter__(self) -> Iterator["NotebookCell"]:
-        return iter(self.cells)
+    def __iter__(self) -> Iterator["NotebookSection"]:
+        return iter(self.sections)
 
-    def __getitem__(self, index) -> "NotebookCell":
-        return self.cells[index]
+    def __getitem__(self, index) -> "NotebookSection":
+        return self.sections[index]
 
     def __len__(self) -> int:
-        return len(self.cells)
+        return len(self.sections)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -64,8 +64,8 @@ class NotebookCells:
 
 
 @dataclass(frozen=True)
-class NotebookSection(NotebookCells):
-    cells: NotebookCells
+class NotebookSection:
+    cells: "NotebookCells"
 
     def __post_init__(self):
         super().__init__(self.cells)
@@ -77,6 +77,26 @@ class NotebookSection(NotebookCells):
             raise ValueError("The cells list is empty.")
         if not isinstance(first_cell, MarkdownCell):
             raise ValueError("The first cell must be a MarkdownCell.")
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def to_json(self, **json_kwargs) -> str:
+        return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
+
+
+@dataclass(frozen=True)
+class NotebookCells:
+    cells: list["NotebookCell"]
+
+    def __iter__(self) -> Iterator["NotebookCell"]:
+        return iter(self.cells)
+
+    def __getitem__(self, index) -> "NotebookCell":
+        return self.cells[index]
+
+    def __len__(self) -> int:
+        return len(self.cells)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
