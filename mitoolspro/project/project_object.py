@@ -13,7 +13,11 @@ from mitoolspro.exceptions import (
     ProjectFolderError,
     ProjectVersionError,
 )
-from mitoolspro.files import file_in_folder, folder_in_subtree, folder_is_subfolder
+from mitoolspro.files.file_handlers import (
+    file_in_folder,
+    folder_in_subtree,
+    folder_is_subfolder,
+)
 from mitoolspro.notebooks import recreate_notebook_structure, save_notebook_as_ipynb
 from mitoolspro.utils import build_dir_tree, read_json_file, write_json_file
 
