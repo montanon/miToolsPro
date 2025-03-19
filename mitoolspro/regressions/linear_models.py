@@ -1,5 +1,6 @@
 from typing import List, Optional, Union
 
+import numpy as np
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from pandas import DataFrame
@@ -92,8 +93,7 @@ class QuantileRegressionModel(BaseRegressionModel):
                 raise ArgumentValueError(
                     f"Quantiles {[quantile for quantile in quantiles if quantile not in self.quantiles]} not in 'self.quantiles'={self.quantiles}"
                 )
-            predictions = {q: self.results[q].predict(new_data) for q in self.quantiles}
-            return predictions if len(self.quantiles) > 1 else predictions[quantiles[0]]
+            return {q: self.results[q].predict(new_data) for q in quantiles}
         else:
             return {q: self.results[q].predict(new_data) for q in self.quantiles}
 
