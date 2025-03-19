@@ -1,6 +1,7 @@
 import hashlib
 import re
-from typing import Optional
+from os import PathLike
+from typing import Optional, Union
 
 import nbformat
 from nbconvert.preprocessors import ClearOutputPreprocessor
@@ -17,20 +18,35 @@ from mitoolspro.notebooks.objects import (
 )
 
 
-def read_notebook(notebook_path: str) -> Notebook:
-    with open(notebook_path, "r", encoding="utf-8") as f:
-        nb = nbformat.read(f, as_version=4)
-    return notebooknode_to_custom_notebook(nb)
+def read_notebook(notebook_path: Union[str, PathLike]) -> Notebook:
+    try:
+        with open(notebook_path, "r", encoding="utf-8") as f:
+            nb = nbformat.read(f, as_version=4)
+        return notebooknode_to_custom_notebook(nb)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Notebook file not found: {notebook_path}")
+    except nbformat.reader.NotJSONError:
+        raise ValueError(f"Invalid notebook format in file: {notebook_path}")
+    except Exception as e:
+        raise RuntimeError(f"Error reading notebook {notebook_path}: {str(e)}")
 
 
-def write_notebook(notebook: Notebook, notebook_path: str) -> None:
-    validate_notebook(notebook)
-    with open(notebook_path, "w", encoding="utf-8") as f:
-        nbformat.write(notebooknode_to_custom_notebook(notebook), f)
+def write_notebook(notebook: Notebook, notebook_path: Union[str, PathLike]) -> None:
+    try:
+        validate_notebook(notebook)
+        nb_node = custom_notebook_to_notebooknode(notebook)
+        with open(notebook_path, "w", encoding="utf-8") as f:
+            nbformat.write(nb_node, f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Directory not found for notebook: {notebook_path}")
+    except PermissionError:
+        raise PermissionError(f"No write permission for notebook: {notebook_path}")
+    except Exception as e:
+        raise RuntimeError(f"Error writing notebook {notebook_path}: {str(e)}")
 
 
 def validate_notebook(notebook: Notebook) -> None:
-    nbformat.validate(notebooknode_to_custom_notebook(notebook))
+    nbformat.validate(custom_notebook_to_notebooknode(notebook))
 
 
 def custom_notebook_to_notebooknode(custom_nb: Notebook) -> NotebookNode:
@@ -39,41 +55,64 @@ def custom_notebook_to_notebooknode(custom_nb: Notebook) -> NotebookNode:
 
 
 def notebooknode_to_custom_notebook(nb_node: NotebookNode) -> Notebook:
-    cells = [
-        NotebookCellFactory.create_cell(
-            cell_type=cell["cell_type"],
-            execution_count=cell.get("execution_count"),
-            cell_id=cell.get("cell_id", ""),
-            metadata=cell.get("metadata", {}),
-            outputs=cell.get("outputs", []),
-            source=cell.get("source", []),
-        )
-        for cell in nb_node["cells"]
-    ]
-
-    metadata = NotebookMetadata(
-        kernelspec=KernelSpec(
-            display_name=nb_node["metadata"]["kernelspec"]["display_name"],
-            language=nb_node["metadata"]["kernelspec"]["language"],
-            name=nb_node["metadata"]["kernelspec"]["name"],
-        ),
-        language_info=LanguageInfo(
-            codemirror_mode=CodeMirrorMode(
-                name=nb_node["metadata"]["language_info"]["codemirror_mode"]["name"],
-                version=nb_node["metadata"]["language_info"]["codemirror_mode"][
-                    "version"
-                ],
+    try:
+        cells = [
+            NotebookCellFactory.create_cell(
+                cell_type=cell["cell_type"],
+                execution_count=cell.get("execution_count"),
+                cell_id=cell.get("cell_id", ""),
+                metadata=cell.get("metadata", {}),
+                outputs=cell.get("outputs", []),
+                source=cell.get("source", []),
+            )
+            for cell in nb_node.get("cells", [])
+        ]
+    except KeyError as e:
+        raise ValueError(f"Invalid cell structure: missing required field {e}")
+    try:
+        metadata = NotebookMetadata(
+            kernelspec=KernelSpec(
+                display_name=nb_node.get("metadata", {})
+                .get("kernelspec", {})
+                .get("display_name", ""),
+                language=nb_node.get("metadata", {})
+                .get("kernelspec", {})
+                .get("language", ""),
+                name=nb_node.get("metadata", {}).get("kernelspec", {}).get("name", ""),
             ),
-            file_extension=nb_node["metadata"]["language_info"]["file_extension"],
-            mimetype=nb_node["metadata"]["language_info"]["mimetype"],
-            name=nb_node["metadata"]["language_info"]["name"],
-            nbconvert_exporter=nb_node["metadata"]["language_info"][
-                "nbconvert_exporter"
-            ],
-            pygments_lexer=nb_node["metadata"]["language_info"]["pygments_lexer"],
-            version=nb_node["metadata"]["language_info"]["version"],
-        ),
-    )
+            language_info=LanguageInfo(
+                codemirror_mode=CodeMirrorMode(
+                    name=nb_node.get("metadata", {})
+                    .get("language_info", {})
+                    .get("codemirror_mode", {})
+                    .get("name", ""),
+                    version=nb_node.get("metadata", {})
+                    .get("language_info", {})
+                    .get("codemirror_mode", {})
+                    .get("version", 4),
+                ),
+                file_extension=nb_node.get("metadata", {})
+                .get("language_info", {})
+                .get("file_extension", ""),
+                mimetype=nb_node.get("metadata", {})
+                .get("language_info", {})
+                .get("mimetype", ""),
+                name=nb_node.get("metadata", {})
+                .get("language_info", {})
+                .get("name", ""),
+                nbconvert_exporter=nb_node.get("metadata", {})
+                .get("language_info", {})
+                .get("nbconvert_exporter", ""),
+                pygments_lexer=nb_node.get("metadata", {})
+                .get("language_info", {})
+                .get("pygments_lexer", ""),
+                version=nb_node.get("metadata", {})
+                .get("language_info", {})
+                .get("version", ""),
+            ),
+        )
+    except KeyError as e:
+        raise ValueError(f"Invalid metadata structure: missing required field {e}")
 
     return Notebook(
         cells=cells,
