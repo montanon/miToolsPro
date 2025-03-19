@@ -62,7 +62,7 @@ def notebooknode_to_custom_notebook(nb_node: NotebookNode) -> Notebook:
             NotebookCellFactory.create_cell(
                 cell_type=cell["cell_type"],
                 execution_count=cell.get("execution_count"),
-                cell_id=cell.get("cell_id", ""),
+                id=cell.get("id", ""),
                 metadata=cell.get("metadata", {}),
                 outputs=cell.get("outputs", []),
                 source=cell.get("source", []),
@@ -240,9 +240,7 @@ def create_notebook_cell(
     cell = NotebookCellFactory.create_cell(
         cell_type=cell_type,
         execution_count=execution_count,
-        cell_id=create_notebook_cell_id(
-            notebook_seed=notebook_seed, cell_seed=cell_seed
-        ),
+        id=create_notebook_cell_id(notebook_seed=notebook_seed, cell_seed=cell_seed),
         metadata=metadata,
         outputs=outputs,
         source=source,
