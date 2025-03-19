@@ -253,6 +253,8 @@ class NotebookCellFactory:
 
     @staticmethod
     def create_cell(cell_type: str, *args, **kwargs):
+        args = [arg for arg in args if arg is not None]
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
         cell_class = NotebookCellFactory.cell_types.get(cell_type.lower(), NotebookCell)
         cell = cell_class(*args, **kwargs)
         return cell

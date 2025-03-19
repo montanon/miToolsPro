@@ -230,12 +230,14 @@ def create_notebook_sections(
 
 def create_notebook_cell(
     cell_type: str,
-    execution_count: None,
+    source: list,
     notebook_seed: str,
     cell_seed: str,
-    metadata: dict,
-    outputs: list,
-    source: list,
+    metadata: Optional[dict] = None,
+    outputs: Optional[list] = None,
+    execution_count: Optional[int] = None,
+    deletable: bool = True,
+    editable: bool = True,
 ) -> NotebookCell:
     cell = NotebookCellFactory.create_cell(
         cell_type=cell_type,
@@ -244,6 +246,8 @@ def create_notebook_cell(
         metadata=metadata,
         outputs=outputs,
         source=source,
+        deletable=deletable,
+        editable=editable,
     )
     return cell
 
