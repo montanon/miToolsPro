@@ -18,6 +18,7 @@ class Notebook:
     notebook_id: str = field(
         default=uuid.uuid4().hex, metadata={"validator": validate_hex_string}
     )
+    _section_indices: List[tuple[int, int]] = field(default_factory=list)
 
     def __post_init__(self):
         new_cells = []
@@ -26,6 +27,13 @@ class Notebook:
             new_cell = replace(cell, id=validate_hex_string(cell_id))
             new_cells.append(new_cell)
         object.__setattr__(self, "cells", NotebookCells(new_cells))
+
+    def get_sections(self) -> "NotebookSections":
+        sections = []
+        for start, end in self._section_indices:
+            section_cells = NotebookCells(self.cells[start:end])
+            sections.append(NotebookSection(cells=section_cells))
+        return NotebookSections(sections=sections)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

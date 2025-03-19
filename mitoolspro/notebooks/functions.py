@@ -154,22 +154,29 @@ def create_notebook(
         cells = [cells]
 
     all_cells = []
-    sections = []
+    section_indices = []
+    current_index = 0
 
     for cell_container in cells:
         if isinstance(cell_container, NotebookCell):
             all_cells.append(cell_container)
+            current_index += 1
         elif isinstance(cell_container, NotebookCells):
             all_cells.extend(cell_container.cells)
+            current_index += len(cell_container.cells)
         elif isinstance(cell_container, NotebookSection):
-            sections.append(cell_container)
+            start_index = current_index
             all_cells.extend(cell_container.cells)
+            current_index += len(cell_container.cells)
+            section_indices.append((start_index, current_index))
         elif isinstance(cell_container, NotebookSections):
-            sections.extend(cell_container.sections)
             for section in cell_container.sections:
+                start_index = current_index
                 all_cells.extend(section.cells)
+                current_index += len(section.cells)
+                section_indices.append((start_index, current_index))
 
-    return Notebook(
+    notebook = Notebook(
         cells=NotebookCells(all_cells),
         metadata=metadata,
         nbformat=nbformat,
@@ -177,6 +184,8 @@ def create_notebook(
         name=name,
         notebook_id=notebook_id,
     )
+    object.__setattr__(notebook, "_section_indices", section_indices)
+    return notebook
 
 
 def create_notebook_metadata(
