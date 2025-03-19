@@ -1,3 +1,4 @@
+import sys
 from os import PathLike
 from typing import List, Optional, Union
 
@@ -278,3 +279,31 @@ def create_language_info(
 
 def create_kernel_spec(display_name: str, language: str, name: str) -> KernelSpec:
     return KernelSpec(display_name=display_name, language=language, name=name)
+
+
+def create_default_metadata() -> NotebookMetadata:
+    python_version = (
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
+
+    codemirror_mode = create_code_mirror_mode(name="python", version=4)
+    language_info = create_language_info(
+        codemirror_mode=codemirror_mode,
+        file_extension=".py",
+        mimetype="text/x-python",
+        name="python",
+        nbconvert_exporter="python",
+        pygments_lexer="ipython3",
+        version=python_version,
+    )
+
+    kernelspec = create_kernel_spec(
+        display_name=f"Python {python_version}",
+        language="python",
+        name=f"python{sys.version_info.major}",
+    )
+
+    return create_notebook_metadata(
+        language_info=language_info,
+        kernelspec=kernelspec,
+    )
