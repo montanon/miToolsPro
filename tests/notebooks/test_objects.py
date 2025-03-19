@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 from unittest import TestCase
 
-from mitoolspro.notebooks import (
+from mitoolspro.notebooks.objects import (
     CodeCell,
     CodeMirrorMode,
     ImportCell,
@@ -16,14 +16,6 @@ from mitoolspro.notebooks import (
     NotebookMetadata,
     NotebookSection,
     NotebookSections,
-    create_code_mirror_mode,
-    create_kernel_spec,
-    create_language_info,
-    create_notebook_cell,
-    create_notebook_cell_id,
-    create_notebook_metadata,
-    create_notebook_section,
-    create_notebook_sections,
 )
 
 
@@ -176,7 +168,7 @@ class TestNotebookCells(TestCase):
             self.notebook_cells[2]
 
     def test_to_dict(self):
-        expected = {"cells": self.cells}
+        expected = {"cells": [cell.to_dict() for cell in self.cells]}
         self.assertEqual(self.notebook_cells.to_dict(), expected)
 
 
@@ -207,7 +199,7 @@ class TestNotebookSection(TestCase):
             )
 
     def test_to_dict(self):
-        expected = {"cells": self.cells}
+        expected = {"cells": [cell.to_dict() for cell in self.cells]}
         self.assertEqual(self.section.to_dict(), expected)
 
 
@@ -244,7 +236,7 @@ class TestNotebookSections(TestCase):
             self.sections[2]
 
     def test_to_dict(self):
-        expected = {"sections": [self.section1, self.section2]}
+        expected = {"sections": [self.section1.to_dict(), self.section2.to_dict()]}
         self.assertEqual(self.sections.to_dict(), expected)
 
 
@@ -262,8 +254,8 @@ class TestNotebook(TestCase):
             cells=NotebookCells(cells=[self.title_cell2, self.code_cell2])
         )
 
-        self.codemirror_mode = create_code_mirror_mode(name="python", version=4)
-        self.language_info = create_language_info(
+        self.codemirror_mode = CodeMirrorMode(name="python", version=4)
+        self.language_info = LanguageInfo(
             codemirror_mode=self.codemirror_mode,
             file_extension=".py",
             mimetype="text/x-python",
@@ -272,12 +264,12 @@ class TestNotebook(TestCase):
             pygments_lexer="ipython3",
             version="3.8.0",
         )
-        self.kernelspec = create_kernel_spec(
+        self.kernelspec = KernelSpec(
             display_name="Python 3",
             language="python",
             name="python3",
         )
-        self.metadata = create_notebook_metadata(
+        self.metadata = NotebookMetadata(
             language_info=self.language_info,
             kernelspec=self.kernelspec,
         )
@@ -332,8 +324,8 @@ class TestNotebook(TestCase):
 
 class TestNotebookMetadata(TestCase):
     def setUp(self):
-        self.codemirror_mode = create_code_mirror_mode(name="python", version=4)
-        self.language_info = create_language_info(
+        self.codemirror_mode = CodeMirrorMode(name="python", version=4)
+        self.language_info = LanguageInfo(
             codemirror_mode=self.codemirror_mode,
             file_extension=".py",
             mimetype="text/x-python",
@@ -342,12 +334,12 @@ class TestNotebookMetadata(TestCase):
             pygments_lexer="ipython3",
             version="3.8.0",
         )
-        self.kernelspec = create_kernel_spec(
+        self.kernelspec = KernelSpec(
             display_name="Python 3",
             language="python",
             name="python3",
         )
-        self.metadata = create_notebook_metadata(
+        self.metadata = NotebookMetadata(
             language_info=self.language_info,
             kernelspec=self.kernelspec,
         )
@@ -358,15 +350,15 @@ class TestNotebookMetadata(TestCase):
 
     def test_to_dict(self):
         expected = {
-            "kernelspec": self.kernelspec,
-            "language_info": self.language_info,
+            "kernelspec": self.kernelspec.to_dict(),
+            "language_info": self.language_info.to_dict(),
         }
         self.assertEqual(self.metadata.to_dict(), expected)
 
 
 class TestKernelSpec(TestCase):
     def setUp(self):
-        self.kernelspec = create_kernel_spec(
+        self.kernelspec = KernelSpec(
             display_name="Python 3",
             language="python",
             name="python3",
@@ -388,8 +380,8 @@ class TestKernelSpec(TestCase):
 
 class TestLanguageInfo(TestCase):
     def setUp(self):
-        self.codemirror_mode = create_code_mirror_mode(name="python", version=4)
-        self.language_info = create_language_info(
+        self.codemirror_mode = CodeMirrorMode(name="python", version=4)
+        self.language_info = LanguageInfo(
             codemirror_mode=self.codemirror_mode,
             file_extension=".py",
             mimetype="text/x-python",
@@ -410,7 +402,7 @@ class TestLanguageInfo(TestCase):
 
     def test_to_dict(self):
         expected = {
-            "codemirror_mode": self.codemirror_mode,
+            "codemirror_mode": self.codemirror_mode.to_dict(),
             "file_extension": ".py",
             "mimetype": "text/x-python",
             "name": "python",
@@ -423,7 +415,7 @@ class TestLanguageInfo(TestCase):
 
 class TestCodeMirrorMode(TestCase):
     def setUp(self):
-        self.codemirror_mode = create_code_mirror_mode(name="python", version=4)
+        self.codemirror_mode = CodeMirrorMode(name="python", version=4)
 
     def test_creation(self):
         self.assertEqual(self.codemirror_mode.name, "python")
