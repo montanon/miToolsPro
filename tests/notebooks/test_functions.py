@@ -79,8 +79,8 @@ class TestWriteNotebook(TestCase):
         self.notebook = Notebook(
             cells=NotebookCells(
                 [
-                    MarkdownCell(cell_type="markdown", source=["# Test"]),
-                    CodeCell(cell_type="code", source=["print('hello')"]),
+                    MarkdownCell(source=["# Test"]),
+                    CodeCell(source=["print('hello')"]),
                 ]
             ),
             metadata=NotebookMetadata(
@@ -156,8 +156,8 @@ class TestValidateNotebook(TestCase):
         self.valid_notebook = Notebook(
             cells=NotebookCells(
                 [
-                    MarkdownCell(cell_type="markdown", source=["# Test"]),
-                    CodeCell(cell_type="code", source=["print('hello')"]),
+                    MarkdownCell(source=["# Test"]),
+                    CodeCell(source=["print('hello')"]),
                 ]
             ),
             metadata=NotebookMetadata(
@@ -273,8 +273,8 @@ class TestCreateNotebook(TestCase):
             ),
         )
         self.cells = [
-            MarkdownCell(cell_type="markdown", source=["# Test"]),
-            CodeCell(cell_type="code", source=["print('hello')"]),
+            MarkdownCell(source=["# Test"]),
+            CodeCell(source=["print('hello')"]),
         ]
 
     def test_create_from_cells(self):
@@ -292,8 +292,8 @@ class TestCreateNotebook(TestCase):
         section = NotebookSection(
             cells=NotebookCells(
                 [
-                    MarkdownCell(cell_type="markdown", source=["# Section"]),
-                    CodeCell(cell_type="code", source=["print('section')"]),
+                    MarkdownCell(source=["# Section"]),
+                    CodeCell(source=["print('section')"]),
                 ]
             )
         )
@@ -313,16 +313,16 @@ class TestCreateNotebook(TestCase):
                 NotebookSection(
                     cells=NotebookCells(
                         [
-                            MarkdownCell(cell_type="markdown", source=["# Section 1"]),
-                            CodeCell(cell_type="code", source=["print('section 1')"]),
+                            MarkdownCell(source=["# Section 1"]),
+                            CodeCell(source=["print('section 1')"]),
                         ]
                     )
                 ),
                 NotebookSection(
                     cells=NotebookCells(
                         [
-                            MarkdownCell(cell_type="markdown", source=["# Section 2"]),
-                            CodeCell(cell_type="code", source=["print('section 2')"]),
+                            MarkdownCell(source=["# Section 2"]),
+                            CodeCell(source=["print('section 2')"]),
                         ]
                     )
                 ),
@@ -375,7 +375,7 @@ class TestCreateNotebookMetadata(TestCase):
 class TestCreateNotebookSection(TestCase):
     def setUp(self):
         self.cells = [
-            CodeCell(cell_type="code", source=["print('hello')"]),
+            CodeCell(source=["print('hello')"]),
         ]
         self.notebook_seed = "test_notebook"
         self.section_seed = "test_section"
@@ -401,13 +401,13 @@ class TestCreateNotebookSections(TestCase):
             (
                 "# Section 1",
                 [
-                    CodeCell(cell_type="code", source=["print('section 1')"]),
+                    CodeCell(source=["print('section 1')"]),
                 ],
             ),
             (
                 "# Section 2",
                 [
-                    CodeCell(cell_type="code", source=["print('section 2')"]),
+                    CodeCell(source=["print('section 2')"]),
                 ],
             ),
         ]

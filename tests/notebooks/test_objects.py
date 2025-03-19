@@ -20,7 +20,6 @@ from mitoolspro.notebooks.objects import (
 class TestMarkdownCell(TestCase):
     def setUp(self):
         self.cell = MarkdownCell(
-            cell_type="markdown",
             metadata={"key": "value"},
             source=["# Title"],
             id="1234567890abcdef",
@@ -30,10 +29,6 @@ class TestMarkdownCell(TestCase):
         self.assertEqual(self.cell.cell_type, "markdown")
         self.assertEqual(self.cell.source, ["# Title"])
         self.assertEqual(self.cell.id, "1234567890abcdef")
-
-    def test_invalid_cell_type(self):
-        with self.assertRaises(ValueError):
-            MarkdownCell(cell_type="code")
 
     def test_to_dict(self):
         expected = {
@@ -60,7 +55,6 @@ class TestMarkdownCell(TestCase):
 class TestCodeCell(TestCase):
     def setUp(self):
         self.cell = CodeCell(
-            cell_type="code",
             execution_count=1,
             metadata={"key": "value"},
             outputs=["output"],
@@ -72,10 +66,6 @@ class TestCodeCell(TestCase):
         self.assertEqual(self.cell.cell_type, "code")
         self.assertEqual(self.cell.execution_count, 1)
         self.assertEqual(self.cell.source, ["print('hello')"])
-
-    def test_invalid_cell_type(self):
-        with self.assertRaises(ValueError):
-            CodeCell(cell_type="markdown")
 
     def test_nbformat(self):
         expected = {
@@ -91,7 +81,6 @@ class TestCodeCell(TestCase):
 class TestImportCell(TestCase):
     def setUp(self):
         self.cell = ImportCell(
-            cell_type="code",
             metadata={"key": "value"},
             source=["import numpy as np", "from pandas import DataFrame"],
             id="1234567890abcdef",
@@ -103,14 +92,9 @@ class TestImportCell(TestCase):
             self.cell.source, ["import numpy as np", "from pandas import DataFrame"]
         )
 
-    def test_invalid_cell_type(self):
-        with self.assertRaises(ValueError):
-            ImportCell(cell_type="markdown")
-
     def test_invalid_source(self):
         with self.assertRaises(ValueError):
             ImportCell(
-                cell_type="code",
                 source=["import numpy as np", "print('hello')"],
             )
 
@@ -128,8 +112,8 @@ class TestImportCell(TestCase):
 class TestNotebookCells(TestCase):
     def setUp(self):
         self.cells = [
-            MarkdownCell(cell_type="markdown", source=["# Title"]),
-            CodeCell(cell_type="code", source=["print('hello')"]),
+            MarkdownCell(source=["# Title"]),
+            CodeCell(source=["print('hello')"]),
         ]
         self.notebook_cells = NotebookCells(cells=self.cells)
 
@@ -176,8 +160,8 @@ class TestNotebookCells(TestCase):
 
 class TestNotebookSection(TestCase):
     def setUp(self):
-        self.title_cell = MarkdownCell(cell_type="markdown", source=["# Section"])
-        self.code_cell = CodeCell(cell_type="code", source=["print('hello')"])
+        self.title_cell = MarkdownCell(source=["# Section"])
+        self.code_cell = CodeCell(source=["print('hello')"])
         self.cells = NotebookCells(cells=[self.title_cell, self.code_cell])
         self.section = NotebookSection(cells=self.cells)
 
@@ -226,10 +210,10 @@ class TestNotebookSection(TestCase):
 
 class TestNotebookSections(TestCase):
     def setUp(self):
-        self.title_cell1 = MarkdownCell(cell_type="markdown", source=["# Section 1"])
-        self.title_cell2 = MarkdownCell(cell_type="markdown", source=["# Section 2"])
-        self.code_cell1 = CodeCell(cell_type="code", source=["print('hello')"])
-        self.code_cell2 = CodeCell(cell_type="code", source=["print('world')"])
+        self.title_cell1 = MarkdownCell(source=["# Section 1"])
+        self.title_cell2 = MarkdownCell(source=["# Section 2"])
+        self.code_cell1 = CodeCell(source=["print('hello')"])
+        self.code_cell2 = CodeCell(source=["print('world')"])
 
         self.section1 = NotebookSection(
             cells=NotebookCells(cells=[self.title_cell1, self.code_cell1])
@@ -302,10 +286,10 @@ class TestNotebookSections(TestCase):
 
 class TestNotebook(TestCase):
     def setUp(self):
-        self.title_cell1 = MarkdownCell(cell_type="markdown", source=["# Section 1"])
-        self.title_cell2 = MarkdownCell(cell_type="markdown", source=["# Section 2"])
-        self.code_cell1 = CodeCell(cell_type="code", source=["print('hello')"])
-        self.code_cell2 = CodeCell(cell_type="code", source=["print('world')"])
+        self.title_cell1 = MarkdownCell(source=["# Section 1"])
+        self.title_cell2 = MarkdownCell(source=["# Section 2"])
+        self.code_cell1 = CodeCell(source=["print('hello')"])
+        self.code_cell2 = CodeCell(source=["print('world')"])
 
         self.section1 = NotebookSection(
             cells=NotebookCells(cells=[self.title_cell1, self.code_cell1])

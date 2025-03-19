@@ -173,12 +173,7 @@ class NotebookCell(ABC):
 
 @dataclass(frozen=True)
 class MarkdownCell(NotebookCell):
-    def __post_init__(self):
-        if object.__getattribute__(self, "cell_type") != "markdown":
-            raise ValueError(
-                f"cell_type of MarkdownCell must be 'markdown', got {object.__getattribute__(self, 'cell_type')}"
-            )
-        object.__setattr__(self, "cell_type", "markdown")
+    cell_type: str = "markdown"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -191,7 +186,7 @@ class MarkdownCell(NotebookCell):
         metadata.update({"editable": self.editable})
         metadata.update({"deletable": self.deletable})
         return {
-            "cell_type": "markdown",
+            "cell_type": self.cell_type,
             "metadata": metadata,
             "source": self.source,
         }
@@ -199,12 +194,7 @@ class MarkdownCell(NotebookCell):
 
 @dataclass(frozen=True)
 class CodeCell(NotebookCell):
-    def __post_init__(self):
-        if object.__getattribute__(self, "cell_type") != "code":
-            raise ValueError(
-                f"cell_type of CodeCell must be 'code', got {object.__getattribute__(self, 'cell_type')}"
-            )
-        object.__setattr__(self, "cell_type", "code")
+    cell_type: str = "code"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -217,7 +207,7 @@ class CodeCell(NotebookCell):
         metadata.update({"editable": self.editable})
         metadata.update({"deletable": self.deletable})
         return {
-            "cell_type": "code",
+            "cell_type": self.cell_type,
             "execution_count": self.execution_count,
             "metadata": metadata,
             "outputs": self.outputs,
@@ -227,13 +217,9 @@ class CodeCell(NotebookCell):
 
 @dataclass(frozen=True)
 class ImportCell(NotebookCell):
-    def __post_init__(self):
-        if object.__getattribute__(self, "cell_type") != "code":
-            raise ValueError(
-                f"cell_type of CodeCell must be 'code', got {object.__getattribute__(self, 'cell_type')}"
-            )
-        object.__setattr__(self, "cell_type", "code")
+    cell_type: str = "code"
 
+    def __post_init__(self):
         source = object.__getattribute__(self, "source")
         for line in source:
             line = line.strip()
@@ -253,7 +239,7 @@ class ImportCell(NotebookCell):
         metadata.update({"editable": self.editable})
         metadata.update({"deletable": self.deletable})
         return {
-            "cell_type": "code",
+            "cell_type": self.cell_type,
             "execution_count": self.execution_count,
             "metadata": metadata,
             "outputs": self.outputs,
@@ -268,7 +254,7 @@ class NotebookCellFactory:
     @staticmethod
     def create_cell(cell_type: str, *args, **kwargs):
         cell_class = NotebookCellFactory.cell_types.get(cell_type.lower(), NotebookCell)
-        cell = cell_class(cell_type=cell_type, *args, **kwargs)
+        cell = cell_class(*args, **kwargs)
         return cell
 
 
