@@ -36,8 +36,8 @@ class Notebook:
     def __post_init__(self):
         new_cells = []
         for i, cell in enumerate(self.cells):
-            cell_id = create_notebook_cell_id(self.notebook_id, str(i))
-            new_cell = replace(cell, cell_id=validate_hex_string(cell_id))
+            id = create_notebook_cell_id(self.notebook_id, str(i))
+            new_cell = replace(cell, id=validate_hex_string(id))
             new_cells.append(new_cell)
         object.__setattr__(self, "cells", NotebookCells(new_cells))
 
@@ -137,7 +137,7 @@ class NotebookCell:
     metadata: Dict[str, Any] = field(default_factory=dict)
     outputs: List[Any] = field(default_factory=list)
     source: List[str] = field(default_factory=list)
-    cell_id: str = field(default="", metadata={"validator": validate_hex_string})
+    id: str = field(default="", metadata={"validator": validate_hex_string})
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

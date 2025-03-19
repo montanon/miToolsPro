@@ -28,7 +28,7 @@ class TestNotebookCell(TestCase):
             metadata={"key": "value"},
             outputs=["output"],
             source=["print('hello')"],
-            cell_id="1234567890abcdef",
+            id="1234567890abcdef",
         )
 
     def test_creation(self):
@@ -37,7 +37,7 @@ class TestNotebookCell(TestCase):
         self.assertEqual(self.cell.metadata, {"key": "value"})
         self.assertEqual(self.cell.outputs, ["output"])
         self.assertEqual(self.cell.source, ["print('hello')"])
-        self.assertEqual(self.cell.cell_id, "1234567890abcdef")
+        self.assertEqual(self.cell.id, "1234567890abcdef")
 
     def test_default_values(self):
         cell = NotebookCell(cell_type="code")
@@ -45,7 +45,7 @@ class TestNotebookCell(TestCase):
         self.assertEqual(cell.metadata, {})
         self.assertEqual(cell.outputs, [])
         self.assertEqual(cell.source, [])
-        self.assertEqual(cell.cell_id, "")
+        self.assertEqual(cell.id, "")
 
     def test_to_dict(self):
         expected = {
@@ -54,7 +54,7 @@ class TestNotebookCell(TestCase):
             "metadata": {"key": "value"},
             "outputs": ["output"],
             "source": ["print('hello')"],
-            "cell_id": "1234567890abcdef",
+            "id": "1234567890abcdef",
         }
         self.assertEqual(self.cell.to_dict(), expected)
 
@@ -71,13 +71,13 @@ class TestMarkdownCell(TestCase):
             cell_type="markdown",
             metadata={"key": "value"},
             source=["# Title"],
-            cell_id="1234567890abcdef",
+            id="1234567890abcdef",
         )
 
     def test_creation(self):
         self.assertEqual(self.cell.cell_type, "markdown")
         self.assertEqual(self.cell.source, ["# Title"])
-        self.assertEqual(self.cell.cell_id, "1234567890abcdef")
+        self.assertEqual(self.cell.id, "1234567890abcdef")
 
     def test_invalid_cell_type(self):
         with self.assertRaises(ValueError):
@@ -90,7 +90,7 @@ class TestMarkdownCell(TestCase):
             "metadata": {"key": "value"},
             "outputs": [],
             "source": ["# Title"],
-            "cell_id": "1234567890abcdef",
+            "id": "1234567890abcdef",
         }
         self.assertEqual(self.cell.to_dict(), expected)
 
@@ -103,7 +103,7 @@ class TestCodeCell(TestCase):
             metadata={"key": "value"},
             outputs=["output"],
             source=["print('hello')"],
-            cell_id="1234567890abcdef",
+            id="1234567890abcdef",
         )
 
     def test_creation(self):
@@ -122,7 +122,7 @@ class TestImportCell(TestCase):
             cell_type="code",
             metadata={"key": "value"},
             source=["import numpy as np", "from pandas import DataFrame"],
-            cell_id="1234567890abcdef",
+            id="1234567890abcdef",
         )
 
     def test_creation(self):
