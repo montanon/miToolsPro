@@ -144,8 +144,8 @@ class TestQuantileRegressionModel(TestCase):
     def test_init_with_defaults(self):
         model = QuantileRegressionModel(self.data, dependent_variable="y")
         self.assertEqual(model.dependent_variable, "y")
-        self.assertIsNone(model.independent_variables)
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.independent_variables, ["x1", "x2"])
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "QuantReg")
         self.assertEqual(model.quantiles, [0.5])
@@ -155,9 +155,9 @@ class TestQuantileRegressionModel(TestCase):
         formula = "y ~ x1 + x2"
         model = QuantileRegressionModel(self.data, formula=formula)
         self.assertEqual(model.formula, formula)
-        self.assertIsNone(model.dependent_variable)
-        self.assertIsNone(model.independent_variables)
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.dependent_variable, "")
+        self.assertEqual(model.independent_variables, [])
+        self.assertEqual(model.control_variables, [])
 
     def test_init_with_variables(self):
         model = QuantileRegressionModel(
@@ -168,7 +168,7 @@ class TestQuantileRegressionModel(TestCase):
         )
         self.assertEqual(model.dependent_variable, "y")
         self.assertEqual(model.independent_variables, ["x1", "x2"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.control_variables, [])
 
     def test_init_with_multiple_quantiles(self):
         quantiles = [0.25, 0.5, 0.75]
@@ -233,8 +233,9 @@ class TestQuantileRegressionModel(TestCase):
         model.fit()
         predictions = model.predict()
 
-        self.assertEqual(len(predictions), len(self.data))
-        self.assertTrue(np.all(np.isfinite(predictions)))
+        self.assertEqual(len(predictions), 1)  # One quantile (0.5)
+        self.assertEqual(len(predictions[0.5]), len(self.data))
+        self.assertTrue(np.all(np.isfinite(predictions[0.5])))
 
     def test_predict_with_new_data(self):
         model = QuantileRegressionModel(
@@ -253,8 +254,9 @@ class TestQuantileRegressionModel(TestCase):
         new_data = sm.add_constant(new_data)
         predictions = model.predict(new_data)
 
-        self.assertEqual(len(predictions), len(new_data))
-        self.assertTrue(np.all(np.isfinite(predictions)))
+        self.assertEqual(len(predictions), 1)  # One quantile (0.5)
+        self.assertEqual(len(predictions[0.5]), len(new_data))
+        self.assertTrue(np.all(np.isfinite(predictions[0.5])))
 
     def test_predict_with_specific_quantile(self):
         quantiles = [0.25, 0.5, 0.75]
@@ -267,8 +269,9 @@ class TestQuantileRegressionModel(TestCase):
         model.fit()
 
         predictions = model.predict(quantiles=0.5)
-        self.assertEqual(len(predictions), len(self.data))
-        self.assertTrue(np.all(np.isfinite(predictions)))
+        self.assertEqual(len(predictions), 1)  # One quantile (0.5)
+        self.assertEqual(len(predictions[0.5]), len(self.data))
+        self.assertTrue(np.all(np.isfinite(predictions[0.5])))
 
     def test_predict_with_invalid_quantile(self):
         quantiles = [0.25, 0.5, 0.75]
