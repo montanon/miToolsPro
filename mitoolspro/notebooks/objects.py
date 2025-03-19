@@ -37,16 +37,19 @@ class Notebook:
         new_cells = []
         for i, cell in enumerate(self.cells):
             cell_id = create_notebook_cell_id(self.notebook_id, str(i))
-            new_cell = replace(cell, id=validate_hex_string(cell_id))
+            new_cell = replace(cell, cell_id=validate_hex_string(cell_id))
             new_cells.append(new_cell)
         object.__setattr__(self, "cells", NotebookCells(new_cells))
 
+    @property
+    def sections(self) -> list["NotebookSection"]:
+        return [
+            NotebookSection(cells=NotebookCells(self.cells[start:end]))
+            for start, end in self._section_indices
+        ]
+
     def get_sections(self) -> "NotebookSections":
-        sections = []
-        for start, end in self._section_indices:
-            section_cells = NotebookCells(self.cells[start:end])
-            sections.append(NotebookSection(cells=section_cells))
-        return NotebookSections(sections=sections)
+        return NotebookSections(sections=self.sections)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -78,7 +81,7 @@ class NotebookSections:
         return len(self.sections)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {"sections": [section.to_dict() for section in self.sections]}
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
@@ -89,7 +92,6 @@ class NotebookSection:
     cells: "NotebookCells"
 
     def __post_init__(self):
-        super().__init__(self.cells)
         if not isinstance(self.cells, NotebookCells):
             raise ValueError("cells must be an instance of NotebookCells.")
         try:
@@ -100,7 +102,7 @@ class NotebookSection:
             raise ValueError("The first cell must be a MarkdownCell.")
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {"cells": self.cells.to_dict()["cells"]}
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
@@ -120,7 +122,7 @@ class NotebookCells:
         return len(self.cells)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {"cells": [cell.to_dict() for cell in self.cells]}
 
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
