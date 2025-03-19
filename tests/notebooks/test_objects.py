@@ -55,6 +55,8 @@ class TestNotebookCell(TestCase):
             "outputs": ["output"],
             "source": ["print('hello')"],
             "id": "1234567890abcdef",
+            "deletable": True,
+            "editable": True,
         }
         self.assertEqual(self.cell.to_dict(), expected)
 
@@ -91,6 +93,8 @@ class TestMarkdownCell(TestCase):
             "outputs": [],
             "source": ["# Title"],
             "id": "1234567890abcdef",
+            "deletable": True,
+            "editable": True,
         }
         self.assertEqual(self.cell.to_dict(), expected)
 
