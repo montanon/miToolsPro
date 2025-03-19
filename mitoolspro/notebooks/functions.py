@@ -52,7 +52,7 @@ def validate_notebook(notebook: Notebook) -> None:
 
 
 def custom_notebook_to_notebooknode(custom_nb: Notebook) -> NotebookNode:
-    nb_dict = custom_nb.to_dict()
+    nb_dict = custom_nb.to_nb()
     return from_dict(nb_dict)
 
 

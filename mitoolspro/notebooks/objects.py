@@ -28,11 +28,11 @@ class Notebook:
     nbformat: int
     nbformat_minor: int
     name: str
-    path: PathLike = field(default="")
     notebook_id: str = field(
         default=uuid.uuid4().hex, metadata={"validator": validate_hex_string}
     )
     _section_indices: List[tuple[int, int]] = field(default_factory=list)
+    path: PathLike = field(default="")
 
     def __post_init__(self):
         new_cells = []
@@ -60,9 +60,9 @@ class Notebook:
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
-    def nbformat(self) -> dict[str, Any]:
+    def to_nb(self) -> dict[str, Any]:
         nb_dict = {
-            "cells": self.cells.nbformat()["cells"],
+            "cells": self.cells.to_nb()["cells"],
             "metadata": self.metadata.to_dict(),
             "nbformat": self.nbformat,
             "nbformat_minor": self.nbformat_minor,
@@ -98,6 +98,9 @@ class NotebookSections:
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
+    def to_nb(self) -> dict[str, Any]:
+        return {"sections": [section.to_nb() for section in self.sections]}
+
 
 @dataclass(frozen=True)
 class NotebookSection:
@@ -119,8 +122,8 @@ class NotebookSection:
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
-    def nbformat(self) -> dict[str, Any]:
-        return {"cells": self.cells.nbformat()["cells"]}
+    def to_nb(self) -> dict[str, Any]:
+        return {"cells": self.cells.to_nb()["cells"]}
 
 
 @dataclass(frozen=True)
@@ -142,8 +145,8 @@ class NotebookCells:
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
-    def nbformat(self) -> dict[str, Any]:
-        return {"cells": [cell.nbformat() for cell in self.cells]}
+    def to_nb(self) -> dict[str, Any]:
+        return {"cells": [cell.to_nb() for cell in self.cells]}
 
 
 @dataclass(frozen=True)
@@ -164,7 +167,7 @@ class NotebookCell(ABC):
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
     @abstractmethod
-    def nbformat(self) -> dict[str, Any]:
+    def to_nb(self) -> dict[str, Any]:
         pass
 
 
@@ -183,9 +186,10 @@ class MarkdownCell(NotebookCell):
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
-    def nbformat(self) -> dict[str, Any]:
-        metadata = self.metadata.update({"editable": self.editable})
-        metadata = metadata.update({"deletable": self.deletable})
+    def to_nb(self) -> dict[str, Any]:
+        metadata = self.metadata
+        metadata.update({"editable": self.editable})
+        metadata.update({"deletable": self.deletable})
         return {
             "cell_type": "markdown",
             "metadata": metadata,
@@ -208,9 +212,10 @@ class CodeCell(NotebookCell):
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
-    def nbformat(self) -> dict[str, Any]:
-        metadata = self.metadata.update({"editable": self.editable})
-        metadata = metadata.update({"deletable": self.deletable})
+    def to_nb(self) -> dict[str, Any]:
+        metadata = self.metadata
+        metadata.update({"editable": self.editable})
+        metadata.update({"deletable": self.deletable})
         return {
             "cell_type": "code",
             "execution_count": self.execution_count,
@@ -243,9 +248,10 @@ class ImportCell(NotebookCell):
     def to_json(self, **json_kwargs) -> str:
         return json.dumps(self.to_dict(), cls=NotebookEncoder, **json_kwargs)
 
-    def nbformat(self) -> dict[str, Any]:
-        metadata = self.metadata.update({"editable": self.editable})
-        metadata = metadata.update({"deletable": self.deletable})
+    def to_nb(self) -> dict[str, Any]:
+        metadata = self.metadata
+        metadata.update({"editable": self.editable})
+        metadata.update({"deletable": self.deletable})
         return {
             "cell_type": "code",
             "execution_count": self.execution_count,

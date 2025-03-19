@@ -1,7 +1,5 @@
 import json
 import unittest
-from dataclasses import dataclass
-from typing import Any, Dict, List
 from unittest import TestCase
 
 from mitoolspro.notebooks.objects import (
@@ -12,63 +10,11 @@ from mitoolspro.notebooks.objects import (
     LanguageInfo,
     MarkdownCell,
     Notebook,
-    NotebookCell,
     NotebookCells,
     NotebookMetadata,
     NotebookSection,
     NotebookSections,
 )
-
-
-class TestNotebookCell(TestCase):
-    def setUp(self):
-        self.cell = NotebookCell(
-            cell_type="code",
-            execution_count=1,
-            metadata={"key": "value"},
-            outputs=["output"],
-            source=["print('hello')"],
-            id="1234567890abcdef",
-        )
-
-    def test_creation(self):
-        self.assertEqual(self.cell.cell_type, "code")
-        self.assertEqual(self.cell.execution_count, 1)
-        self.assertEqual(self.cell.metadata, {"key": "value"})
-        self.assertEqual(self.cell.outputs, ["output"])
-        self.assertEqual(self.cell.source, ["print('hello')"])
-        self.assertEqual(self.cell.id, "1234567890abcdef")
-
-    def test_default_values(self):
-        cell = NotebookCell(cell_type="code")
-        self.assertEqual(cell.execution_count, None)
-        self.assertEqual(cell.metadata, {})
-        self.assertEqual(cell.outputs, [])
-        self.assertEqual(cell.source, [])
-        self.assertEqual(cell.id, "")
-
-    def test_to_dict(self):
-        expected = {
-            "cell_type": "code",
-            "execution_count": 1,
-            "metadata": {"key": "value"},
-            "outputs": ["output"],
-            "source": ["print('hello')"],
-            "id": "1234567890abcdef",
-            "deletable": True,
-            "editable": True,
-        }
-        self.assertEqual(self.cell.to_dict(), expected)
-
-    def test_to_json(self):
-        json_str = self.cell.to_json()
-        self.assertIsInstance(json_str, str)
-        self.assertIn('"cell_type": "code"', json_str)
-        self.assertIn('"execution_count": 1', json_str)
-
-    def test_nbformat_abstract(self):
-        with self.assertRaises(TypeError):
-            NotebookCell(cell_type="code").nbformat()
 
 
 class TestMarkdownCell(TestCase):
@@ -105,10 +51,10 @@ class TestMarkdownCell(TestCase):
     def test_nbformat(self):
         expected = {
             "cell_type": "markdown",
-            "metadata": {"key": "value"},
+            "metadata": {"key": "value", "deletable": True, "editable": True},
             "source": ["# Title"],
         }
-        self.assertEqual(self.cell.nbformat(), expected)
+        self.assertEqual(self.cell.to_nb(), expected)
 
 
 class TestCodeCell(TestCase):
@@ -135,11 +81,11 @@ class TestCodeCell(TestCase):
         expected = {
             "cell_type": "code",
             "execution_count": 1,
-            "metadata": {"key": "value"},
+            "metadata": {"key": "value", "deletable": True, "editable": True},
             "outputs": ["output"],
             "source": ["print('hello')"],
         }
-        self.assertEqual(self.cell.nbformat(), expected)
+        self.assertEqual(self.cell.to_nb(), expected)
 
 
 class TestImportCell(TestCase):
@@ -172,11 +118,11 @@ class TestImportCell(TestCase):
         expected = {
             "cell_type": "code",
             "execution_count": None,
-            "metadata": {"key": "value"},
+            "metadata": {"key": "value", "deletable": True, "editable": True},
             "outputs": [],
             "source": ["import numpy as np", "from pandas import DataFrame"],
         }
-        self.assertEqual(self.cell.nbformat(), expected)
+        self.assertEqual(self.cell.to_nb(), expected)
 
 
 class TestNotebookCells(TestCase):
@@ -208,6 +154,25 @@ class TestNotebookCells(TestCase):
         expected = {"cells": [cell.to_dict() for cell in self.cells]}
         self.assertEqual(self.notebook_cells.to_dict(), expected)
 
+    def test_nbformat(self):
+        expected = {
+            "cells": [
+                {
+                    "cell_type": "markdown",
+                    "metadata": {"deletable": True, "editable": True},
+                    "source": ["# Title"],
+                },
+                {
+                    "cell_type": "code",
+                    "execution_count": None,
+                    "metadata": {"deletable": True, "editable": True},
+                    "outputs": [],
+                    "source": ["print('hello')"],
+                },
+            ]
+        }
+        self.assertEqual(self.notebook_cells.to_nb(), expected)
+
 
 class TestNotebookSection(TestCase):
     def setUp(self):
@@ -238,6 +203,25 @@ class TestNotebookSection(TestCase):
     def test_to_dict(self):
         expected = {"cells": [cell.to_dict() for cell in self.cells]}
         self.assertEqual(self.section.to_dict(), expected)
+
+    def test_nbformat(self):
+        expected = {
+            "cells": [
+                {
+                    "cell_type": "markdown",
+                    "metadata": {"deletable": True, "editable": True},
+                    "source": ["# Section"],
+                },
+                {
+                    "cell_type": "code",
+                    "execution_count": None,
+                    "metadata": {"deletable": True, "editable": True},
+                    "outputs": [],
+                    "source": ["print('hello')"],
+                },
+            ]
+        }
+        self.assertEqual(self.section.to_nb(), expected)
 
 
 class TestNotebookSections(TestCase):
@@ -275,6 +259,45 @@ class TestNotebookSections(TestCase):
     def test_to_dict(self):
         expected = {"sections": [self.section1.to_dict(), self.section2.to_dict()]}
         self.assertEqual(self.sections.to_dict(), expected)
+
+    def test_nbformat(self):
+        expected = {
+            "sections": [
+                {
+                    "cells": [
+                        {
+                            "cell_type": "markdown",
+                            "metadata": {"deletable": True, "editable": True},
+                            "source": ["# Section 1"],
+                        },
+                        {
+                            "cell_type": "code",
+                            "execution_count": None,
+                            "metadata": {"deletable": True, "editable": True},
+                            "outputs": [],
+                            "source": ["print('hello')"],
+                        },
+                    ],
+                },
+                {
+                    "cells": [
+                        {
+                            "cell_type": "markdown",
+                            "metadata": {"deletable": True, "editable": True},
+                            "source": ["# Section 2"],
+                        },
+                        {
+                            "cell_type": "code",
+                            "execution_count": None,
+                            "metadata": {"deletable": True, "editable": True},
+                            "outputs": [],
+                            "source": ["print('world')"],
+                        },
+                    ],
+                },
+            ]
+        }
+        self.assertEqual(self.sections.to_nb(), expected)
 
 
 class TestNotebook(TestCase):
@@ -425,7 +448,7 @@ class TestNotebook(TestCase):
             self.fail(f"Invalid JSON: {e}")
 
     def test_nbformat(self):
-        nb_dict = self.notebook.nbformat()
+        nb_dict = self.notebook.to_nb()
 
         self.assertEqual(nb_dict["nbformat"], 4)
         self.assertEqual(nb_dict["nbformat_minor"], 5)
