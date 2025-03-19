@@ -24,10 +24,10 @@ def create_notebook_cell_id(notebook_seed: str, cell_seed: str) -> str:
 @dataclass(frozen=True)
 class Notebook:
     cells: "NotebookCells"
-    metadata: "NotebookMetadata"
-    nbformat: int
-    nbformat_minor: int
     name: str
+    metadata: "NotebookMetadata"
+    nbformat: int = field(default=4)
+    nbformat_minor: int = field(default=0)
     notebook_id: str = field(
         default=uuid.uuid4().hex, metadata={"validator": validate_hex_string}
     )
