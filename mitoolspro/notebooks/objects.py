@@ -138,6 +138,8 @@ class NotebookCell:
     outputs: List[Any] = field(default_factory=list)
     source: List[str] = field(default_factory=list)
     id: str = field(default="", metadata={"validator": validate_hex_string})
+    deletable: bool = field(default=True)
+    editable: bool = field(default=True)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
