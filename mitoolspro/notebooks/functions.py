@@ -14,7 +14,9 @@ from mitoolspro.notebooks.objects import (
     Notebook,
     NotebookCell,
     NotebookCellFactory,
+    NotebookCells,
     NotebookMetadata,
+    NotebookSection,
 )
 
 
@@ -160,10 +162,30 @@ def create_notebook_metadata(
     return NotebookMetadata(kernelspec=kernelspec, language_info=language_info)
 
 
+def create_notebook_section(
+    title: str,
+    cells: list[NotebookCell],
+    notebook_seed: str,
+    section_seed: str,
+) -> NotebookSection:
+    title_cell = create_notebook_cell(
+        cell_type="markdown",
+        execution_count=None,
+        notebook_seed=notebook_seed,
+        cell_seed=f"{section_seed}_title",
+        metadata={},
+        outputs=[],
+        source=[title],
+    )
+    section_cells = NotebookCells([title_cell] + cells)
+    return NotebookSection(cells=section_cells)
+
+
 def create_notebook_cell(
     cell_type: str,
     execution_count: None,
-    cell_id: str,
+    notebook_seed: str,
+    cell_seed: str,
     metadata: dict,
     outputs: list,
     source: list,
@@ -171,7 +193,9 @@ def create_notebook_cell(
     cell = NotebookCellFactory.create_cell(
         cell_type=cell_type,
         execution_count=execution_count,
-        cell_id=cell_id,
+        cell_id=create_notebook_cell_id(
+            notebook_seed=notebook_seed, cell_seed=cell_seed
+        ),
         metadata=metadata,
         outputs=outputs,
         source=source,
