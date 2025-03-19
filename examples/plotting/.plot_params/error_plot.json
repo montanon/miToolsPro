@@ -1,0 +1,104 @@
+{
+    "title": "",
+    "xlabel": "",
+    "ylabel": "",
+    "legend": {
+        "show": true,
+        "kwargs": {
+            "loc": "upper right",
+            "ncol": 1,
+            "frameon": true,
+            "fancybox": true,
+            "framealpha": 0.8,
+            "facecolor": "inherit"
+        }
+    },
+    "figsize": [
+        10,
+        8
+    ],
+    "style": null,
+    "grid": null,
+    "tight_layout": false,
+    "texts": null,
+    "xscale": null,
+    "yscale": null,
+    "background": null,
+    "figure_background": null,
+    "suptitle": null,
+    "xlim": null,
+    "ylim": null,
+    "xticks": null,
+    "yticks": null,
+    "xticklabels": null,
+    "yticklabels": null,
+    "xtickparams": null,
+    "ytickparams": null,
+    "spines": {},
+    "color": null,
+    "alpha": 0.66,
+    "label": "The error",
+    "zorder": null,
+    "fmt": null,
+    "xerr": [
+        1.2132560390839207,
+        1.6537575980770254,
+        0.14591019117790505,
+        1.0827891564317813,
+        1.7908294447800326,
+        1.1881321062560195,
+        1.1911361855036289,
+        0.6055986281170807
+    ],
+    "yerr": [
+        1.956783338751982,
+        0.6014592760299078,
+        1.0881915498659902,
+        0.34781851551395593,
+        0.6622861634179757,
+        0.45034820146753196,
+        0.19300086616959278,
+        0.4859295195206057
+    ],
+    "ecolor": "red",
+    "elinewidth": 0.5,
+    "capsize": 3.5,
+    "capthick": 1.75,
+    "barsabove": false,
+    "lolims": false,
+    "uplims": false,
+    "xuplims": false,
+    "xlolims": true,
+    "errorevery": 1,
+    "marker": "s",
+    "markersize": null,
+    "markeredgewidth": null,
+    "markeredgecolor": "red",
+    "markerfacecolor": "white",
+    "linestyle": "",
+    "linewidth": null,
+    "x_data": [
+        [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+        ]
+    ],
+    "y_data": [
+        [
+            0,
+            1,
+            3,
+            -1,
+            -3,
+            0,
+            2,
+            1
+        ]
+    ]
+}
