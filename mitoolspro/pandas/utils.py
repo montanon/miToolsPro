@@ -3,7 +3,6 @@ from typing import Any, List, Union
 from pandas import DataFrame, IndexSlice, MultiIndex
 
 from mitoolspro.exceptions import ArgumentValueError
-from mitoolspro.exceptions.custom_exceptions import ArgumentValueError
 
 
 def idxslice(
