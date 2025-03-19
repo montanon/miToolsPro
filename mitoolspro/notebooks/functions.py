@@ -1,7 +1,7 @@
 import hashlib
 import re
 from os import PathLike
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import nbformat
 from nbconvert.preprocessors import ClearOutputPreprocessor
@@ -17,6 +17,7 @@ from mitoolspro.notebooks.objects import (
     NotebookCells,
     NotebookMetadata,
     NotebookSection,
+    NotebookSections,
 )
 
 
@@ -139,15 +140,37 @@ def clear_notebook_output(notebook_path: str, clean_notebook_path: str) -> None:
 
 
 def create_notebook(
-    cells: list[NotebookCell],
+    cells: Union[
+        Union[NotebookCell, NotebookCells, NotebookSection, NotebookSections],
+        List[Union[NotebookCell, NotebookCells, NotebookSection, NotebookSections]],
+    ],
     metadata: NotebookMetadata,
     nbformat: int,
     nbformat_minor: int,
     name: Optional[str] = "",
     notebook_id: Optional[str] = "",
 ) -> Notebook:
+    if not isinstance(cells, list):
+        cells = [cells]
+
+    all_cells = []
+    sections = []
+
+    for cell_container in cells:
+        if isinstance(cell_container, NotebookCell):
+            all_cells.append(cell_container)
+        elif isinstance(cell_container, NotebookCells):
+            all_cells.extend(cell_container.cells)
+        elif isinstance(cell_container, NotebookSection):
+            sections.append(cell_container)
+            all_cells.extend(cell_container.cells)
+        elif isinstance(cell_container, NotebookSections):
+            sections.extend(cell_container.sections)
+            for section in cell_container.sections:
+                all_cells.extend(section.cells)
+
     return Notebook(
-        cells=cells,
+        cells=NotebookCells(all_cells),
         metadata=metadata,
         nbformat=nbformat,
         nbformat_minor=nbformat_minor,
