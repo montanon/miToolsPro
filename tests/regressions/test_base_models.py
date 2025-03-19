@@ -18,8 +18,8 @@ class TestRegressionModel(BaseRegressionModel):
             "Results",
             (),
             {
-                "predict": lambda x: np.array([1, 2, 3]),
-                "summary": lambda: "Test Summary",
+                "predict": lambda self, new_data=None: np.array([1, 2, 3]),
+                "summary": lambda self: "Test Summary",
             },
         )()
 
@@ -91,6 +91,15 @@ class TestBaseRegressionModel(TestCase):
         )
         model.fit()
         predictions = model.predict()
+        np.testing.assert_array_equal(predictions, np.array([1, 2, 3]))
+
+    def test_predict_with_new_data(self):
+        model = TestRegressionModel(
+            self.data, dependent_variable="y", independent_variables=["x1"]
+        )
+        model.fit()
+        new_data = pd.DataFrame({"x1": [6, 7, 8]})
+        predictions = model.predict(new_data)
         np.testing.assert_array_equal(predictions, np.array([1, 2, 3]))
 
     def test_summary_before_fit(self):
