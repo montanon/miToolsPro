@@ -330,8 +330,8 @@ class TestRLMModel(TestCase):
     def test_init_with_defaults(self):
         model = RLMModel(self.data, dependent_variable="y")
         self.assertEqual(model.dependent_variable, "y")
-        self.assertIsNone(model.independent_variables)
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.independent_variables, ["x1", "x2"])
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "RLM")
         self.assertIsInstance(model.M, HuberT)
@@ -341,9 +341,9 @@ class TestRLMModel(TestCase):
         formula = "y ~ x1 + x2"
         model = RLMModel(self.data, formula=formula)
         self.assertEqual(model.formula, formula)
-        self.assertIsNone(model.dependent_variable)
-        self.assertIsNone(model.independent_variables)
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.dependent_variable, "")
+        self.assertEqual(model.independent_variables, [])
+        self.assertEqual(model.control_variables, [])
 
     def test_init_with_variables(self):
         model = RLMModel(
@@ -354,10 +354,10 @@ class TestRLMModel(TestCase):
         )
         self.assertEqual(model.dependent_variable, "y")
         self.assertEqual(model.independent_variables, ["x1", "x2"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.control_variables, [])
 
     def test_init_with_custom_norm(self):
-        custom_norm = HuberT(c=2.0)
+        custom_norm = HuberT(t=2.0)
         model = RLMModel(
             self.data,
             dependent_variable="y",
