@@ -10,7 +10,7 @@ from pyvis.network import Network as VisNetwork
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
 
-NodeID = Any
+NodeID = Union[str, int]
 NodeColor = Union[Tuple[float, ...], Tuple[int, ...]]
 NodesColors = Dict[NodeID, NodeColor]
 NodesLabels = Dict[NodeID, str]
