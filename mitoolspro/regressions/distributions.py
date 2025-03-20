@@ -7,6 +7,13 @@ from scipy.special import beta as scipy_beta
 
 class GeneralizedBetaDistribution:
     def __init__(self, alpha, beta, a, b):
+        if alpha <= 0:
+            raise ValueError("alpha must be positive")
+        if beta <= 0:
+            raise ValueError("beta must be positive")
+        if a >= b:
+            raise ValueError("a must be less than b")
+
         self.alpha = alpha
         self.beta = beta
         self.a = a
