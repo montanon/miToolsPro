@@ -163,6 +163,37 @@ def build_vis_graph(
     physics: bool = False,
     physics_kwargs: Optional[Dict[str, Any]] = None,
 ) -> VisNetwork:
+    def _custom_from_nx(
+        net: VisNetwork,
+        nx_graph: Graph,
+        node_size_transf=lambda x: x,
+        edge_weight_transf=lambda x: x,
+        default_node_size=10,
+        default_edge_weight=1,
+        edge_scaling=False,
+    ):
+        for node, attrs in nx_graph.nodes(data=True):
+            if "size" not in attrs:
+                attrs["size"] = default_node_size
+            else:
+                try:
+                    attrs["size"] = int(node_size_transf(attrs["size"]))
+                except Exception:
+                    attrs["size"] = default_node_size
+            if "label" not in attrs and "name" not in attrs:
+                attrs["label"] = str(node)
+            net.add_node(node, **attrs)
+
+        for source, target, attrs in nx_graph.edges(data=True):
+            if "value" not in attrs and "width" not in attrs:
+                width_type = "value" if edge_scaling else "width"
+                if "weight" not in attrs:
+                    attrs["weight"] = default_edge_weight
+                transformed_weight = edge_weight_transf(attrs["weight"])
+                attrs[width_type] = transformed_weight
+                attrs.pop("weight", None)
+            net.add_edge(source, target, **attrs)
+
     if physics_kwargs is None:
         physics_kwargs = {
             "gravity": -1000000,
@@ -173,8 +204,9 @@ def build_vis_graph(
             "overlap": 1,
         }
     net = VisNetwork(height=f"{net_height}px", notebook=notebook)
-    net.from_nx(graph)
-
+    _custom_from_nx(
+        net, graph, default_node_size=10, default_edge_weight=1, edge_scaling=False
+    )
     assign_net_nodes_attributes(
         net=net,
         sizes=nodes_sizes,
@@ -182,9 +214,7 @@ def build_vis_graph(
         labels=nodes_labels,
         label_sizes=node_label_size,
     )
-
     assign_net_edges_attributes(net=net, edges_widths=edges_widths)
-
     net.barnes_hut(**physics_kwargs)
     if physics:
         net.show_buttons(filter_=["physics"])
