@@ -80,9 +80,28 @@ class IV2SLSModel(BaseRegressionModel):
                 raise ArgumentValueError(
                     f"new_data is missing required exogenous variables: {missing_exog}"
                 )
+            missing_endog = [
+                var for var in self.endogenous_variables if var not in new_data.columns
+            ]
+            if missing_endog:
+                raise ArgumentValueError(
+                    f"new_data is missing required endogenous variables: {missing_endog}"
+                )
             if self.results.model.has_constant and "const" not in new_data.columns:
                 new_data = new_data.assign(const=1)
-            return self.results.predict(new_data)
+
+            exog = new_data[exog_vars]
+            if self.results.model.has_constant and "const" not in exog.columns:
+                exog = exog.assign(const=1)
+                exog = exog[["const"] + exog_vars]
+
+            endog = (
+                new_data[self.endogenous_variables]
+                if self.endogenous_variables
+                else None
+            )
+
+            return self.results.predict(exog=exog, endog=endog)
 
 
 class IVGMMModel(BaseRegressionModel):
@@ -156,9 +175,28 @@ class IVGMMModel(BaseRegressionModel):
                 raise ArgumentValueError(
                     f"new_data is missing required exogenous variables: {missing_exog}"
                 )
+            missing_endog = [
+                var for var in self.endogenous_variables if var not in new_data.columns
+            ]
+            if missing_endog:
+                raise ArgumentValueError(
+                    f"new_data is missing required endogenous variables: {missing_endog}"
+                )
             if self.results.model.has_constant and "const" not in new_data.columns:
                 new_data = new_data.assign(const=1)
-            return self.results.predict(new_data)
+
+            exog = new_data[exog_vars]
+            if self.results.model.has_constant and "const" not in exog.columns:
+                exog = exog.assign(const=1)
+                exog = exog[["const"] + exog_vars]
+
+            endog = (
+                new_data[self.endogenous_variables]
+                if self.endogenous_variables
+                else None
+            )
+
+            return self.results.predict(exog=exog, endog=endog)
 
 
 class IVGMMCUEModel(BaseRegressionModel):
@@ -234,9 +272,28 @@ class IVGMMCUEModel(BaseRegressionModel):
                 raise ArgumentValueError(
                     f"new_data is missing required exogenous variables: {missing_exog}"
                 )
+            missing_endog = [
+                var for var in self.endogenous_variables if var not in new_data.columns
+            ]
+            if missing_endog:
+                raise ArgumentValueError(
+                    f"new_data is missing required endogenous variables: {missing_endog}"
+                )
             if self.results.model.has_constant and "const" not in new_data.columns:
                 new_data = new_data.assign(const=1)
-            return self.results.predict(new_data)
+
+            exog = new_data[exog_vars]
+            if self.results.model.has_constant and "const" not in exog.columns:
+                exog = exog.assign(const=1)
+                exog = exog[["const"] + exog_vars]
+
+            endog = (
+                new_data[self.endogenous_variables]
+                if self.endogenous_variables
+                else None
+            )
+
+            return self.results.predict(exog=exog, endog=endog)
 
 
 class IVLIMLModel(BaseRegressionModel):
@@ -312,6 +369,25 @@ class IVLIMLModel(BaseRegressionModel):
                 raise ArgumentValueError(
                     f"new_data is missing required exogenous variables: {missing_exog}"
                 )
+            missing_endog = [
+                var for var in self.endogenous_variables if var not in new_data.columns
+            ]
+            if missing_endog:
+                raise ArgumentValueError(
+                    f"new_data is missing required endogenous variables: {missing_endog}"
+                )
             if self.results.model.has_constant and "const" not in new_data.columns:
                 new_data = new_data.assign(const=1)
-            return self.results.predict(new_data)
+
+            exog = new_data[exog_vars]
+            if self.results.model.has_constant and "const" not in exog.columns:
+                exog = exog.assign(const=1)
+                exog = exog[["const"] + exog_vars]
+
+            endog = (
+                new_data[self.endogenous_variables]
+                if self.endogenous_variables
+                else None
+            )
+
+            return self.results.predict(exog=exog, endog=endog)
