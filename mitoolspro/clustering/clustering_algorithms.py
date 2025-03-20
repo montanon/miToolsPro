@@ -30,7 +30,7 @@ def kmeans_clustering(
     random_state: Optional[int] = 0,
     n_init: Optional[int] = 10,
     max_iter: Optional[int] = 300,
-    algorithm: Optional[Literal["auto", "full", "elkan"]] = "auto",
+    algorithm: Optional[Literal["lloyd", "elkan"]] = "lloyd",
     tol: Optional[float] = 1e-4,
     verbose: Optional[bool] = False,
 ) -> Tuple[KMeans, ndarray]:
