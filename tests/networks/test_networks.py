@@ -40,8 +40,8 @@ class TestBuildNxGraph(TestCase):
     def setUp(self):
         self.proximity_vectors = DataFrame(
             {
-                "product_i": ["A", "A", "B"],
-                "product_j": ["B", "C", "C"],
+                "node_i": ["A", "A", "B"],
+                "node_j": ["B", "C", "C"],
                 "weight": [0.8, 0.4, 0.5],
             }
         )
@@ -56,11 +56,11 @@ class TestBuildNxGraph(TestCase):
 
     def test_missing_column(self):
         with self.assertRaises(ArgumentValueError):
-            invalid_vectors = self.proximity_vectors.drop(columns=["product_i"])
+            invalid_vectors = self.proximity_vectors.drop(columns=["node_i"])
             build_nx_graph(invalid_vectors)
 
     def test_empty_dataframe(self):
-        empty_df = DataFrame(columns=["product_i", "product_j", "weight"])
+        empty_df = DataFrame(columns=["node_i", "node_j", "weight"])
         G = build_nx_graph(empty_df)
         self.assertEqual(len(G.nodes), 0)
         self.assertEqual(len(G.edges), 0)
@@ -81,9 +81,9 @@ class TestBuildNxGraphs(TestCase):
         self.networks_folder.mkdir(parents=True, exist_ok=True)
         self.proximity_vectors = {
             1: DataFrame(
-                {"product_i": ["A", "A"], "product_j": ["B", "C"], "weight": [0.8, 0.4]}
+                {"node_i": ["A", "A"], "node_j": ["B", "C"], "weight": [0.8, 0.4]}
             ),
-            2: DataFrame({"product_i": ["B"], "product_j": ["C"], "weight": [0.5]}),
+            2: DataFrame({"node_i": ["B"], "node_j": ["C"], "weight": [0.5]}),
         }
 
     def tearDown(self):
@@ -93,8 +93,8 @@ class TestBuildNxGraphs(TestCase):
     def test_build_and_store_graphs(self):
         graphs, graph_files = build_nx_graphs(
             self.proximity_vectors,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             networks_folder=self.networks_folder,
             recalculate=True,
         )
@@ -112,15 +112,15 @@ class TestBuildNxGraphs(TestCase):
     def test_load_existing_graphs(self):
         build_nx_graphs(
             self.proximity_vectors,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             networks_folder=self.networks_folder,
             recalculate=True,
         )
         graphs, graph_files = build_nx_graphs(
             self.proximity_vectors,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             networks_folder=self.networks_folder,
             recalculate=False,
         )
@@ -139,8 +139,8 @@ class TestBuildNxGraphs(TestCase):
         with self.assertRaises(ArgumentValueError):
             build_nx_graphs(
                 self.proximity_vectors,
-                orig_product="product_i",
-                dest_product="product_j",
+                origin="node_i",
+                destination="node_j",
                 networks_folder="non_existent_folder",
                 recalculate=False,
             )
@@ -148,8 +148,8 @@ class TestBuildNxGraphs(TestCase):
     def test_empty_proximity_vectors(self):
         graphs, graph_files = build_nx_graphs(
             {},
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             networks_folder=self.networks_folder,
             recalculate=True,
         )
@@ -161,8 +161,8 @@ class TestBuildMSTGraph(TestCase):
     def setUp(self):
         self.proximity_vectors = DataFrame(
             {
-                "product_i": ["A", "A", "B", "C"],
-                "product_j": ["B", "C", "C", "D"],
+                "node_i": ["A", "A", "B", "C"],
+                "node_j": ["B", "C", "C", "D"],
                 "weight": [0.8, 0.4, 0.5, 0.6],
             }
         )
@@ -194,7 +194,7 @@ class TestBuildMSTGraph(TestCase):
             build_mst_graph(invalid_vectors)
 
     def test_empty_proximity_vectors(self):
-        empty_vectors = DataFrame(columns=["product_i", "product_j", "weight"])
+        empty_vectors = DataFrame(columns=["node_i", "node_j", "weight"])
         mst = build_mst_graph(empty_vectors)
         self.assertEqual(len(mst.edges), 0)
 
@@ -216,15 +216,15 @@ class TestBuildMSTGraphs(TestCase):
         self.proximity_vectors = {
             1: DataFrame(
                 {
-                    "product_i": ["A", "A", "B", "C", "D"],
-                    "product_j": ["B", "C", "C", "D", "A"],
+                    "node_i": ["A", "A", "B", "C", "D"],
+                    "node_j": ["B", "C", "C", "D", "A"],
                     "weight": [0.8, 0.4, 0.5, 0.6, 0.1],
                 }
             ),
             2: DataFrame(
                 {
-                    "product_i": ["A", "A", "B", "C", "D"],
-                    "product_j": ["B", "C", "C", "D", "A"],
+                    "node_i": ["A", "A", "B", "C", "D"],
+                    "node_j": ["B", "C", "C", "D", "A"],
                     "weight": [0.8, 0.4, 0.5, 0.6, 0.1],
                 }
             ),
@@ -238,8 +238,8 @@ class TestBuildMSTGraphs(TestCase):
         graphs, graph_files = build_mst_graphs(
             self.proximity_vectors,
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             recalculate=True,
         )
@@ -251,16 +251,16 @@ class TestBuildMSTGraphs(TestCase):
         build_mst_graphs(
             self.proximity_vectors,
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             recalculate=True,
         )
         graphs, graph_files = build_mst_graphs(
             self.proximity_vectors,
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             recalculate=False,
         )
@@ -271,8 +271,8 @@ class TestBuildMSTGraphs(TestCase):
         graphs, _ = build_mst_graphs(
             self.proximity_vectors,
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             n_extra_edges=1,
             recalculate=True,
@@ -284,8 +284,8 @@ class TestBuildMSTGraphs(TestCase):
         graphs, _ = build_mst_graphs(
             self.proximity_vectors,
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             attribute_th=0.4,
             recalculate=True,
@@ -298,8 +298,8 @@ class TestBuildMSTGraphs(TestCase):
         graphs, _ = build_mst_graphs(
             self.proximity_vectors,
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             pct_extra_edges=0.0,
             recalculate=True,
@@ -312,8 +312,8 @@ class TestBuildMSTGraphs(TestCase):
             build_mst_graphs(
                 self.proximity_vectors,
                 networks_folder="non_existent_folder",
-                orig_product="product_i",
-                dest_product="product_j",
+                origin="node_i",
+                destination="node_j",
                 attribute="weight",
             )
 
@@ -321,8 +321,8 @@ class TestBuildMSTGraphs(TestCase):
         graphs, graph_files = build_mst_graphs(
             {},
             networks_folder=self.networks_folder,
-            orig_product="product_i",
-            dest_product="product_j",
+            origin="node_i",
+            destination="node_j",
             attribute="weight",
             recalculate=True,
         )
