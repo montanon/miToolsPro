@@ -16,7 +16,7 @@ class TestTradedFactorModel(TestCase):
     def setUp(self):
         np.random.seed(42)
         n_samples = 100
-        n_portfolios = 3
+        n_portfolios = 5
         n_factors = 2
 
         self.data = pd.DataFrame(
@@ -24,6 +24,8 @@ class TestTradedFactorModel(TestCase):
                 "portfolio1": np.random.normal(0, 1, n_samples),
                 "portfolio2": np.random.normal(0, 1, n_samples),
                 "portfolio3": np.random.normal(0, 1, n_samples),
+                "portfolio4": np.random.normal(0, 1, n_samples),
+                "portfolio5": np.random.normal(0, 1, n_samples),
                 "factor1": np.random.normal(0, 1, n_samples),
                 "factor2": np.random.normal(0, 1, n_samples),
             }
@@ -34,7 +36,14 @@ class TestTradedFactorModel(TestCase):
         self.assertEqual(model.dependent_variable, "portfolio1")
         self.assertEqual(
             model.independent_variables,
-            ["factor1", "factor2", "portfolio2", "portfolio3"],
+            [
+                "factor1",
+                "factor2",
+                "portfolio2",
+                "portfolio3",
+                "portfolio4",
+                "portfolio5",
+            ],
         )
         self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
@@ -151,14 +160,14 @@ class TestLinearFactorModel(TestCase):
     def setUp(self):
         np.random.seed(42)
         n_samples = 100
-        n_portfolios = 3
-        n_factors = 2
 
         self.data = pd.DataFrame(
             {
                 "portfolio1": np.random.normal(0, 1, n_samples),
                 "portfolio2": np.random.normal(0, 1, n_samples),
                 "portfolio3": np.random.normal(0, 1, n_samples),
+                "portfolio4": np.random.normal(0, 1, n_samples),
+                "portfolio5": np.random.normal(0, 1, n_samples),
                 "factor1": np.random.normal(0, 1, n_samples),
                 "factor2": np.random.normal(0, 1, n_samples),
             }
@@ -167,8 +176,18 @@ class TestLinearFactorModel(TestCase):
     def test_init_with_defaults(self):
         model = LinearFactorModel(self.data, portfolios="portfolio1")
         self.assertEqual(model.dependent_variable, "portfolio1")
-        self.assertEqual(model.independent_variables, ["factor1", "factor2"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(
+            model.independent_variables,
+            [
+                "factor1",
+                "factor2",
+                "portfolio2",
+                "portfolio3",
+                "portfolio4",
+                "portfolio5",
+            ],
+        )
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "LinearFactorModel")
         self.assertFalse(model.risk_free)
@@ -182,8 +201,11 @@ class TestLinearFactorModel(TestCase):
             factors=["factor1"],
         )
         self.assertEqual(model.dependent_variable, portfolios)
-        self.assertEqual(model.independent_variables, ["factor1"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(
+            model.independent_variables,
+            ["factor1"],
+        )
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "LinearFactorModel")
         self.assertFalse(model.risk_free)
@@ -196,8 +218,11 @@ class TestLinearFactorModel(TestCase):
             factors=["factor1"],
         )
         self.assertEqual(model.dependent_variable, "portfolio1")
-        self.assertEqual(model.independent_variables, ["factor1"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(
+            model.independent_variables,
+            ["factor1"],
+        )
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "LinearFactorModel")
         self.assertFalse(model.risk_free)
@@ -214,7 +239,7 @@ class TestLinearFactorModel(TestCase):
     def test_fit_with_single_portfolio(self):
         model = LinearFactorModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         results = model.fit()
@@ -235,14 +260,12 @@ class TestLinearFactorModel(TestCase):
         self.assertTrue(model.fitted)
         self.assertIsNotNone(results)
         self.assertIsNotNone(results.params)
-        self.assertEqual(
-            len(results.params), 6
-        )  # 2 portfolios * (const + factor1 + factor2)
+        self.assertEqual(len(results.params), 2)
 
     def test_fit_with_risk_free(self):
         model = LinearFactorModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
             risk_free=True,
         )
@@ -260,13 +283,14 @@ class TestLinearFactorModel(TestCase):
     def test_predict_after_fit(self):
         model = LinearFactorModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         model.fit()
         predictions = model.predict()
 
         self.assertEqual(len(predictions), len(self.data))
+        self.assertEqual(len(predictions.columns), 3)  # One column per portfolio
         self.assertTrue(np.all(np.isfinite(predictions)))
 
     def test_predict_with_new_data(self):
@@ -309,14 +333,14 @@ class TestLinearFactorGMMModel(TestCase):
     def setUp(self):
         np.random.seed(42)
         n_samples = 100
-        n_portfolios = 3
-        n_factors = 2
 
         self.data = pd.DataFrame(
             {
                 "portfolio1": np.random.normal(0, 1, n_samples),
                 "portfolio2": np.random.normal(0, 1, n_samples),
                 "portfolio3": np.random.normal(0, 1, n_samples),
+                "portfolio4": np.random.normal(0, 1, n_samples),
+                "portfolio5": np.random.normal(0, 1, n_samples),
                 "factor1": np.random.normal(0, 1, n_samples),
                 "factor2": np.random.normal(0, 1, n_samples),
             }
@@ -325,8 +349,18 @@ class TestLinearFactorGMMModel(TestCase):
     def test_init_with_defaults(self):
         model = LinearFactorGMMModel(self.data, portfolios="portfolio1")
         self.assertEqual(model.dependent_variable, "portfolio1")
-        self.assertEqual(model.independent_variables, ["factor1", "factor2"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(
+            model.independent_variables,
+            [
+                "factor1",
+                "factor2",
+                "portfolio2",
+                "portfolio3",
+                "portfolio4",
+                "portfolio5",
+            ],
+        )
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "LinearFactorGMMModel")
         self.assertFalse(model.risk_free)
@@ -340,8 +374,11 @@ class TestLinearFactorGMMModel(TestCase):
             factors=["factor1"],
         )
         self.assertEqual(model.dependent_variable, portfolios)
-        self.assertEqual(model.independent_variables, ["factor1"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(
+            model.independent_variables,
+            ["factor1"],
+        )
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "LinearFactorGMMModel")
         self.assertFalse(model.risk_free)
@@ -354,8 +391,11 @@ class TestLinearFactorGMMModel(TestCase):
             factors=["factor1"],
         )
         self.assertEqual(model.dependent_variable, "portfolio1")
-        self.assertEqual(model.independent_variables, ["factor1"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(
+            model.independent_variables,
+            ["factor1"],
+        )
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "LinearFactorGMMModel")
         self.assertFalse(model.risk_free)
@@ -372,7 +412,7 @@ class TestLinearFactorGMMModel(TestCase):
     def test_fit_with_single_portfolio(self):
         model = LinearFactorGMMModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         results = model.fit()
@@ -393,14 +433,12 @@ class TestLinearFactorGMMModel(TestCase):
         self.assertTrue(model.fitted)
         self.assertIsNotNone(results)
         self.assertIsNotNone(results.params)
-        self.assertEqual(
-            len(results.params), 6
-        )  # 2 portfolios * (const + factor1 + factor2)
+        self.assertEqual(len(results.params), 2)
 
     def test_fit_with_risk_free(self):
         model = LinearFactorGMMModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
             risk_free=True,
         )
