@@ -87,6 +87,22 @@ class TestTiming(TestCase):
             elapsed_time = float(output.split()[2])
             self.assertGreater(elapsed_time, 0)
 
+    def test_timeit_factory(self):
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            with timeit("Test Task: ", unit="s"):
+                time.sleep(0.1)  # Sleep for 100 milliseconds
+            output = mock_stdout.getvalue().strip()
+            self.assertTrue("Test Task: " in output)
+            self.assertTrue("s" in output)
+            elapsed_time = float(output.split()[2])
+            self.assertAlmostEqual(elapsed_time, 0.1, delta=0.05)
+
+    def test_timeit_disabled(self):
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            with timeit("Disabled Task: ", enabled=False):
+                time.sleep(0.1)
+            self.assertEqual(mock_stdout.getvalue().strip(), "")
+
 
 if __name__ == "__main__":
     unittest.main()
