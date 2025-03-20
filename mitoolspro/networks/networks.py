@@ -248,18 +248,28 @@ def assign_net_nodes_attributes(
     labels: Optional[Union[NodesLabels, str]] = None,
     label_sizes: Optional[Union[Dict[NodeID, int], int]] = None,
 ):
+    if sizes is not None and not isinstance(sizes, (int, float, dict)):
+        raise ArgumentTypeError("Nodes 'sizes' must be a int, float or dict.")
     if isinstance(sizes, dict) and not all(node["id"] in sizes for node in net.nodes):
         raise ArgumentValueError(
             "Some node ids are not present in the corresponding 'sizes' argument."
+        )
+    if colors is not None and not isinstance(colors, (tuple, list, dict)):
+        raise ArgumentTypeError(
+            "Nodes 'colors' must be a tuple, list, NodeColor or dict."
         )
     if isinstance(colors, dict) and not all(node["id"] in colors for node in net.nodes):
         raise ArgumentValueError(
             "Some node ids are not present in the corresponding 'colors' argument."
         )
+    if labels is not None and not isinstance(labels, (str, dict)):
+        raise ArgumentTypeError("Nodes 'labels' must be a str or dict.")
     if isinstance(labels, dict) and not all(node["id"] in labels for node in net.nodes):
         raise ArgumentValueError(
             "Some node ids are not present in the corresponding 'labels' argument."
         )
+    if label_sizes is not None and not isinstance(label_sizes, (int, dict)):
+        raise ArgumentTypeError("Nodes 'label_sizes' must be a int or dict.")
     if isinstance(label_sizes, dict) and not all(
         node["id"] in label_sizes for node in net.nodes
     ):
