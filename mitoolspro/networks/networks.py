@@ -306,22 +306,79 @@ def assign_net_nodes_attributes(
             )
 
 
-def pyvis_to_networkx(pyvis_network: VisNetwork) -> Union[Graph, DiGraph]:
-    if not isinstance(pyvis_network, VisNetwork):
-        raise TypeError("Input must be a PyVis network.")
-    nx_graph = DiGraph() if pyvis_network.directed else Graph()
+def pyvis_to_networkx(pyvis_network: "VisNetwork") -> Union[Graph, DiGraph]:
+    if not hasattr(pyvis_network, "nodes") or not hasattr(pyvis_network, "edges"):
+        raise TypeError(
+            "Input must be a PyVis network with 'nodes' and 'edges' attributes."
+        )
+
+    def _convert_color(color):
+        if isinstance(color, str):
+            color_str = color.strip()
+            if color_str.startswith("#"):
+                color_str = color_str[1:]
+            try:
+                if len(color_str) == 6:
+                    return tuple(int(color_str[i : i + 2], 16) for i in (0, 2, 4))
+                elif len(color_str) == 3:
+                    # Expand shorthand hex (e.g., "abc" becomes "aabbcc")
+                    return tuple(int(c * 2, 16) for c in color_str)
+                else:
+                    return color  # Unhandled format; return as is.
+            except Exception:
+                return color  # If conversion fails, return the original.
+        elif isinstance(color, (list, tuple)):
+            try:
+                return tuple(int(c) for c in color)
+            except Exception:
+                return color  # In case the values cannot be converted.
+        return color
+
+    directed = getattr(pyvis_network, "directed", False)
+    nx_graph = DiGraph() if directed else Graph()
     for node in pyvis_network.nodes:
+        if not isinstance(node, dict):
+            try:
+                node = dict(node)
+            except Exception as e:
+                raise ValueError("A node cannot be converted to a dictionary.") from e
+        if "id" not in node:
+            raise ValueError("Every node must have an 'id' attribute.")
         node_id = node["id"]
-        node_attrs = {k: v for k, v in node.items() if k != "id"}
-        if "label" in node_attrs:
-            node_attrs["name"] = node_attrs.pop("label")
+        node_attrs = {}
+        for key, value in node.items():
+            if key == "id":
+                continue
+            if key == "label":
+                node_attrs["label"] = value
+                node_attrs["name"] = value
+            elif key == "color":
+                node_attrs["color"] = _convert_color(value)
+            else:
+                node_attrs[key] = value
         nx_graph.add_node(node_id, **node_attrs)
     for edge in pyvis_network.edges:
-        source, target = edge["from"], edge["to"]
-        edge_attrs = {"weight": edge.get("width", 1.0)}
-        if "title" in edge:
-            edge_attrs["title"] = edge["title"]
+        if not isinstance(edge, dict):
+            try:
+                edge = dict(edge)
+            except Exception as e:
+                raise ValueError("An edge cannot be converted to a dictionary.") from e
+        if "from" not in edge or "to" not in edge:
+            raise ValueError("Every edge must have 'from' and 'to' attributes.")
+        source = edge["from"]
+        target = edge["to"]
+        edge_attrs = {}
+        for key, value in edge.items():
+            if key in ["from", "to"]:
+                continue
+            if key == "width":
+                edge_attrs["weight"] = value
+            elif key == "color":
+                edge_attrs["color"] = _convert_color(value)
+            else:
+                edge_attrs[key] = value
         nx_graph.add_edge(source, target, **edge_attrs)
+
     return nx_graph
 
 
