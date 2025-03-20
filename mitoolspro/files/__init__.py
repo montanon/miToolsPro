@@ -1,4 +1,4 @@
-from mitoolspro.files.file_handlers import (
+from mitoolspro.files.file_functions import (
     build_dir_tree,
     file_in_folder,
     folder_in_subtree,
