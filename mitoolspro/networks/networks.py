@@ -411,6 +411,74 @@ def draw_nx_colored_graph(
         )
 
 
+def draw_nx(g: Union[Graph, DiGraph], with_labels: bool = True):
+    pos = nx.spring_layout(g)
+
+    default_node_color = (0, 0, 1)
+    default_node_size = 10
+    default_edge_color = "black"
+    default_edge_width = 1.0
+
+    node_groups = {}
+    for node, node_data in g.nodes(data=True):
+        shape = node_data.get("shape", "dot")
+        if shape == "dot":
+            marker = "o"
+        elif shape == "square":
+            marker = "s"
+        elif shape == "triangle":
+            marker = "^"
+        else:
+            marker = shape  # allow custom markers if valid in matplotlib
+        node_groups.setdefault(marker, []).append(node)
+
+    edge_colors = []
+    edge_widths = []
+    for u, v, node_data in g.edges(data=True):
+        color = node_data.get("color", default_edge_color)
+        if isinstance(color, (list, tuple)) and all(
+            isinstance(x, (int, float)) for x in color
+        ):
+            if max(color) > 1:
+                color = tuple(x / 255 for x in color)
+            else:
+                color = tuple(color)
+        edge_colors.append(color)
+        edge_widths.append(node_data.get("weight", default_edge_width))
+    nx.draw_networkx_edges(g, pos, edge_color=edge_colors, width=edge_widths)
+    for marker, nodes in node_groups.items():
+        node_colors = []
+        node_sizes = []
+        node_labels = {}
+        for n in nodes:
+            node_data = g.nodes[n]
+            color = node_data.get("color", default_node_color)
+            if isinstance(color, (list, tuple)) and all(
+                isinstance(x, (int, float)) for x in color
+            ):
+                if max(color) > 1:
+                    color = tuple(x / 255 for x in color)
+                else:
+                    color = tuple(color)
+            node_colors.append(color)
+            size = node_data.get("size", default_node_size)
+            node_sizes.append(size * 100)
+            if "name" in node_data:
+                node_labels[n] = node_data["name"]
+            elif "label" in node_data:
+                node_labels[n] = node_data["label"]
+        nx.draw_networkx_nodes(
+            g,
+            pos,
+            nodelist=nodes,
+            node_color=node_colors,
+            node_size=node_sizes,
+            node_shape=marker,
+        )
+        if with_labels:
+            nx.draw_networkx_labels(g, pos, labels=node_labels)
+
+
 def distribute_items_in_communities(items: Sequence, n_communities: int) -> Sequence:
     if n_communities < 1:
         raise ArgumentValueError("The number of communities must be greater than zero.")
