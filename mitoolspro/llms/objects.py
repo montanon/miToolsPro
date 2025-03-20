@@ -168,6 +168,9 @@ class LLMFactory:
 
 @dataclass
 class TokenUsageStats:
+    source: Literal["openai", "anthropic", "google"]
+    model: str
+    model_cost: Dict[str, (int, float)]
     total_tokens: int
     prompt_tokens: int
     completion_tokens: int
