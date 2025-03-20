@@ -15,6 +15,8 @@ from mitoolspro.clustering.clustering_evaluations import (
     get_similarities_metric_vector,
 )
 from mitoolspro.clustering.clustering_visualizations import (
+    add_clusters_centroids,
+    add_clusters_ellipse,
     plot_clustering_ncluster_search,
     plot_clusters,
     plot_clusters_groupings,
