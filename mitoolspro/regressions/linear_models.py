@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 import numpy as np
+import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from pandas import DataFrame
@@ -228,11 +229,11 @@ class RollingOLSModel(BaseRegressionModel):
         self.fitted = True
         return self.results
 
-    def predict(self, new_data: Optional[DataFrame] = None):
-        if not self.fitted:
-            raise ArgumentValueError("Model not fitted yet.")
+    def _get_exog(
+        self, new_data: Optional[DataFrame] = None
+    ) -> Union[DataFrame, np.ndarray]:
         if new_data is None:
-            return self.results.predict()
+            return self.results.model.exog
         else:
             missing_vars = [
                 col
@@ -244,9 +245,51 @@ class RollingOLSModel(BaseRegressionModel):
                     f"new_data is missing required variables: {missing_vars}"
                 )
             exog = new_data[self.independent_variables + self.control_variables].copy()
-            if (
+            has_constant = (
                 "const" in self.results.model.exog.columns
-                and "const" not in exog.columns
-            ):
+                if isinstance(self.results.model.exog, DataFrame)
+                else exog.shape[1]
+                > len(self.independent_variables + self.control_variables)
+            )
+            if has_constant and "const" not in exog.columns:
                 exog = sm.add_constant(exog, has_constant="add")
-            return self.results.predict(exog)
+            return exog
+
+    def _compute_predictions(
+        self, exog: Union[DataFrame, np.ndarray], params: pd.Series
+    ) -> np.ndarray:
+        return np.dot(exog, params)
+
+    def predict(self, new_data: Optional[DataFrame] = None):
+        if not self.fitted:
+            raise ArgumentValueError("Model not fitted yet.")
+
+        if new_data is None:
+            exog = self.results.model.exog
+            params = self.results.params
+            predictions = []
+            for i in range(len(self.data)):
+                predictions.append(np.dot(exog[i], params.iloc[i]))
+            return np.array(predictions)
+        else:
+            missing_vars = [
+                col
+                for col in self.independent_variables + self.control_variables
+                if col not in new_data.columns
+            ]
+            if missing_vars:
+                raise ArgumentValueError(
+                    f"new_data is missing required variables: {missing_vars}"
+                )
+            exog = new_data[self.independent_variables + self.control_variables].copy()
+            if isinstance(self.results.model.exog, DataFrame):
+                if "const" in self.results.model.exog.columns:
+                    exog = sm.add_constant(exog, has_constant="add")
+            else:
+                if self.results.model.exog.shape[1] > len(
+                    self.independent_variables + self.control_variables
+                ):
+                    exog = sm.add_constant(exog, has_constant="add")
+
+            last_params = self.results.params.iloc[-1]
+            return np.dot(exog, last_params)
