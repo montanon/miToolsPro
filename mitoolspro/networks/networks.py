@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import networkx as nx
 import numpy as np
+from matplotlib.colors import CSS4_COLORS
 from networkx import DiGraph, Graph
 from pandas import DataFrame, Interval
 from pyvis.network import Network as VisNetwork
@@ -310,7 +311,7 @@ def assign_net_nodes_attributes(
 def _convert_color(color):
     if isinstance(color, str):
         color_str = color.strip().lower()
-        hex_pattern = r"^#?([0-9a-f]{3}|[0-9a-f]{6})$"
+        hex_pattern = r"^#([0-9a-f]{3}|[0-9a-f]{6})$"
         rgb_pattern = r"^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$"
         rgba_pattern = r"^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-9.]+)\s*\)$"
         hex_match = re.match(hex_pattern, color_str)
@@ -337,15 +338,19 @@ def _convert_color(color):
                 return tuple(rgb + [alpha])
             except Exception:
                 raise ArgumentValueError(f"Invalid RGBA color format: {color}")
-        if re.match(r"^[0-9a-f]{3}$|^[0-9a-f]{6}$", color_str):
-            raise ArgumentValueError(f"Invalid hex color format: {color}")
-        return color
-    elif isinstance(color, (list, tuple)):
+        if color_str in CSS4_COLORS:
+            hex_color = CSS4_COLORS[color_str]  # e.g., "#ff0000"
+            try:
+                return tuple(int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
+            except Exception:
+                raise ArgumentValueError(f"Error converting named color: {color}")
+        raise ArgumentValueError(f"Invalid hex color format: {color}")
+    elif isinstance(color, (list, tuple)) and len(color) in [3, 4]:
         try:
             return tuple(int(c) for c in color)
         except Exception:
-            return color
-    return color
+            raise ArgumentValueError(f"Invalid color tuple/list format: {color}")
+    raise ArgumentValueError(f"Invalid color format: {color}")
 
 
 def pyvis_to_networkx(pyvis_network: "VisNetwork") -> Union[Graph, DiGraph]:
