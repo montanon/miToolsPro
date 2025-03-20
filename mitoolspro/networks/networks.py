@@ -36,34 +36,36 @@ def build_nx_graph(
 
 def build_nx_graphs(
     proximity_vectors: Dict[Union[str, int], DataFrame],
-    networks_folder: PathLike,
     orig_product: str = "product_i",
     dest_product: str = "product_j",
+    networks_folder: Optional[PathLike] = None,
     recalculate: Optional[bool] = False,
-    store: bool = False,
-) -> Tuple[Dict[Union[str, int], Graph], Dict[Union[str, int], Path]]:
-    networks_folder = Path(networks_folder)
-    if store and not networks_folder.exists():
-        raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
+) -> Tuple[Dict[Union[str, int], Graph], Dict[Union[str, int], Optional[Path]]]:
     graphs = {}
     graph_files = {}
     for key, vectors in proximity_vectors.items():
-        gml_name = f"{key}_G_graph.gml".replace(" ", "_")
-        gml_path = networks_folder / gml_name
-        if store and not gml_path.exists() or recalculate:
-            G = build_nx_graph(
-                vectors, orig_product=orig_product, dest_product=dest_product
-            )
-            if store:
+        if networks_folder is not None:
+            networks_folder = Path(networks_folder)
+            if not networks_folder.exists():
+                raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
+            gml_name = f"{key}_G_graph.gml".replace(" ", "_")
+            gml_path = networks_folder / gml_name
+
+            if not gml_path.exists() or recalculate:
+                G = build_nx_graph(
+                    vectors, orig_product=orig_product, dest_product=dest_product
+                )
                 nx.write_gml(G, gml_path)
-        elif store:
-            G = nx.read_gml(gml_path)
+            else:
+                G = nx.read_gml(gml_path)
+            graph_files[key] = gml_path
         else:
             G = build_nx_graph(
                 vectors, orig_product=orig_product, dest_product=dest_product
             )
+            graph_files[key] = None
+
         graphs[key] = G
-        graph_files[key] = str(gml_path) if store else None
 
     return graphs, graph_files
 
