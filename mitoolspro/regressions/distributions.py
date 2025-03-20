@@ -2,7 +2,7 @@ from functools import lru_cache
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.special import beta
+from scipy.special import beta as scipy_beta
 
 
 class GeneralizedBetaDistribution:
@@ -11,7 +11,7 @@ class GeneralizedBetaDistribution:
         self.beta = beta
         self.a = a
         self.b = b
-        self._beta_constant = beta(alpha, beta) * (b - a) ** (alpha + beta - 1)
+        self._beta_constant = scipy_beta(alpha, beta) * (b - a) ** (alpha + beta - 1)
 
     @lru_cache(maxsize=1000)
     def pdf(self, x):
