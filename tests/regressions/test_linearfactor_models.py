@@ -296,7 +296,7 @@ class TestLinearFactorModel(TestCase):
     def test_predict_with_new_data(self):
         model = LinearFactorModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         model.fit()
@@ -315,7 +315,7 @@ class TestLinearFactorModel(TestCase):
     def test_predict_with_missing_factors(self):
         model = LinearFactorModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         model.fit()

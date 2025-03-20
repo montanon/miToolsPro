@@ -146,10 +146,9 @@ class LinearFactorModel(BaseRegressionModel):
             predictions = pd.Series(np.dot(X, params.T), index=new_data.index)
         else:
             predictions = pd.DataFrame(index=new_data.index)
-            n_params = len(self.independent_variables) + 1
-            for i, portfolio in enumerate(self.dependent_variable):
-                portfolio_params = params[i * n_params : (i + 1) * n_params]
-                predictions[portfolio] = np.dot(X, portfolio_params.T)
+            for portfolio in self.dependent_variable:
+                portfolio_params = params.loc[portfolio]
+                predictions[portfolio] = np.dot(X, portfolio_params)
         return predictions
 
 
