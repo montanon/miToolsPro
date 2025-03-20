@@ -1,4 +1,6 @@
+import os
 import shutil
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import TestCase
@@ -805,24 +807,24 @@ class TestPyvisToNetworkx(TestCase):
 
         nx_graph = pyvis_to_networkx(network)
 
-        test_gml_path = Path("./tests/.test_assets/test_network.gml")
-        test_gml_path.parent.mkdir(parents=True, exist_ok=True)
-        nx.write_gml(nx_graph, test_gml_path)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_gml_path = os.path.join(temp_dir, "test_network.gml")
+            nx.write_gml(nx_graph, test_gml_path)
 
-        loaded_graph = nx.read_gml(test_gml_path)
+            loaded_graph = nx.read_gml(test_gml_path)
 
-        self.assertEqual(loaded_graph.nodes["1"]["name"], "Node A")
-        self.assertEqual(loaded_graph.nodes["1"]["size"], 10)
-        self.assertEqual(
-            loaded_graph.nodes["1"]["color"], [255, 0, 0]
-        )  # GML stores as list
-        self.assertEqual(loaded_graph.nodes["2"]["name"], "Node B")
-        self.assertEqual(loaded_graph.nodes["2"]["size"], 15)
-        self.assertEqual(loaded_graph.nodes["2"]["color"], [0, 255, 0])
+            self.assertEqual(loaded_graph.nodes["1"]["name"], "Node A")
+            self.assertEqual(loaded_graph.nodes["1"]["size"], 10)
+            self.assertEqual(
+                loaded_graph.nodes["1"]["color"], [255, 0, 0]
+            )  # GML stores as list
+            self.assertEqual(loaded_graph.nodes["2"]["name"], "Node B")
+            self.assertEqual(loaded_graph.nodes["2"]["size"], 15)
+            self.assertEqual(loaded_graph.nodes["2"]["color"], [0, 255, 0])
 
-        # Test edge attributes
-        self.assertEqual(loaded_graph["1"]["2"]["weight"], 2.0)
-        self.assertEqual(loaded_graph["1"]["2"]["color"], [0, 0, 255])
+            # Test edge attributes
+            self.assertEqual(loaded_graph["1"]["2"]["weight"], 2.0)
+            self.assertEqual(loaded_graph["1"]["2"]["color"], [0, 0, 255])
 
 
 class TestDrawNxColoredGraph(TestCase):
