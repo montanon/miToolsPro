@@ -150,6 +150,8 @@ class TestIV2SLSModel(TestCase):
             {
                 "x1": np.random.normal(0, 1, 10),
                 "x2": np.random.normal(0, 1, 10),
+                "z1": np.random.normal(0, 1, 10),
+                "z2": np.random.normal(0, 1, 10),
             }
         )
         predictions = model.predict(new_data)
@@ -281,6 +283,8 @@ class TestIVGMMModel(TestCase):
             {
                 "x1": np.random.normal(0, 1, 10),
                 "x2": np.random.normal(0, 1, 10),
+                "z1": np.random.normal(0, 1, 10),
+                "z2": np.random.normal(0, 1, 10),
             }
         )
         predictions = model.predict(new_data)
@@ -412,6 +416,8 @@ class TestIVGMMCUEModel(TestCase):
             {
                 "x1": np.random.normal(0, 1, 10),
                 "x2": np.random.normal(0, 1, 10),
+                "z1": np.random.normal(0, 1, 10),
+                "z2": np.random.normal(0, 1, 10),
             }
         )
         predictions = model.predict(new_data)
@@ -543,6 +549,8 @@ class TestIVLIMLModel(TestCase):
             {
                 "x1": np.random.normal(0, 1, 10),
                 "x2": np.random.normal(0, 1, 10),
+                "z1": np.random.normal(0, 1, 10),
+                "z2": np.random.normal(0, 1, 10),
             }
         )
         predictions = model.predict(new_data)
