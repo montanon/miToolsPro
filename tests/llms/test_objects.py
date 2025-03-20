@@ -129,7 +129,7 @@ class TestTokensCounter(TokensCounter):
         prompt_tokens = total_tokens // 2
         completion_tokens = total_tokens - prompt_tokens
         registry = ModelRegistry.get_instance(self.source)
-        model_costs = registry.get_model_costs(self.model)
+        model_costs = registry.get_model_cost(self.model)
         cost = (
             prompt_tokens * model_costs["input"]
             + completion_tokens * model_costs["output"]
@@ -155,7 +155,7 @@ class TokensCounterTests(TestCase):
         self.temp_path = Path(self.temp_dir.name)
         self.source = "openai"
         self.model = "gpt-3.5-turbo"
-        self.model_cost = ModelRegistry.get_instance(self.source).get_model_costs(
+        self.model_cost = ModelRegistry.get_instance(self.source).get_model_cost(
             self.model
         )
         self.counter = TestTokensCounter(self.source, self.model)
@@ -262,8 +262,8 @@ class TokensCounterTests(TestCase):
         gpt4_counter = TestTokensCounter(source="openai", model="gpt-4o")
         gpt35_counter = TestTokensCounter(source="openai", model="gpt-3.5-turbo")
         registry = ModelRegistry.get_instance("openai")
-        gpt4_costs = registry.get_model_costs("gpt-4o")
-        gpt35_costs = registry.get_model_costs("gpt-3.5-turbo")
+        gpt4_costs = registry.get_model_cost("gpt-4o")
+        gpt35_costs = registry.get_model_cost("gpt-3.5-turbo")
         # Create usage stats with same tokens but different models
         gpt4_usage = TokenUsageStats(
             source="openai",
@@ -301,7 +301,7 @@ class TestPersistentTokensCounter(PersistentTokensCounter):
         completion_tokens = total_tokens - prompt_tokens
 
         registry = ModelRegistry.get_instance(self.source)
-        model_costs = registry.get_model_costs(self.model)
+        model_costs = registry.get_model_cost(self.model)
 
         cost = (
             prompt_tokens * model_costs["input"]
@@ -477,13 +477,13 @@ class TestModelRegistry(TestCase):
         self.assertIn("o1-mini", self.registry.models)
 
     def test_get_model_config_existing_model(self):
-        costs = self.registry.get_model_costs("gpt-3.5-turbo")
+        costs = self.registry.get_model_cost("gpt-3.5-turbo")
         self.assertEqual(costs["input"], 3.0)
         self.assertEqual(costs["output"], 8.0)
 
     def test_get_model_config_nonexistent_model(self):
         with self.assertRaises(ValueError):
-            self.registry.get_model_costs("nonexistent-model")
+            self.registry.get_model_cost("nonexistent-model")
 
     def test_model_config_structure(self):
         for _, config in self.registry.models.items():

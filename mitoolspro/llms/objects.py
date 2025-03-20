@@ -48,9 +48,9 @@ class ModelRegistry:
         self.source = source
         self.models = getattr(self, f"{source.upper()}_MODELS", {})
 
-    def get_model_costs(self, name: str) -> Dict:
+    def get_model_cost(self, name: str) -> Dict:
         if name not in self.models:
-            raise ValueError(f"Model {name} not supported for {self.source}")
+            raise ArgumentValueError(f"Model {name} not supported for {self.source}")
         return self.models[name]
 
 
@@ -183,7 +183,7 @@ class TokensCounter(ABC):
         self.source = source
         self.model_registry = ModelRegistry.get_instance(self.source)
         self.model = model
-        self.model_cost = self.model_registry.get_model_costs(self.model)
+        self.model_cost = self.model_registry.get_model_cost(self.model)
         self.usage_history: List[TokenUsageStats] = []
         self.prompt_tokens_count: int = 0
         self.completion_tokens_count: int = 0
@@ -322,7 +322,7 @@ class PersistentTokensCounter(TokensCounter):
             self.source = source
             self.model = model
             self.model_registry = ModelRegistry.get_instance(self.source)
-            self.model_cost = self.model_registry.get_model_costs(self.model)
+            self.model_cost = self.model_registry.get_model_cost(self.model)
 
     def update(self, usage: TokenUsageStats) -> None:
         super().update(usage)
