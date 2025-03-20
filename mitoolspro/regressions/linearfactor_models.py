@@ -73,12 +73,9 @@ class TradedFactorModel(BaseRegressionModel):
             predictions = pd.DataFrame(index=new_data.index)
             # Add constant term to new_data
             X = pd.concat([pd.Series(1, index=new_data.index), new_data], axis=1)
-            for i, portfolio in enumerate(self.dependent_variable):
-                start_idx = i * (len(self.independent_variables) + 1)
-                portfolio_params = params[
-                    start_idx : start_idx + len(self.independent_variables) + 1
-                ]
-                predictions[portfolio] = np.dot(X, portfolio_params.T)
+            for portfolio in self.dependent_variable:
+                portfolio_params = params.loc[portfolio]
+                predictions[portfolio] = np.dot(X, portfolio_params)
         return predictions
 
 
@@ -217,10 +214,7 @@ class LinearFactorGMMModel(BaseRegressionModel):
             predictions = pd.DataFrame(index=new_data.index)
             # Add constant term to new_data
             X = pd.concat([pd.Series(1, index=new_data.index), new_data], axis=1)
-            for i, portfolio in enumerate(self.dependent_variable):
-                start_idx = i * (len(self.independent_variables) + 1)
-                portfolio_params = params[
-                    start_idx : start_idx + len(self.independent_variables) + 1
-                ]
-                predictions[portfolio] = np.dot(X, portfolio_params.T).flatten()
+            for portfolio in self.dependent_variable:
+                portfolio_params = params.loc[portfolio]
+                predictions[portfolio] = np.dot(X, portfolio_params)
         return predictions
