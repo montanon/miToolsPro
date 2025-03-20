@@ -324,6 +324,11 @@ class PersistentTokensCounter(TokensCounter):
             self.model_registry = ModelRegistry.get_instance(self.source)
             self.model_cost = self.model_registry.get_model_cost(self.model)
 
+    def _load_instance_data(self, file_path: PathLike) -> Dict:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+        return data
+
     def update(self, usage: TokenUsageStats) -> None:
         super().update(usage)
         self.save(self.file_path)
