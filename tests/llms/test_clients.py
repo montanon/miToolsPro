@@ -12,6 +12,11 @@ class TestOpenAIClient(TestCase):
     def setUp(self):
         self.model = "gpt-4o-mini"
         self.client = OpenAIClient(api_key="test_key", model=self.model)
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_path = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
 
     def test_initialization(self):
         self.assertEqual(self.client.model, self.model)
@@ -19,10 +24,11 @@ class TestOpenAIClient(TestCase):
         self.assertIsNone(self.client.counter)
         self.assertFalse(self.client.beta)
 
+        temp_file = self.temp_path / "test.json"
         client_with_counter = OpenAIClient(
             api_key="test_key",
             model=self.model,
-            counter=OpenAITokensCounter(Path("test.json"), model=self.model),
+            counter=OpenAITokensCounter(temp_file, model=self.model),
             beta=True,
         )
         self.assertIsNotNone(client_with_counter.counter)
