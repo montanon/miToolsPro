@@ -10,18 +10,19 @@ from mitoolspro.llms.objects import ModelRegistry, Prompt
 
 class TestOpenAIClient(TestCase):
     def setUp(self):
-        self.client = OpenAIClient(api_key="test_key", model="gpt-4o-mini")
+        self.model = "gpt-4o-mini"
+        self.client = OpenAIClient(api_key="test_key", model=self.model)
 
     def test_initialization(self):
-        self.assertEqual(self.client.model, "gpt-4o-mini")
+        self.assertEqual(self.client.model, self.model)
         self.assertEqual(len(self.client.raw_responses), 0)
         self.assertIsNone(self.client.counter)
         self.assertFalse(self.client.beta)
 
         client_with_counter = OpenAIClient(
             api_key="test_key",
-            model="gpt-4o-mini",
-            counter=OpenAITokensCounter(Path("test.json")),
+            model=self.model,
+            counter=OpenAITokensCounter(Path("test.json"), model=self.model),
             beta=True,
         )
         self.assertIsNotNone(client_with_counter.counter)
@@ -30,7 +31,7 @@ class TestOpenAIClient(TestCase):
     def test_parse_request(self):
         prompt = Prompt("Test prompt")
         request = self.client.parse_request(prompt)
-        self.assertEqual(request["model"], "gpt-4o-mini")
+        self.assertEqual(request["model"], self.model)
         self.assertEqual(len(request["messages"]), 1)
         self.assertEqual(request["messages"][0]["role"], "user")
         self.assertEqual(request["messages"][0]["content"], "Test prompt")
@@ -38,10 +39,10 @@ class TestOpenAIClient(TestCase):
     def test_get_model_info(self):
         info = self.client.get_model_info()
         self.assertEqual(info["name"], "OpenAI")
-        self.assertEqual(info["model"], "gpt-4o-mini")
+        self.assertEqual(info["model"], self.model)
 
     def test_model_name(self):
-        self.assertEqual(self.client.model_name(), "gpt-4o-mini")
+        self.assertEqual(self.client.model_name(), self.model)
 
 
 class TestOpenAITokensCounter(TestCase):
