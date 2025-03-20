@@ -332,8 +332,10 @@ class TestStatisticalTests(TestCase):
         result = st.shapiro_test()
         self.assertIsInstance(result, pd.DataFrame)
         self.assertTrue(all(col in result.columns for col in ["statistic", "p-value"]))
-        self.assertTrue(all(0 <= result["p-value"] <= 1))
-        self.assertTrue(all(result["statistic"] > 0))
+        self.assertTrue(
+            (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
+        )
+        self.assertTrue((result["statistic"] > 0).all())
 
     def test_anderson_test(self):
         st = StatisticalTests(self.normal_df)
@@ -342,8 +344,8 @@ class TestStatisticalTests(TestCase):
         self.assertTrue(
             all(col in result.columns for col in ["statistic", "critical_value"])
         )
-        self.assertTrue(all(result["statistic"] > 0))
-        self.assertTrue(all(result["critical_value"] > 0))
+        self.assertTrue((result["statistic"] > 0).all())
+        self.assertTrue((result["critical_value"] > 0).all())
 
     def test_adf_test(self):
         st = StatisticalTests(self.normal_df)
@@ -355,7 +357,9 @@ class TestStatisticalTests(TestCase):
                 for col in ["statistic", "p-value", "critical_value_5%"]
             )
         )
-        self.assertTrue(all(0 <= result["p-value"] <= 1))
+        self.assertTrue(
+            (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
+        )
 
     def test_calculate_vif(self):
         st = StatisticalTests(
