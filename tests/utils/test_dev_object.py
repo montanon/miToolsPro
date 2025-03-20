@@ -1,4 +1,5 @@
 import json
+import tempfile
 import unittest
 from pathlib import Path
 from threading import Thread
@@ -15,11 +16,11 @@ class TestDev(TestCase):
     def setUp(self):
         self.dev = Dev()  # Reference the singleton instance
         self.dev.clear_vars()  # Clear all variables before each test
-        self.test_file = Path("./tests/.test_assets/dev_vars.json")
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.test_file = Path(self.temp_dir.name) / "dev_vars.json"
 
     def tearDown(self):
-        if self.test_file.exists():
-            self.test_file.unlink()
+        self.temp_dir.cleanup()
 
     def test_singleton_instance(self):
         dev1 = Dev()
