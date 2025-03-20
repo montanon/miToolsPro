@@ -336,6 +336,8 @@ class TestStatisticalTests(TestCase):
             (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
         )
         self.assertTrue((result["statistic"] > 0).all())
+        expected = shapiro_tests(self.normal_df)
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_anderson_test(self):
         st = StatisticalTests(self.normal_df)
@@ -346,6 +348,8 @@ class TestStatisticalTests(TestCase):
         )
         self.assertTrue((result["statistic"] > 0).all())
         self.assertTrue((result["critical_value"] > 0).all())
+        expected = anderson_tests(self.normal_df, criteria=0.05)
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_adf_test(self):
         st = StatisticalTests(self.normal_df)
@@ -360,6 +364,8 @@ class TestStatisticalTests(TestCase):
         self.assertTrue(
             (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
         )
+        expected = adf_tests(self.normal_df, critical_value=5)
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_calculate_vif(self):
         st = StatisticalTests(
@@ -371,8 +377,15 @@ class TestStatisticalTests(TestCase):
         self.assertIsInstance(result, pd.DataFrame)
         self.assertIn("VIF", result.columns)
         self.assertIn("hypothesis", result.columns)
-        self.assertTrue(all(result["VIF"] > 0))
-        self.assertTrue(all(result["hypothesis"].isin(["Accept", "Reject"])))
+        self.assertTrue((result["VIF"] > 0).all())
+        self.assertTrue((result["hypothesis"].isin(["Accept", "Reject"])).all())
+        expected = calculate_vif(
+            self.regression_data,
+            dependent_variable="y",
+            independent_variables=["x1", "x2"],
+            threshold=5.0,
+        )
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_durbin_watson_test(self):
         st = StatisticalTests(
@@ -386,6 +399,12 @@ class TestStatisticalTests(TestCase):
         self.assertIn("Hypothesis", result.columns)
         self.assertTrue(result["DW Statistic"].iloc[0] > 0)
         self.assertIsInstance(result["Hypothesis"].iloc[0], str)
+        expected = durbin_watson_test(
+            self.regression_data,
+            dependent_variable="y",
+            independent_variables=["x1", "x2"],
+        )
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_breusch_pagan_test(self):
         st = StatisticalTests(
@@ -401,8 +420,16 @@ class TestStatisticalTests(TestCase):
                 for col in ["BP Statistic", "p-value", "Hypothesis"]
             )
         )
-        self.assertTrue(0 <= result["p-value"].iloc[0] <= 1)
+        self.assertTrue(
+            (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
+        )
         self.assertIsInstance(result["Hypothesis"].iloc[0], str)
+        expected = breusch_pagan_test(
+            self.regression_data,
+            dependent_variable="y",
+            independent_variables=["x1", "x2"],
+        )
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_white_test(self):
         st = StatisticalTests(
@@ -418,8 +445,16 @@ class TestStatisticalTests(TestCase):
                 for col in ["White Statistic", "p-value", "Hypothesis"]
             )
         )
-        self.assertTrue(0 <= result["p-value"].iloc[0] <= 1)
+        self.assertTrue(
+            (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
+        )
         self.assertIsInstance(result["Hypothesis"].iloc[0], str)
+        expected = white_test(
+            self.regression_data,
+            dependent_variable="y",
+            independent_variables=["x1", "x2"],
+        )
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_repr(self):
         st = StatisticalTests(
