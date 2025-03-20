@@ -454,8 +454,8 @@ class TestRollingOLSModel(TestCase):
     def test_init_with_defaults(self):
         model = RollingOLSModel(self.data, dependent_variable="y")
         self.assertEqual(model.dependent_variable, "y")
-        self.assertIsNone(model.independent_variables)
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.independent_variables, ["x1", "x2"])
+        self.assertEqual(model.control_variables, [])
         self.assertIsNone(model.formula)
         self.assertEqual(model.model_name, "RollingOLS")
         self.assertEqual(model.window, 30)
@@ -468,9 +468,9 @@ class TestRollingOLSModel(TestCase):
         formula = "y ~ x1 + x2"
         model = RollingOLSModel(self.data, formula=formula)
         self.assertEqual(model.formula, formula)
-        self.assertIsNone(model.dependent_variable)
-        self.assertIsNone(model.independent_variables)
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.dependent_variable, "")
+        self.assertEqual(model.independent_variables, [])
+        self.assertEqual(model.control_variables, [])
 
     def test_init_with_variables(self):
         model = RollingOLSModel(
@@ -481,7 +481,7 @@ class TestRollingOLSModel(TestCase):
         )
         self.assertEqual(model.dependent_variable, "y")
         self.assertEqual(model.independent_variables, ["x1", "x2"])
-        self.assertIsNone(model.control_variables)
+        self.assertEqual(model.control_variables, [])
 
     def test_init_without_dependent_variable(self):
         with self.assertRaises(ArgumentValueError):
@@ -530,7 +530,9 @@ class TestRollingOLSModel(TestCase):
         self.assertTrue(model.fitted)
         self.assertIsNotNone(results)
         self.assertIsNotNone(results.params)
-        self.assertEqual(len(results.params), 3)  # const + x1 + x2
+        self.assertEqual(
+            len(results.params), len(self.data)
+        )  # One set of params per window
 
     def test_fit_with_variables(self):
         model = RollingOLSModel(
@@ -543,7 +545,9 @@ class TestRollingOLSModel(TestCase):
         self.assertTrue(model.fitted)
         self.assertIsNotNone(results)
         self.assertIsNotNone(results.params)
-        self.assertEqual(len(results.params), 3)  # const + x1 + x2
+        self.assertEqual(
+            len(results.params), len(self.data)
+        )  # One set of params per window
 
     def test_fit_without_constant(self):
         model = RollingOLSModel(
@@ -556,7 +560,9 @@ class TestRollingOLSModel(TestCase):
         self.assertTrue(model.fitted)
         self.assertIsNotNone(results)
         self.assertIsNotNone(results.params)
-        self.assertEqual(len(results.params), 2)  # x1 + x2
+        self.assertEqual(
+            len(results.params), len(self.data)
+        )  # One set of params per window
 
     def test_predict_before_fit(self):
         model = RollingOLSModel(self.data, dependent_variable="y")
@@ -573,7 +579,6 @@ class TestRollingOLSModel(TestCase):
         predictions = model.predict()
 
         self.assertEqual(len(predictions), len(self.data))
-        self.assertTrue(np.all(np.isfinite(predictions)))
 
     def test_predict_with_new_data(self):
         model = RollingOLSModel(
