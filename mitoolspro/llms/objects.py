@@ -46,7 +46,7 @@ class ModelRegistry:
         self.source = source
         self.models = getattr(self, f"{source.upper()}_MODELS", {})
 
-    def get_model_config(self, name: str) -> Dict:
+    def get_model_costs(self, name: str) -> Dict:
         if name not in self.models:
             raise ValueError(f"Model {name} not supported for {self.source}")
         return self.models[name]
