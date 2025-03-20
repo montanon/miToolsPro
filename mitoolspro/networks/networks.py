@@ -111,7 +111,7 @@ def build_mst_graph(
 
 def build_mst_graphs(
     proximity_vectors: Dict[Union[str, int], DataFrame],
-    networks_folder: PathLike,
+    networks_folder: Optional[PathLike] = None,
     origin: str = "node_i",
     destination: str = "node_j",
     attribute: str = "weight",
@@ -119,30 +119,34 @@ def build_mst_graphs(
     n_extra_edges: Optional[int] = None,
     pct_extra_edges: Optional[float] = None,
     recalculate: bool = False,
-) -> Tuple[Dict[Union[str, int], Graph], Dict[Union[str, int], Path]]:
-    networks_folder = Path(networks_folder)
-    if not networks_folder.exists():
-        raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
+) -> Tuple[Dict[Union[str, int], Graph], Dict[Union[str, int], Optional[Path]]]:
     graphs = {}
     graph_files = {}
+
     for key, vectors in proximity_vectors.items():
-        gml_name = f"{key}_MST_graph.gml".replace(" ", "_")
-        gml_path = networks_folder / gml_name
-        if not gml_path.exists() or recalculate:
-            MST = build_mst_graph(
-                vectors,
-                origin=origin,
-                destination=destination,
-                attribute=attribute,
-                attribute_th=attribute_th,
-                n_extra_edges=n_extra_edges,
-                pct_extra_edges=pct_extra_edges,
-            )
-            nx.write_gml(MST, gml_path)
-        else:
-            MST = nx.read_gml(gml_path)
+        MST = build_mst_graph(
+            vectors,
+            origin=origin,
+            destination=destination,
+            attribute=attribute,
+            attribute_th=attribute_th,
+            n_extra_edges=n_extra_edges,
+            pct_extra_edges=pct_extra_edges,
+        )
         graphs[key] = MST
-        graph_files[key] = str(gml_path)
+
+        if networks_folder is not None:
+            networks_folder = Path(networks_folder)
+            if not networks_folder.exists():
+                raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
+            gml_name = f"{key}_MST_graph.gml".replace(" ", "_")
+            gml_path = networks_folder / gml_name
+
+            if not gml_path.exists() or recalculate:
+                nx.write_gml(MST, gml_path)
+            graph_files[key] = gml_path
+        else:
+            graph_files[key] = None
 
     return graphs, graph_files
 
@@ -189,7 +193,7 @@ def build_vis_graph(
 
 def build_vis_graphs(
     graphs_data: Dict[Union[str, int], Graph],
-    networks_folder: PathLike,
+    networks_folder: Optional[PathLike] = None,
     nodes_sizes: Optional[Union[NodesSizes, int, float]] = None,
     nodes_colors: Optional[Union[NodesColors, NodeColor]] = None,
     nodes_labels: Optional[Union[NodesLabels, str]] = None,
@@ -199,35 +203,35 @@ def build_vis_graphs(
     notebook: bool = True,
     physics: bool = False,
     physics_kwargs: Optional[Dict[str, Any]] = None,
-) -> Tuple[Dict[Union[str, int], VisNetwork], Dict[Union[str, int], str]]:
-    networks_folder = Path(networks_folder)
-    if not networks_folder.exists():
-        raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
-
+) -> Tuple[Dict[Union[str, int], VisNetwork], Dict[Union[str, int], Optional[Path]]]:
     vis_graphs = {}
     graph_files = {}
 
     for key, graph in graphs_data.items():
-        gml_name = f"{key}_vis_graph.html".replace(" ", "_")
-        gml_path = networks_folder / gml_name
-
-        if not gml_path.exists():
-            net = build_vis_graph(
-                graph=graph,
-                nodes_sizes=nodes_sizes,
-                nodes_colors=nodes_colors,
-                nodes_labels=nodes_labels,
-                node_label_size=node_label_size,
-                edges_widths=edges_widths,
-                net_height=net_height,
-                notebook=notebook,
-                physics=physics,
-                physics_kwargs=physics_kwargs,
-            )
-            net.save_graph(str(gml_path))  # Save the graph as an HTML file
-
+        net = build_vis_graph(
+            graph=graph,
+            nodes_sizes=nodes_sizes,
+            nodes_colors=nodes_colors,
+            nodes_labels=nodes_labels,
+            node_label_size=node_label_size,
+            edges_widths=edges_widths,
+            net_height=net_height,
+            notebook=notebook,
+            physics=physics,
+            physics_kwargs=physics_kwargs,
+        )
         vis_graphs[key] = net
-        graph_files[key] = str(gml_path)
+
+        if networks_folder is not None:
+            networks_folder = Path(networks_folder)
+            if not networks_folder.exists():
+                raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
+            gml_name = f"{key}_vis_graph.html".replace(" ", "_")
+            gml_path = networks_folder / gml_name
+            net.save_graph(str(gml_path))
+            graph_files[key] = gml_path
+        else:
+            graph_files[key] = None
 
     return vis_graphs, graph_files
 

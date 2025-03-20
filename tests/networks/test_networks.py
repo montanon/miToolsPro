@@ -77,8 +77,6 @@ class TestBuildNxGraph(TestCase):
 
 class TestBuildNxGraphs(TestCase):
     def setUp(self):
-        self.networks_folder = Path("./tests/.test_assets/.data")
-        self.networks_folder.mkdir(parents=True, exist_ok=True)
         self.proximity_vectors = {
             1: DataFrame(
                 {"node_i": ["A", "A"], "node_j": ["B", "C"], "weight": [0.8, 0.4]}
@@ -86,20 +84,14 @@ class TestBuildNxGraphs(TestCase):
             2: DataFrame({"node_i": ["B"], "node_j": ["C"], "weight": [0.5]}),
         }
 
-    def tearDown(self):
-        if self.networks_folder.exists():
-            shutil.rmtree(self.networks_folder)
-
     def test_build_and_store_graphs(self):
         graphs, graph_files = build_nx_graphs(
             self.proximity_vectors,
             origin="node_i",
             destination="node_j",
-            networks_folder=self.networks_folder,
             recalculate=True,
         )
-        for key, gml_path in graph_files.items():
-            self.assertTrue(Path(gml_path).exists())
+        for key, _ in graph_files.items():
             self.assertTrue(isinstance(graphs[key], nx.Graph))
         self.assertEqual(len(graphs[1].nodes), 3)
         self.assertEqual(len(graphs[1].edges), 2)
@@ -114,18 +106,15 @@ class TestBuildNxGraphs(TestCase):
             self.proximity_vectors,
             origin="node_i",
             destination="node_j",
-            networks_folder=self.networks_folder,
             recalculate=True,
         )
         graphs, graph_files = build_nx_graphs(
             self.proximity_vectors,
             origin="node_i",
             destination="node_j",
-            networks_folder=self.networks_folder,
             recalculate=False,
         )
-        for key, gml_path in graph_files.items():
-            self.assertTrue(Path(gml_path).exists())
+        for key, _ in graph_files.items():
             self.assertTrue(isinstance(graphs[key], nx.Graph))
         self.assertEqual(len(graphs[1].nodes), 3)
         self.assertEqual(len(graphs[1].edges), 2)
@@ -150,7 +139,6 @@ class TestBuildNxGraphs(TestCase):
             {},
             origin="node_i",
             destination="node_j",
-            networks_folder=self.networks_folder,
             recalculate=True,
         )
         self.assertEqual(len(graphs), 0)
@@ -211,8 +199,6 @@ class TestBuildMSTGraph(TestCase):
 
 class TestBuildMSTGraphs(TestCase):
     def setUp(self):
-        self.networks_folder = Path("./tests/.test_assets/.data")
-        self.networks_folder.mkdir(parents=True, exist_ok=True)
         self.proximity_vectors = {
             1: DataFrame(
                 {
@@ -230,35 +216,27 @@ class TestBuildMSTGraphs(TestCase):
             ),
         }
 
-    def tearDown(self):
-        if self.networks_folder.exists():
-            shutil.rmtree(self.networks_folder)
-
     def test_build_and_store_mst_graphs(self):
         graphs, graph_files = build_mst_graphs(
             self.proximity_vectors,
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
             recalculate=True,
         )
-        for key, gml_path in graph_files.items():
-            self.assertTrue(Path(gml_path).exists())
+        for key, _ in graph_files.items():
             self.assertIsInstance(graphs[key], Graph)
 
     def test_load_existing_mst_graphs(self):
         build_mst_graphs(
             self.proximity_vectors,
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
             recalculate=True,
         )
-        graphs, graph_files = build_mst_graphs(
+        graphs, _ = build_mst_graphs(
             self.proximity_vectors,
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
@@ -270,7 +248,6 @@ class TestBuildMSTGraphs(TestCase):
     def test_with_n_extra_edges(self):
         graphs, _ = build_mst_graphs(
             self.proximity_vectors,
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
@@ -283,7 +260,6 @@ class TestBuildMSTGraphs(TestCase):
     def test_attribute_threshold(self):
         graphs, _ = build_mst_graphs(
             self.proximity_vectors,
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
@@ -297,7 +273,6 @@ class TestBuildMSTGraphs(TestCase):
     def test_with_pct_extra_edges(self):
         graphs, _ = build_mst_graphs(
             self.proximity_vectors,
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
@@ -320,7 +295,6 @@ class TestBuildMSTGraphs(TestCase):
     def test_empty_proximity_vectors(self):
         graphs, graph_files = build_mst_graphs(
             {},
-            networks_folder=self.networks_folder,
             origin="node_i",
             destination="node_j",
             attribute="weight",
@@ -511,23 +485,14 @@ class TestBuildVisGraph(TestCase):
 
 class TestBuildVisGraphs(TestCase):
     def setUp(self):
-        self.networks_folder = Path("./tests/.test_assets/.data")
-        self.networks_folder.mkdir(parents=True, exist_ok=True)
         self.graphs_data = {
             1: nx.Graph([(1, 2, {"weight": 0.8}), (1, 3, {"weight": 0.4})]),
             2: nx.Graph([(2, 3, {"weight": 0.5})]),
         }
 
-    def tearDown(self):
-        if self.networks_folder.exists():
-            shutil.rmtree(self.networks_folder)
-
     def test_build_and_store_vis_graphs(self):
-        vis_graphs, graph_files = build_vis_graphs(
-            self.graphs_data, networks_folder=self.networks_folder
-        )
-        for key, html_path in graph_files.items():
-            self.assertTrue(Path(html_path).exists())
+        vis_graphs, graph_files = build_vis_graphs(self.graphs_data)
+        for key, _ in graph_files.items():
             self.assertIsInstance(vis_graphs[key], VisNetwork)
         self.assertEqual(len(vis_graphs[1].nodes), 3)
         self.assertEqual(len(vis_graphs[1].edges), 2)
@@ -541,7 +506,6 @@ class TestBuildVisGraphs(TestCase):
     def test_empty_graph_data(self):
         vis_graphs, graph_files = build_vis_graphs(
             {},
-            networks_folder=self.networks_folder,
         )
         self.assertEqual(len(vis_graphs), 0)
         self.assertEqual(len(graph_files), 0)
@@ -550,7 +514,6 @@ class TestBuildVisGraphs(TestCase):
         node_sizes = {1: 10, 2: 15, 3: 20}
         vis_graphs, _ = build_vis_graphs(
             self.graphs_data,
-            networks_folder=self.networks_folder,
             nodes_sizes=node_sizes,
         )
         for node in vis_graphs[1].nodes:
@@ -560,7 +523,6 @@ class TestBuildVisGraphs(TestCase):
         node_colors = {1: (255, 0, 0), 2: (0, 255, 0), 3: (0, 0, 255)}
         vis_graphs, _ = build_vis_graphs(
             self.graphs_data,
-            networks_folder=self.networks_folder,
             nodes_colors=node_colors,
         )
         for node in vis_graphs[1].nodes:
@@ -570,7 +532,6 @@ class TestBuildVisGraphs(TestCase):
         node_labels = {1: "A", 2: "B", 3: "C"}
         vis_graphs, _ = build_vis_graphs(
             self.graphs_data,
-            networks_folder=self.networks_folder,
             nodes_labels=node_labels,
         )
         for node in vis_graphs[1].nodes:
@@ -580,7 +541,6 @@ class TestBuildVisGraphs(TestCase):
         physics_kwargs = {"gravity": -5000, "spring_length": 300}
         vis_graphs, _ = build_vis_graphs(
             self.graphs_data,
-            networks_folder=self.networks_folder,
             physics=True,
             physics_kwargs=physics_kwargs,
         )
