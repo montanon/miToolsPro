@@ -179,17 +179,16 @@ class TokenUsageStats:
 
 
 class TokensCounter(ABC):
-    def __init__(
-        self,
-        cost_per_1M_input_tokens: float = 0.0,
-        cost_per_1M_output_tokens: float = 0.0,
-    ):
+    def __init__(self, source: Literal["openai", "anthropic", "google"], model: str):
+        self.source = source
+        model_registry = ModelRegistry.get_instance(self.source)
+        self.model = model
+        self.model_costs = model_registry.get_model_costs(self.model)
         self.usage_history: List[TokenUsageStats] = []
         self.prompt_tokens_count: int = 0
         self.completion_tokens_count: int = 0
         self.total_tokens_count: int = 0
-        self.cost_per_1M_input_tokens: float = cost_per_1M_input_tokens
-        self.cost_per_1M_output_tokens: float = cost_per_1M_output_tokens
+        self.total_cost: float = 0.0
         self.max_context_length: Optional[int] = None
 
     @abstractmethod
@@ -198,6 +197,7 @@ class TokensCounter(ABC):
 
     def update(self, usage: TokenUsageStats) -> None:
         self.usage_history.append(usage)
+        self.total_cost += usage.cost
         self.prompt_tokens_count += usage.prompt_tokens
         self.completion_tokens_count += usage.completion_tokens
         self.total_tokens_count = (
@@ -217,31 +217,23 @@ class TokensCounter(ABC):
         return self.count_tokens(text) > self.max_context_length
 
     def _calculate_cost(self) -> float:
-        return self._calculate_input_cost(
-            self.prompt_tokens_count
-        ) + self._calculate_output_cost(self.completion_tokens_count)
+        return sum(usage.cost for usage in self.usage_history)
 
-    def _calculate_input_cost(self, input_token_count: int = None) -> float:
-        return (
-            self.cost_per_1M_input_tokens
-            * (
-                self.prompt_tokens_count
-                if input_token_count is None
-                else input_token_count
+    def _calculate_input_cost(self, input_token_count: Optional[int] = None) -> float:
+        if input_token_count is None:
+            return sum(
+                usage.prompt_tokens * (usage.model_costs["input"] / 1_000_000)
+                for usage in self.usage_history
             )
-            / 1_000_000
-        )
+        return input_token_count * (self.model_costs["input"] / 1_000_000)
 
-    def _calculate_output_cost(self, output_token_count: int = None) -> float:
-        return (
-            self.cost_per_1M_output_tokens
-            * (
-                self.completion_tokens_count
-                if output_token_count is None
-                else output_token_count
+    def _calculate_output_cost(self, output_token_count: Optional[int] = None) -> float:
+        if output_token_count is None:
+            return sum(
+                usage.completion_tokens * (usage.model_costs["output"] / 1_000_000)
+                for usage in self.usage_history
             )
-            / 1_000_000
-        )
+        return output_token_count * (self.model_costs["output"] / 1_000_000)
 
     @property
     def count(self) -> int:
@@ -254,15 +246,9 @@ class TokensCounter(ABC):
     @property
     def cost_detail(self) -> Dict:
         return {
-            "cost": {
-                "prompt_tokens": self._calculate_input_cost(self.prompt_tokens_count),
-                "completion_tokens": self._calculate_output_cost(
-                    self.completion_tokens_count
-                ),
-                "total": self.cost,
-            },
-            "cost_per_1M_input_tokens": self.cost_per_1M_input_tokens,
-            "cost_per_1M_output_tokens": self.cost_per_1M_output_tokens,
+            "prompt_tokens": self._calculate_input_cost(),
+            "completion_tokens": self._calculate_output_cost(),
+            "total": self.cost,
         }
 
     def json(self) -> str:
@@ -271,10 +257,10 @@ class TokensCounter(ABC):
             "prompt_tokens_count": self.prompt_tokens_count,
             "completion_tokens_count": self.completion_tokens_count,
             "total_tokens_count": self.total_tokens_count,
-            "cost_per_1M_input_tokens": self.cost_per_1M_input_tokens,
-            "cost_per_1M_output_tokens": self.cost_per_1M_output_tokens,
             "max_context_length": self.max_context_length,
             "cost_detail": self.cost_detail,
+            "model": self.model,
+            "source": self.source,
         }
         return json.dumps(data, indent=4, default=str)
 
@@ -288,9 +274,7 @@ class TokensCounter(ABC):
     def load(cls, file_path: PathLike) -> "TokensCounter":
         with open(file_path, "r") as f:
             data = json.load(f)
-        instance = cls(
-            data["cost_per_1M_input_tokens"], data["cost_per_1M_output_tokens"]
-        )
+        instance = cls(data["source"], data["model"])
         instance.prompt_tokens_count = data["prompt_tokens_count"]
         instance.completion_tokens_count = data["completion_tokens_count"]
         instance.total_tokens_count = data["total_tokens_count"]
