@@ -306,33 +306,49 @@ def assign_net_nodes_attributes(
             )
 
 
+def _convert_color(color):
+    if isinstance(color, str):
+        color_str = color.strip().lower()
+        if color_str.startswith("#"):
+            color_str = color_str[1:]
+            try:
+                if len(color_str) == 6:
+                    return tuple(int(color_str[i : i + 2], 16) for i in (0, 2, 4))
+                elif len(color_str) == 3:
+                    return tuple(int(c * 2, 16) for c in color_str)
+                else:
+                    return color
+            except Exception:
+                return color
+        elif color_str.startswith(("rgb(", "rgba(")):
+            try:
+                values = color_str[color_str.find("(") + 1 : color_str.find(")")].split(
+                    ","
+                )
+                values = [int(v.strip()) for v in values]
+                if len(values) == 3:  # RGB
+                    return tuple(values)
+                elif len(values) == 4:  # RGBA
+                    return tuple(values)
+                else:
+                    return color
+            except Exception:
+                return color
+        else:
+            return color
+    elif isinstance(color, (list, tuple)):
+        try:
+            return tuple(int(c) for c in color)
+        except Exception:
+            return color
+    return color
+
+
 def pyvis_to_networkx(pyvis_network: "VisNetwork") -> Union[Graph, DiGraph]:
     if not hasattr(pyvis_network, "nodes") or not hasattr(pyvis_network, "edges"):
         raise TypeError(
             "Input must be a PyVis network with 'nodes' and 'edges' attributes."
         )
-
-    def _convert_color(color):
-        if isinstance(color, str):
-            color_str = color.strip()
-            if color_str.startswith("#"):
-                color_str = color_str[1:]
-            try:
-                if len(color_str) == 6:
-                    return tuple(int(color_str[i : i + 2], 16) for i in (0, 2, 4))
-                elif len(color_str) == 3:
-                    # Expand shorthand hex (e.g., "abc" becomes "aabbcc")
-                    return tuple(int(c * 2, 16) for c in color_str)
-                else:
-                    return color  # Unhandled format; return as is.
-            except Exception:
-                return color  # If conversion fails, return the original.
-        elif isinstance(color, (list, tuple)):
-            try:
-                return tuple(int(c) for c in color)
-            except Exception:
-                return color  # In case the values cannot be converted.
-        return color
 
     directed = getattr(pyvis_network, "directed", False)
     nx_graph = DiGraph() if directed else Graph()
@@ -435,7 +451,7 @@ def draw_nx(g: Union[Graph, DiGraph], with_labels: bool = True):
     edge_colors = []
     edge_widths = []
     for u, v, node_data in g.edges(data=True):
-        color = node_data.get("color", default_edge_color)
+        color = _convert_color(node_data.get("color", default_edge_color))
         if isinstance(color, (list, tuple)) and all(
             isinstance(x, (int, float)) for x in color
         ):
