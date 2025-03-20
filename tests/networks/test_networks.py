@@ -664,6 +664,223 @@ class TestPyvisToNetworkx(TestCase):
         nx_graph = pyvis_to_networkx(self.undirected_network)
         self.assertAlmostEqual(nx_graph[2][1]["weight"], 2.0)
 
+    def test_comprehensive_attribute_transfer(self):
+        # Create a network with comprehensive attributes
+        network = VisNetwork()
+
+        # Add nodes with various attributes
+        network.add_node(
+            "1",
+            label="Node A",
+            size=10,
+            color="#FF0000",  # Direct hex color
+            font="20px Arial",
+            title="Node A Title",
+            level=1,
+            shape="dot",
+            x=100,
+            y=200,
+            fixed=True,
+            mass=2.0,
+            physics=True,
+        )
+
+        # Add a second node with different attributes
+        network.add_node(
+            "2",
+            label="Node B",
+            size=15,
+            color=(0, 255, 0),  # Direct RGB color
+            font="15px Arial",
+            title="Node B Title",
+            level=2,
+            shape="square",
+            x=300,
+            y=400,
+            fixed=False,
+            mass=1.5,
+            physics=True,
+        )
+
+        # Add an edge with attributes
+        network.add_edge(
+            "1",
+            "2",
+            width=2.0,
+            title="Edge A-B",
+            color="#0000FF",  # Direct hex color for edge
+            arrows="to",
+            smooth={"type": "curvedCW"},
+            dashes=True,
+            label="Edge Label",
+            font="12px Arial",
+            hidden=False,
+            selectionWidth=3.0,
+            selfReferenceSize=20,
+            selfReferenceAngle=90,
+        )
+
+        # Save the VisNetwork HTML for inspection
+        test_html_path = Path("./tests/.test_assets/test_network.html")
+        test_html_path.parent.mkdir(parents=True, exist_ok=True)
+        network.save_graph(str(test_html_path))
+
+        # Convert to NetworkX
+        nx_graph = pyvis_to_networkx(network)
+
+        # Save the NetworkX graph for inspection
+        test_gml_path = Path("./tests/.test_assets/test_network.gml")
+        nx.write_gml(nx_graph, test_gml_path)
+
+        # Debug print to check PyVis node attributes
+        print("\nPyVis node attributes:")
+        for node in network.nodes:
+            print(f"Node {node['id']} attributes:", node)
+
+        # Debug print to check NetworkX node attributes
+        print("\nNetworkX node attributes:")
+        for node in nx_graph.nodes(data=True):
+            print(f"Node {node[0]} attributes:", node[1])
+
+        # Test node 1 attributes
+        node1_attrs = nx_graph.nodes["1"]
+        self.assertEqual(node1_attrs["name"], "Node A")
+        self.assertEqual(node1_attrs["label"], "Node A")
+        self.assertEqual(node1_attrs["size"], 10)
+        self.assertEqual(node1_attrs["color"], (255, 0, 0))  # Converted from hex
+        self.assertEqual(node1_attrs["font"], "20px Arial")
+        self.assertEqual(node1_attrs["title"], "Node A Title")
+        self.assertEqual(node1_attrs["level"], 1)
+        self.assertEqual(node1_attrs["shape"], "dot")
+        self.assertEqual(node1_attrs["x"], 100)
+        self.assertEqual(node1_attrs["y"], 200)
+        self.assertTrue(node1_attrs["fixed"])
+        self.assertEqual(node1_attrs["mass"], 2.0)
+        self.assertTrue(node1_attrs["physics"])
+
+        # Test node 2 attributes
+        node2_attrs = nx_graph.nodes["2"]
+        self.assertEqual(node2_attrs["name"], "Node B")
+        self.assertEqual(node2_attrs["label"], "Node B")
+        self.assertEqual(node2_attrs["size"], 15)
+        self.assertEqual(node2_attrs["color"], (0, 255, 0))  # RGB tuple preserved
+        self.assertEqual(node2_attrs["font"], "15px Arial")
+        self.assertEqual(node2_attrs["title"], "Node B Title")
+        self.assertEqual(node2_attrs["level"], 2)
+        self.assertEqual(node2_attrs["shape"], "square")
+        self.assertEqual(node2_attrs["x"], 300)
+        self.assertEqual(node2_attrs["y"], 400)
+        self.assertFalse(node2_attrs["fixed"])
+        self.assertEqual(node2_attrs["mass"], 1.5)
+        self.assertTrue(node2_attrs["physics"])
+
+        # Test edge attributes
+        edge_attrs = nx_graph["1"]["2"]
+        self.assertEqual(edge_attrs["weight"], 2.0)  # width converted to weight
+        self.assertEqual(edge_attrs["title"], "Edge A-B")
+        self.assertEqual(edge_attrs["color"], (0, 0, 255))  # Converted from hex
+        self.assertEqual(edge_attrs["arrows"], "to")
+        self.assertEqual(edge_attrs["smooth"], {"type": "curvedCW"})
+        self.assertTrue(edge_attrs["dashes"])
+        self.assertEqual(edge_attrs["label"], "Edge Label")
+        self.assertEqual(edge_attrs["font"], "12px Arial")
+        self.assertFalse(edge_attrs["hidden"])
+        self.assertEqual(edge_attrs["selectionWidth"], 3.0)
+        self.assertEqual(edge_attrs["selfReferenceSize"], 20)
+        self.assertEqual(edge_attrs["selfReferenceAngle"], 90)
+
+        # Test graph structure
+        self.assertEqual(len(nx_graph), 2)
+        self.assertIsInstance(nx_graph, Graph)  # Should be undirected by default
+
+    def test_directed_graph_attributes(self):
+        # Create a directed network with attributes
+        network = VisNetwork(directed=True)
+        network.add_node(1, label="Node A", size=10)
+        network.add_node(2, label="Node B", size=15)
+        network.add_edge(1, 2, width=2.0, arrows="to")
+
+        # Convert to NetworkX
+        nx_graph = pyvis_to_networkx(network)
+
+        # Test graph type
+        self.assertIsInstance(nx_graph, DiGraph)
+
+        # Test edge direction
+        self.assertTrue(nx_graph.has_edge(1, 2))
+        self.assertFalse(nx_graph.has_edge(2, 1))
+
+    def test_color_conversion_edge_cases(self):
+        network = VisNetwork()
+
+        # Test various color formats
+        network.add_node(1, color="#abc")  # 3-digit hex
+        network.add_node(2, color="#aabbcc")  # 6-digit hex
+        network.add_node(3, color=[100, 200, 300])  # List
+        network.add_node(4, color=(255, 128, 64))  # Tuple
+        network.add_node(5, color="rgb(255, 128, 64)")  # RGB string
+        network.add_node(6, color="invalid")  # Invalid color
+
+        nx_graph = pyvis_to_networkx(network)
+
+        # Test color conversions
+        self.assertEqual(nx_graph.nodes[1]["color"], (170, 187, 204))  # #abc expanded
+        self.assertEqual(nx_graph.nodes[2]["color"], (170, 187, 204))  # #aabbcc
+        self.assertEqual(nx_graph.nodes[3]["color"], (100, 200, 300))  # List preserved
+        self.assertEqual(nx_graph.nodes[4]["color"], (255, 128, 64))  # Tuple preserved
+        self.assertEqual(
+            nx_graph.nodes[5]["color"], "rgb(255, 128, 64)"
+        )  # Invalid format preserved
+        self.assertEqual(
+            nx_graph.nodes[6]["color"], "invalid"
+        )  # Invalid color preserved
+
+    def test_gml_serialization(self):
+        # Create a network with attributes
+        network = VisNetwork()
+        network.add_node(1, label="Node A", size=10, color="#FF0000")
+        network.add_node(2, label="Node B", size=15, color=(0, 255, 0))
+        network.add_edge(1, 2, width=2.0, color="#0000FF")
+
+        # Convert to NetworkX
+        nx_graph = pyvis_to_networkx(network)
+
+        # Save to GML
+        test_gml_path = Path("./tests/.test_assets/test_network.gml")
+        test_gml_path.parent.mkdir(parents=True, exist_ok=True)
+        nx.write_gml(nx_graph, test_gml_path)
+
+        # Read back from GML
+        loaded_graph = nx.read_gml(test_gml_path)
+
+        # Debug print original graph
+        print("\nOriginal NetworkX graph attributes:")
+        for node in nx_graph.nodes(data=True):
+            print(f"Node {node[0]} attributes:", node[1])
+        for edge in nx_graph.edges(data=True):
+            print(f"Edge {edge[0]}-{edge[1]} attributes:", edge[2])
+
+        # Debug print loaded graph
+        print("\nLoaded NetworkX graph attributes:")
+        for node in loaded_graph.nodes(data=True):
+            print(f"Node {node[0]} attributes:", node[1])
+        for edge in loaded_graph.edges(data=True):
+            print(f"Edge {edge[0]}-{edge[1]} attributes:", edge[2])
+
+        # Test node attributes (using string IDs since GML converts them to strings)
+        self.assertEqual(loaded_graph.nodes["1"]["name"], "Node A")
+        self.assertEqual(loaded_graph.nodes["1"]["size"], 10)
+        self.assertEqual(
+            loaded_graph.nodes["1"]["color"], [255, 0, 0]
+        )  # GML stores as list
+        self.assertEqual(loaded_graph.nodes["2"]["name"], "Node B")
+        self.assertEqual(loaded_graph.nodes["2"]["size"], 15)
+        self.assertEqual(loaded_graph.nodes["2"]["color"], [0, 255, 0])
+
+        # Test edge attributes
+        self.assertEqual(loaded_graph["1"]["2"]["weight"], 2.0)
+        self.assertEqual(loaded_graph["1"]["2"]["color"], [0, 0, 255])
+
 
 class TestDrawNxColoredGraph(TestCase):
     def setUp(self):
