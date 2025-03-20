@@ -75,6 +75,10 @@ class SURModel(BaseRegressionModel):
         self.fitted = True
         return self.results
 
+    @classmethod
+    def multivariate_ls(cls, *args, **kwargs):
+        return SUR.multivariate_ls(*args, **kwargs)
+
     def predict(self, new_data: Optional[Dict[str, DataFrame]] = None):
         if not self.fitted:
             raise ArgumentValueError("Model not fitted yet")
