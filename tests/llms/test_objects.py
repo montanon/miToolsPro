@@ -128,8 +128,16 @@ class TestTokensCounter(TokensCounter):
         total_tokens = len(response.get("text", "").split())
         prompt_tokens = total_tokens // 2
         completion_tokens = total_tokens - prompt_tokens
-        cost = self._calculate_cost(total_tokens)
+        registry = ModelRegistry.get_instance(self.source)
+        model_costs = registry.get_model_costs(self.model)
+        cost = (
+            prompt_tokens * model_costs["input"]
+            + completion_tokens * model_costs["output"]
+        ) / 1_000_000
         return TokenUsageStats(
+            source=self.source,
+            model=self.model,
+            model_cost=model_costs,
             total_tokens=total_tokens,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
@@ -143,20 +151,19 @@ class TestTokensCounter(TokensCounter):
 
 class TokensCounterTests(TestCase):
     def setUp(self):
-        self.counter = TestTokensCounter(
-            cost_per_1M_input_tokens=0.02, cost_per_1M_output_tokens=0.2
+        self.source = "openai"
+        self.model = "gpt-3.5-turbo"
+        self.model_cost = ModelRegistry.get_instance(self.source).get_model_costs(
+            self.model
         )
-        self.usage_sample = TokenUsageStats(
-            total_tokens=100,
-            prompt_tokens=60,
-            completion_tokens=40,
-            cost=0.002,
-            timestamp=datetime.now(),
+        self.counter = TestTokensCounter(self.source, self.model)
+        self.usage_sample = self.counter.get_usage_stats(
+            {"text": "This is a sample text with nine tokens total." * 10}
         )
 
     def test_initialization(self):
-        self.assertEqual(self.counter.cost_per_1M_input_tokens, 0.02)
-        self.assertEqual(self.counter.cost_per_1M_output_tokens, 0.2)
+        self.assertEqual(self.counter.source, self.source)
+        self.assertEqual(self.counter.model, self.model)
         self.assertEqual(self.counter.prompt_tokens_count, 0)
         self.assertEqual(self.counter.completion_tokens_count, 0)
         self.assertEqual(self.counter.total_tokens_count, 0)
@@ -165,9 +172,9 @@ class TokensCounterTests(TestCase):
     def test_update_usage(self):
         self.counter.update(self.usage_sample)
         self.assertEqual(len(self.counter.usage_history), 1)
-        self.assertEqual(self.counter.prompt_tokens_count, 60)
-        self.assertEqual(self.counter.completion_tokens_count, 40)
-        self.assertEqual(self.counter.total_tokens_count, 100)
+        self.assertEqual(self.counter.prompt_tokens_count, 40)
+        self.assertEqual(self.counter.completion_tokens_count, 41)
+        self.assertEqual(self.counter.total_tokens_count, 81)
 
     def test_count_tokens(self):
         text = "This is a sample text with nine tokens total."
@@ -180,26 +187,26 @@ class TokensCounterTests(TestCase):
 
     def test_cost_calculation(self):
         self.counter.update(self.usage_sample)
-        self.assertEqual(self.counter._calculate_cost(), 9.2e-6)
-        self.assertEqual(self.counter._calculate_input_cost(), 1.2e-6)
-        self.assertEqual(self.counter._calculate_output_cost(), 8e-6)
+        self.assertEqual(self.counter._calculate_cost(), 0.000448)
+        self.assertEqual(self.counter._calculate_input_cost(), 0.00012)
+        self.assertEqual(self.counter._calculate_output_cost(), 0.000328)
 
     def test_cost_detail(self):
         self.counter.update(self.usage_sample)
         cost_detail = self.counter.cost_detail
-        self.assertAlmostEqual(cost_detail["cost"]["total"], 9.2e-6)
-        self.assertAlmostEqual(cost_detail["cost"]["prompt_tokens"], 1.2e-6)
-        self.assertAlmostEqual(cost_detail["cost"]["completion_tokens"], 8e-6)
+        self.assertAlmostEqual(cost_detail["total"], 0.000448)
+        self.assertAlmostEqual(cost_detail["prompt_tokens"], 0.00012)
+        self.assertAlmostEqual(cost_detail["completion_tokens"], 0.000328)
 
     def test_json_serialization(self):
         self.counter.update(self.usage_sample)
         json_data = self.counter.json()
         data = json.loads(json_data)
-        self.assertEqual(data["prompt_tokens_count"], 60)
-        self.assertEqual(data["completion_tokens_count"], 40)
-        self.assertEqual(data["total_tokens_count"], 100)
-        self.assertEqual(data["cost_per_1M_input_tokens"], 0.02)
-        self.assertEqual(data["cost_per_1M_output_tokens"], 0.2)
+        self.assertEqual(data["prompt_tokens_count"], 40)
+        self.assertEqual(data["completion_tokens_count"], 41)
+        self.assertEqual(data["total_tokens_count"], 81)
+        self.assertEqual(data["model"], self.model)
+        self.assertEqual(data["source"], self.source)
 
     def test_save_to_json(self):
         file_path = Path("test_tokens_counter.json")
@@ -207,25 +214,23 @@ class TokensCounterTests(TestCase):
         self.counter.save(file_path)
         with open(file_path, "r") as f:
             data = json.load(f)
-        self.assertEqual(data["prompt_tokens_count"], 60)
-        self.assertEqual(data["completion_tokens_count"], 40)
-        self.assertEqual(data["total_tokens_count"], 100)
-        self.assertEqual(data["cost_per_1M_input_tokens"], 0.02)
-        self.assertEqual(data["cost_per_1M_output_tokens"], 0.2)
+        self.assertEqual(data["prompt_tokens_count"], 40)
+        self.assertEqual(data["completion_tokens_count"], 41)
+        self.assertEqual(data["total_tokens_count"], 81)
+        self.assertEqual(data["model"], self.model)
+        self.assertEqual(data["source"], self.source)
         file_path.unlink()  # Cleanup
 
     def test_usage_dataframe(self):
         self.counter.update(self.usage_sample)
-        self.counter.update(self.usage_sample)
-        self.counter.update(self.usage_sample)
-        self.counter.update(self.usage_sample)
-        self.counter.update(self.usage_sample)
         df = self.counter.usage()
-        self.assertEqual(df.shape, (5, 5))
-        self.assertEqual(df.loc[0, "total_tokens"], 100)
-        self.assertEqual(df.loc[0, "prompt_tokens"], 60)
-        self.assertEqual(df.loc[0, "completion_tokens"], 40)
-        self.assertAlmostEqual(df.loc[0, "cost"], 0.002)
+        self.assertEqual(df.shape, (1, 8))  # Updated for new TokenUsageStats fields
+        self.assertEqual(df.loc[0, "total_tokens"], 81)
+        self.assertEqual(df.loc[0, "prompt_tokens"], 40)
+        self.assertEqual(df.loc[0, "completion_tokens"], 41)
+        self.assertEqual(df.loc[0, "source"], self.source)
+        self.assertEqual(df.loc[0, "model"], self.model)
+        self.assertAlmostEqual(df.loc[0, "cost"], 0.000448)
 
     def test_load_from_json(self):
         file_path = Path("test_tokens_counter.json")
@@ -233,11 +238,13 @@ class TokensCounterTests(TestCase):
         self.counter.save(file_path)
 
         loaded_counter = TestTokensCounter.load(file_path)
-        self.assertEqual(loaded_counter.prompt_tokens_count, 60)
-        self.assertEqual(loaded_counter.completion_tokens_count, 40)
-        self.assertEqual(loaded_counter.total_tokens_count, 100)
+        self.assertEqual(loaded_counter.prompt_tokens_count, 40)
+        self.assertEqual(loaded_counter.completion_tokens_count, 41)
+        self.assertEqual(loaded_counter.total_tokens_count, 81)
+        self.assertEqual(loaded_counter.model, self.model)
+        self.assertEqual(loaded_counter.source, self.source)
         self.assertEqual(len(loaded_counter.usage_history), 1)
-        self.assertAlmostEqual(loaded_counter.cost, 9.2e-6)
+        self.assertAlmostEqual(loaded_counter.cost, 0.000448)
         file_path.unlink()  # Cleanup
 
     def test_invalid_file_extension(self):
@@ -247,6 +254,41 @@ class TokensCounterTests(TestCase):
     def test_load_from_nonexistent_file(self):
         with self.assertRaises(FileNotFoundError):
             TestTokensCounter.load("nonexistent.json")
+
+    def test_different_model_costs(self):
+        gpt4_counter = TestTokensCounter(source="openai", model="gpt-4o")
+        gpt35_counter = TestTokensCounter(source="openai", model="gpt-3.5-turbo")
+        registry = ModelRegistry.get_instance("openai")
+        gpt4_costs = registry.get_model_costs("gpt-4o")
+        gpt35_costs = registry.get_model_costs("gpt-3.5-turbo")
+        # Create usage stats with same tokens but different models
+        gpt4_usage = TokenUsageStats(
+            source="openai",
+            model="gpt-4o",
+            model_cost=gpt4_costs,
+            total_tokens=100,
+            prompt_tokens=60,
+            completion_tokens=40,
+            cost=(60 * gpt4_costs["input"] + 40 * gpt4_costs["output"]) / 1_000_000,
+            timestamp=datetime.now(),
+        )
+        gpt35_usage = TokenUsageStats(
+            source="openai",
+            model="gpt-3.5-turbo",
+            model_cost=gpt35_costs,
+            total_tokens=100,
+            prompt_tokens=60,
+            completion_tokens=40,
+            cost=(60 * gpt35_costs["input"] + 40 * gpt35_costs["output"]) / 1_000_000,
+            timestamp=datetime.now(),
+        )
+        gpt4_counter.update(gpt4_usage)
+        gpt35_counter.update(gpt35_usage)
+        # Verify different costs for same token counts
+        self.assertNotEqual(gpt4_counter.cost, gpt35_counter.cost)
+        self.assertEqual(
+            gpt4_counter.total_tokens_count, gpt35_counter.total_tokens_count
+        )
 
 
 class TestPersistentTokensCounter(PersistentTokensCounter):
