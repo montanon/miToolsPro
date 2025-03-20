@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from pandas import DataFrame
 
@@ -14,6 +14,42 @@ from mitoolspro.exceptions import (
     ArgumentTypeError,
     ArgumentValueError,
 )
+
+
+class ModelRegistry:
+    _instances = {}
+
+    OPENAI_MODELS = {
+        "gpt-3.5-turbo": {"input": 3.0, "output": 8.0},
+        "gpt-4o-mini": {"input": 0.15, "output": 0.6},
+        "gpt-4o": {"input": 2.5, "output": 10.0},
+        "o1-preview": {"input": 15.0, "output": 60.0},
+        "o1": {"input": 15.0, "output": 60.0},
+        "o1-mini": {"input": 3.0, "output": 12.0},
+    }
+    ANTHROPIC_MODELS = {
+        "claude-3-opus": {"input": 0.0, "output": 0.0},
+    }
+    GOOGLE_MODELS = {
+        "gemini-1.5-flash": {"input": 0.0, "output": 0.0},
+    }
+
+    @classmethod
+    def get_instance(cls, source: Literal["openai", "anthropic", "google"]):
+        if source not in cls._instances:
+            cls._instances[source] = cls(source)
+        return cls._instances[source]
+
+    def __init__(self, source: Literal["openai", "anthropic", "google"]):
+        if source in ["anthropic", "google"]:
+            raise ArgumentValueError(f"Source {source} not supported yet.")
+        self.source = source
+        self.models = getattr(self, f"{source.upper()}_MODELS", {})
+
+    def get_model_config(self, name: str) -> Dict:
+        if name not in self.models:
+            raise ValueError(f"Model {name} not supported for {self.source}")
+        return self.models[name]
 
 
 class Prompt:
