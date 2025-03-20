@@ -151,11 +151,19 @@ class TestPanelOLSModel(TestCase):
         )
         model.fit()
 
+        n_new = 10
+        n_entities = 2
+        n_time = 5
+        entity_ids = np.repeat(range(n_entities), n_time)
+        time_ids = np.tile(range(n_time), n_entities)
+        index = MultiIndex.from_arrays([entity_ids, time_ids], names=["entity", "time"])
+
         new_data = pd.DataFrame(
             {
-                "x1": np.random.normal(0, 1, 10),
-                "x2": np.random.normal(0, 1, 10),
-            }
+                "x1": np.random.normal(0, 1, n_new),
+                "x2": np.random.normal(0, 1, n_new),
+            },
+            index=index,
         )
         new_data = sm.add_constant(new_data)
         predictions = model.predict(new_data)
@@ -273,11 +281,19 @@ class TestPooledOLSModel(TestCase):
         )
         model.fit()
 
+        n_new = 10
+        n_entities = 2
+        n_time = 5
+        entity_ids = np.repeat(range(n_entities), n_time)
+        time_ids = np.tile(range(n_time), n_entities)
+        index = MultiIndex.from_arrays([entity_ids, time_ids], names=["entity", "time"])
+
         new_data = pd.DataFrame(
             {
-                "x1": np.random.normal(0, 1, 10),
-                "x2": np.random.normal(0, 1, 10),
-            }
+                "x1": np.random.normal(0, 1, n_new),
+                "x2": np.random.normal(0, 1, n_new),
+            },
+            index=index,
         )
         new_data = sm.add_constant(new_data)
         predictions = model.predict(new_data)
@@ -395,11 +411,19 @@ class TestRandomEffectsModel(TestCase):
         )
         model.fit()
 
+        n_new = 10
+        n_entities = 2
+        n_time = 5
+        entity_ids = np.repeat(range(n_entities), n_time)
+        time_ids = np.tile(range(n_time), n_entities)
+        index = MultiIndex.from_arrays([entity_ids, time_ids], names=["entity", "time"])
+
         new_data = pd.DataFrame(
             {
-                "x1": np.random.normal(0, 1, 10),
-                "x2": np.random.normal(0, 1, 10),
-            }
+                "x1": np.random.normal(0, 1, n_new),
+                "x2": np.random.normal(0, 1, n_new),
+            },
+            index=index,
         )
         new_data = sm.add_constant(new_data)
         predictions = model.predict(new_data)
@@ -517,11 +541,19 @@ class TestBetweenOLSModel(TestCase):
         )
         model.fit()
 
+        n_new = 10
+        n_entities = 2
+        n_time = 5
+        entity_ids = np.repeat(range(n_entities), n_time)
+        time_ids = np.tile(range(n_time), n_entities)
+        index = MultiIndex.from_arrays([entity_ids, time_ids], names=["entity", "time"])
+
         new_data = pd.DataFrame(
             {
-                "x1": np.random.normal(0, 1, 10),
-                "x2": np.random.normal(0, 1, 10),
-            }
+                "x1": np.random.normal(0, 1, n_new),
+                "x2": np.random.normal(0, 1, n_new),
+            },
+            index=index,
         )
         new_data = sm.add_constant(new_data)
         predictions = model.predict(new_data)
@@ -626,11 +658,19 @@ class TestFirstDifferenceOLSModel(TestCase):
         )
         model.fit()
 
+        n_new = 10
+        n_entities = 2
+        n_time = 5
+        entity_ids = np.repeat(range(n_entities), n_time)
+        time_ids = np.tile(range(n_time), n_entities)
+        index = MultiIndex.from_arrays([entity_ids, time_ids], names=["entity", "time"])
+
         new_data = pd.DataFrame(
             {
-                "x1": np.random.normal(0, 1, 10),
-                "x2": np.random.normal(0, 1, 10),
-            }
+                "x1": np.random.normal(0, 1, n_new),
+                "x2": np.random.normal(0, 1, n_new),
+            },
+            index=index,
         )
         predictions = model.predict(new_data)
 
