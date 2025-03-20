@@ -22,15 +22,15 @@ EdgesWidthsBins = Dict[Interval, float]
 
 def build_nx_graph(
     proximity_vectors: DataFrame,
-    orig_product: str = "product_i",
-    dest_product: str = "product_j",
+    origin: str = "node_i",
+    destination: str = "node_j",
 ) -> Graph:
-    required_columns = {orig_product, dest_product}
+    required_columns = {origin, destination}
     if not required_columns.issubset(proximity_vectors.columns):
         missing_cols = required_columns - set(proximity_vectors.columns)
         raise ArgumentValueError(f"Missing columns in DataFrame: {missing_cols}")
     G = nx.from_pandas_edgelist(
-        proximity_vectors, source=orig_product, target=dest_product, edge_attr=True
+        proximity_vectors, source=origin, target=destination, edge_attr=True
     )
 
     return G
@@ -38,8 +38,8 @@ def build_nx_graph(
 
 def build_nx_graphs(
     proximity_vectors: Dict[Union[str, int], DataFrame],
-    orig_product: str = "product_i",
-    dest_product: str = "product_j",
+    origin: str = "node_i",
+    destination: str = "node_j",
     networks_folder: Optional[PathLike] = None,
     recalculate: Optional[bool] = False,
 ) -> Tuple[Dict[Union[str, int], Graph], Dict[Union[str, int], Optional[Path]]]:
@@ -54,17 +54,13 @@ def build_nx_graphs(
             gml_path = networks_folder / gml_name
 
             if not gml_path.exists() or recalculate:
-                G = build_nx_graph(
-                    vectors, orig_product=orig_product, dest_product=dest_product
-                )
+                G = build_nx_graph(vectors, origin=origin, destination=destination)
                 nx.write_gml(G, gml_path)
             else:
                 G = nx.read_gml(gml_path)
             graph_files[key] = gml_path
         else:
-            G = build_nx_graph(
-                vectors, orig_product=orig_product, dest_product=dest_product
-            )
+            G = build_nx_graph(vectors, origin=origin, destination=destination)
             graph_files[key] = None
 
         graphs[key] = G
@@ -74,21 +70,19 @@ def build_nx_graphs(
 
 def build_mst_graph(
     proximity_vectors: DataFrame,
-    orig_product: str = "product_i",
-    dest_product: str = "product_j",
+    origin: str = "node_i",
+    destination: str = "node_j",
     attribute: str = "weight",
     attribute_th: Optional[float] = None,
     n_extra_edges: Optional[int] = None,
     pct_extra_edges: Optional[float] = None,
 ) -> Graph:
-    required_columns = {orig_product, dest_product, attribute}
+    required_columns = {origin, destination, attribute}
     if not required_columns.issubset(proximity_vectors.columns):
         missing_cols = required_columns - set(proximity_vectors.columns)
         raise ArgumentValueError(f"Missing columns in DataFrame: {missing_cols}")
     sorted_vectors = proximity_vectors.sort_values(by=attribute, ascending=False)
-    G = build_nx_graph(
-        sorted_vectors, orig_product=orig_product, dest_product=dest_product
-    )
+    G = build_nx_graph(sorted_vectors, origin=origin, destination=destination)
     MST = nx.maximum_spanning_tree(G, weight=attribute)
     extra_edges = None
     if attribute_th is not None:
@@ -105,7 +99,7 @@ def build_mst_graph(
         ]
     if extra_edges is not None:
         extra_graph = build_nx_graph(
-            extra_edges, orig_product=orig_product, dest_product=dest_product
+            extra_edges, origin=origin, destination=destination
         )
         combined_graph = nx.compose(MST, extra_graph)
         for u, v, data in G.edges(data=True):
@@ -118,8 +112,8 @@ def build_mst_graph(
 def build_mst_graphs(
     proximity_vectors: Dict[Union[str, int], DataFrame],
     networks_folder: PathLike,
-    orig_product: str = "product_i",
-    dest_product: str = "product_j",
+    origin: str = "node_i",
+    destination: str = "node_j",
     attribute: str = "weight",
     attribute_th: Optional[float] = None,
     n_extra_edges: Optional[int] = None,
@@ -137,8 +131,8 @@ def build_mst_graphs(
         if not gml_path.exists() or recalculate:
             MST = build_mst_graph(
                 vectors,
-                orig_product=orig_product,
-                dest_product=dest_product,
+                origin=origin,
+                destination=destination,
                 attribute=attribute,
                 attribute_th=attribute_th,
                 n_extra_edges=n_extra_edges,
