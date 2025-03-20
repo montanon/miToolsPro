@@ -33,6 +33,7 @@ from mitoolspro.networks import (
     draw_nx_colored_graph,
     pyvis_to_networkx,
 )
+from mitoolspro.networks.networks import _convert_color
 
 
 class TestBuildNxGraph(TestCase):
@@ -993,6 +994,103 @@ class TestLinkStrengthFunctions(TestCase):
         result_from = average_strength_of_links_from_community(self.G, [5])
         self.assertTrue(np.isnan(result_within))
         self.assertTrue(np.isnan(result_from))
+
+
+class TestConvertColor(TestCase):
+    def test_hex_colors(self):
+        # Test 6-digit hex colors
+        self.assertEqual(_convert_color("#FF0000"), (255, 0, 0))  # Red
+        self.assertEqual(_convert_color("#00FF00"), (0, 255, 0))  # Green
+        self.assertEqual(_convert_color("#0000FF"), (0, 0, 255))  # Blue
+        self.assertEqual(_convert_color("#FFFFFF"), (255, 255, 255))  # White
+        self.assertEqual(_convert_color("#000000"), (0, 0, 0))  # Black
+        # Test 3-digit hex colors
+        self.assertEqual(_convert_color("#F00"), (255, 0, 0))  # Red
+        self.assertEqual(_convert_color("#0F0"), (0, 255, 0))  # Green
+        self.assertEqual(_convert_color("#00F"), (0, 0, 255))  # Blue
+        self.assertEqual(_convert_color("#FFF"), (255, 255, 255))  # White
+        self.assertEqual(_convert_color("#000"), (0, 0, 0))  # Black
+        # Test hex colors with spaces and mixed case
+        self.assertEqual(_convert_color(" #FF0000 "), (255, 0, 0))
+        self.assertEqual(_convert_color("#ff0000"), (255, 0, 0))
+        self.assertEqual(_convert_color("#Ff0000"), (255, 0, 0))
+        # Test invalid hex colors
+        self.assertEqual(_convert_color("#FF"), "#FF")  # Too short
+        self.assertEqual(_convert_color("#FFFF"), "#FFFF")  # Invalid length
+        self.assertEqual(_convert_color("#FF00000"), "#FF00000")  # Too long
+        self.assertEqual(_convert_color("#FF000G"), "#FF000G")  # Invalid character
+        self.assertEqual(_convert_color("FF0000"), "FF0000")  # Missing #
+
+    def test_rgb_colors(self):
+        # Test RGB colors
+        self.assertEqual(_convert_color("rgb(255, 0, 0)"), (255, 0, 0))  # Red
+        self.assertEqual(_convert_color("rgb(0, 255, 0)"), (0, 255, 0))  # Green
+        self.assertEqual(_convert_color("rgb(0, 0, 255)"), (0, 0, 255))  # Blue
+        self.assertEqual(_convert_color("rgb(255, 255, 255)"), (255, 255, 255))  # White
+        self.assertEqual(_convert_color("rgb(0, 0, 0)"), (0, 0, 0))  # Black
+        # Test RGBA colors
+        self.assertEqual(
+            _convert_color("rgba(255, 0, 0, 1)"), (255, 0, 0, 1)
+        )  # Red with alpha
+        self.assertEqual(
+            _convert_color("rgba(0, 255, 0, 0.5)"), (0, 255, 0, 0.5)
+        )  # Green with alpha
+        # Test RGB/RGBA colors with spaces
+        self.assertEqual(_convert_color(" rgb(255, 0, 0) "), (255, 0, 0))
+        self.assertEqual(_convert_color("rgba(255, 0, 0, 1) "), (255, 0, 0, 1))
+        # Test invalid RGB/RGBA colors
+        self.assertEqual(_convert_color("rgb(255)"), "rgb(255)")  # Too few values
+        self.assertEqual(
+            _convert_color("rgb(255, 0, 0, 1)"), "rgb(255, 0, 0, 1)"
+        )  # Too many values
+        self.assertEqual(
+            _convert_color("rgb(255, 0, 0, 1, 2)"), "rgb(255, 0, 0, 1, 2)"
+        )  # Too many values
+        self.assertEqual(
+            _convert_color("rgb(255, 0, 0, x)"), "rgb(255, 0, 0, x)"
+        )  # Invalid value
+        self.assertEqual(
+            _convert_color("rgb(255, 0, 0"), "rgb(255, 0, 0)"
+        )  # Missing closing parenthesis
+
+    def test_tuple_list_colors(self):
+        # Test tuple colors
+        self.assertEqual(_convert_color((255, 0, 0)), (255, 0, 0))  # Red
+        self.assertEqual(_convert_color((0, 255, 0)), (0, 255, 0))  # Green
+        self.assertEqual(_convert_color((0, 0, 255)), (0, 0, 255))  # Blue
+        self.assertEqual(_convert_color((255, 255, 255)), (255, 255, 255))  # White
+        self.assertEqual(_convert_color((0, 0, 0)), (0, 0, 0))  # Black
+        # Test list colors
+        self.assertEqual(_convert_color([255, 0, 0]), (255, 0, 0))  # Red
+        self.assertEqual(_convert_color([0, 255, 0]), (0, 255, 0))  # Green
+        self.assertEqual(_convert_color([0, 0, 255]), (0, 0, 255))  # Blue
+        self.assertEqual(_convert_color([255, 255, 255]), (255, 255, 255))  # White
+        self.assertEqual(_convert_color([0, 0, 0]), (0, 0, 0))  # Black
+        # Test invalid tuple/list colors
+        self.assertEqual(_convert_color((255, 0)), (255, 0))  # Too few values
+        self.assertEqual(
+            _convert_color((255, 0, 0, 1, 2)), (255, 0, 0, 1, 2)
+        )  # Too many values
+        self.assertEqual(_convert_color((255, 0, "x")), (255, 0, "x"))  # Invalid value
+        self.assertEqual(_convert_color([255, 0]), [255, 0])  # Too few values
+        self.assertEqual(
+            _convert_color([255, 0, 0, 1, 2]), [255, 0, 0, 1, 2]
+        )  # Too many values
+        self.assertEqual(_convert_color([255, 0, "x"]), [255, 0, "x"])  # Invalid value
+
+    def test_other_color_formats(self):
+        # Test named colors
+        self.assertEqual(_convert_color("red"), "red")
+        self.assertEqual(_convert_color("blue"), "blue")
+        self.assertEqual(_convert_color("green"), "green")
+        # Test invalid color formats
+        self.assertEqual(_convert_color(123), 123)  # Number
+        self.assertEqual(_convert_color(None), None)  # None
+        self.assertEqual(_convert_color(True), True)  # Boolean
+        self.assertEqual(_convert_color(1.5), 1.5)  # Float
+        self.assertEqual(_convert_color("invalid"), "invalid")  # Invalid string
+        self.assertEqual(_convert_color(""), "")  # Empty string
+        self.assertEqual(_convert_color(" "), " ")  # Whitespace string
 
 
 if __name__ == "__main__":
