@@ -139,19 +139,16 @@ class LinearFactorModel(BaseRegressionModel):
             new_data = new_data[self.independent_variables]
 
         params = self.results.params
+        # Add constant term to new_data
+        X = pd.concat([pd.Series(1, index=new_data.index), new_data], axis=1)
+
         if isinstance(self.dependent_variable, str):
-            # Add constant term to new_data
-            X = pd.concat([pd.Series(1, index=new_data.index), new_data], axis=1)
-            predictions = np.dot(X, params.T)
+            predictions = pd.Series(np.dot(X, params.T), index=new_data.index)
         else:
             predictions = pd.DataFrame(index=new_data.index)
-            # Add constant term to new_data
-            X = pd.concat([pd.Series(1, index=new_data.index), new_data], axis=1)
+            n_params = len(self.independent_variables) + 1
             for i, portfolio in enumerate(self.dependent_variable):
-                start_idx = i * (len(self.independent_variables) + 1)
-                portfolio_params = params[
-                    start_idx : start_idx + len(self.independent_variables) + 1
-                ]
+                portfolio_params = params[i * n_params : (i + 1) * n_params]
                 predictions[portfolio] = np.dot(X, portfolio_params.T)
         return predictions
 
@@ -226,5 +223,5 @@ class LinearFactorGMMModel(BaseRegressionModel):
                 portfolio_params = params[
                     start_idx : start_idx + len(self.independent_variables) + 1
                 ]
-                predictions[portfolio] = np.dot(X, portfolio_params.T)
+                predictions[portfolio] = np.dot(X, portfolio_params.T).flatten()
         return predictions
