@@ -181,9 +181,9 @@ class TokenUsageStats:
 class TokensCounter(ABC):
     def __init__(self, source: Literal["openai", "anthropic", "google"], model: str):
         self.source = source
-        model_registry = ModelRegistry.get_instance(self.source)
+        self.model_registry = ModelRegistry.get_instance(self.source)
         self.model = model
-        self.model_costs = model_registry.get_model_costs(self.model)
+        self.model_cost = self.model_registry.get_model_costs(self.model)
         self.usage_history: List[TokenUsageStats] = []
         self.prompt_tokens_count: int = 0
         self.completion_tokens_count: int = 0
@@ -222,18 +222,18 @@ class TokensCounter(ABC):
     def _calculate_input_cost(self, input_token_count: Optional[int] = None) -> float:
         if input_token_count is None:
             return sum(
-                usage.prompt_tokens * (usage.model_costs["input"] / 1_000_000)
+                usage.prompt_tokens * (usage.model_cost["input"] / 1_000_000)
                 for usage in self.usage_history
             )
-        return input_token_count * (self.model_costs["input"] / 1_000_000)
+        return input_token_count * (self.model_cost["input"] / 1_000_000)
 
     def _calculate_output_cost(self, output_token_count: Optional[int] = None) -> float:
         if output_token_count is None:
             return sum(
-                usage.completion_tokens * (usage.model_costs["output"] / 1_000_000)
+                usage.completion_tokens * (usage.model_cost["output"] / 1_000_000)
                 for usage in self.usage_history
             )
-        return output_token_count * (self.model_costs["output"] / 1_000_000)
+        return output_token_count * (self.model_cost["output"] / 1_000_000)
 
     @property
     def count(self) -> int:
