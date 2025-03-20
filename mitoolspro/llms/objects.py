@@ -292,7 +292,7 @@ class PersistentTokensCounter(TokensCounter):
     _instances = {}
     _lock = threading.Lock()
 
-    def __new__(cls, file_path: PathLike, *args, **kwargs):
+    def __new__(cls, file_path: PathLike, source: str, model: str, *args, **kwargs):
         file_path = Path(file_path).absolute()
         with cls._lock:
             if file_path not in cls._instances:
@@ -304,18 +304,20 @@ class PersistentTokensCounter(TokensCounter):
     def __init__(
         self,
         file_path: PathLike,
-        cost_per_1M_input_tokens: float = 0.0,
-        cost_per_1M_output_tokens: float = 0.0,
+        source: Literal["openai", "anthropic", "google"],
+        model: str,
     ):
         if not hasattr(self, "_initialized"):
             self.file_path = Path(file_path).absolute()
-            self.cost_per_1M_input_tokens = cost_per_1M_input_tokens
-            self.cost_per_1M_output_tokens = cost_per_1M_output_tokens
+            super().__init__(source=source, model=model)
+
             if self.file_path.exists():
                 instance_data = self._load_instance_data(self.file_path)
-                self.__dict__.update(instance_data)
+                # Restore usage history and let TokensCounter handle the counts
+                for usage in instance_data["usage_history"]:
+                    self.update(TokenUsageStats(**usage))
+                self.max_context_length = instance_data.get("max_context_length")
             else:
-                super().__init__(cost_per_1M_input_tokens, cost_per_1M_output_tokens)
                 self.save(self.file_path)
             self._initialized = True
 
@@ -327,20 +329,18 @@ class PersistentTokensCounter(TokensCounter):
         file_path = file_path or self.file_path
         super().save(file_path)
 
-    def _load_instance_data(self, file_path: PathLike) -> Dict:
-        with open(file_path, "r") as f:
-            data = json.load(f)
-        data["usage_history"] = [
-            TokenUsageStats(**usage) for usage in data["usage_history"]
-        ]
-        return data
-
     @classmethod
     def load(cls, file_path: PathLike) -> "PersistentTokensCounter":
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"No file found at {file_path}")
-        instance_data = cls._load_instance_data(cls, file_path)
-        instance = cls(file_path)
-        instance.__dict__.update(instance_data)
-        return instance
+
+        with open(file_path, "r") as f:
+            data = json.load(f)
+
+        # Use the most recent model in the usage history, or default to the last known model
+        last_usage = data["usage_history"][-1] if data["usage_history"] else None
+        source = last_usage["source"] if last_usage else data.get("source")
+        model = last_usage["model"] if last_usage else data.get("model")
+
+        return cls(file_path=file_path, source=source, model=model)
