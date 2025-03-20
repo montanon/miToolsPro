@@ -40,24 +40,30 @@ def build_nx_graphs(
     orig_product: str = "product_i",
     dest_product: str = "product_j",
     recalculate: Optional[bool] = False,
+    store: bool = False,
 ) -> Tuple[Dict[Union[str, int], Graph], Dict[Union[str, int], Path]]:
     networks_folder = Path(networks_folder)
-    if not networks_folder.exists():
+    if store and not networks_folder.exists():
         raise ArgumentValueError(f"Folder '{networks_folder}' does not exist.")
     graphs = {}
     graph_files = {}
     for key, vectors in proximity_vectors.items():
         gml_name = f"{key}_G_graph.gml".replace(" ", "_")
         gml_path = networks_folder / gml_name
-        if not gml_path.exists() or recalculate:
+        if store and not gml_path.exists() or recalculate:
             G = build_nx_graph(
                 vectors, orig_product=orig_product, dest_product=dest_product
             )
-            nx.write_gml(G, gml_path)  # Store the graph in GML format
+            if store:
+                nx.write_gml(G, gml_path)
+        elif store:
+            G = nx.read_gml(gml_path)
         else:
-            G = nx.read_gml(gml_path)  # Load the graph from disk
+            G = build_nx_graph(
+                vectors, orig_product=orig_product, dest_product=dest_product
+            )
         graphs[key] = G
-        graph_files[key] = str(gml_path)
+        graph_files[key] = str(gml_path) if store else None
 
     return graphs, graph_files
 
