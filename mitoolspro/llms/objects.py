@@ -307,19 +307,22 @@ class PersistentTokensCounter(TokensCounter):
         source: Literal["openai", "anthropic", "google"],
         model: str,
     ):
+        self.file_path = Path(file_path).absolute()
         if not hasattr(self, "_initialized"):
-            self.file_path = Path(file_path).absolute()
             super().__init__(source=source, model=model)
-
             if self.file_path.exists():
                 instance_data = self._load_instance_data(self.file_path)
-                # Restore usage history and let TokensCounter handle the counts
                 for usage in instance_data["usage_history"]:
                     self.update(TokenUsageStats(**usage))
                 self.max_context_length = instance_data.get("max_context_length")
             else:
                 self.save(self.file_path)
             self._initialized = True
+        else:
+            self.source = source
+            self.model = model
+            self.model_registry = ModelRegistry.get_instance(self.source)
+            self.model_cost = self.model_registry.get_model_costs(self.model)
 
     def update(self, usage: TokenUsageStats) -> None:
         super().update(usage)
@@ -334,10 +337,8 @@ class PersistentTokensCounter(TokensCounter):
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"No file found at {file_path}")
-
         with open(file_path, "r") as f:
             data = json.load(f)
-
         # Use the most recent model in the usage history, or default to the last known model
         last_usage = data["usage_history"][-1] if data["usage_history"] else None
         source = last_usage["source"] if last_usage else data.get("source")

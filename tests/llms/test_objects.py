@@ -296,8 +296,19 @@ class TestPersistentTokensCounter(PersistentTokensCounter):
         total_tokens = len(response.get("text", "").split())
         prompt_tokens = total_tokens // 2
         completion_tokens = total_tokens - prompt_tokens
-        cost = self._calculate_cost(total_tokens)
+
+        registry = ModelRegistry.get_instance(self.source)
+        model_costs = registry.get_model_costs(self.model)
+
+        cost = (
+            prompt_tokens * model_costs["input"]
+            + completion_tokens * model_costs["output"]
+        ) / 1_000_000
+
         return TokenUsageStats(
+            source=self.source,
+            model=self.model,
+            model_cost=model_costs,
             total_tokens=total_tokens,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
@@ -311,147 +322,122 @@ class TestPersistentTokensCounter(PersistentTokensCounter):
 
 class PersistentTokensCounterTests(TestCase):
     def setUp(self):
+        self.model = "gpt-3.5-turbo"
+        self.model2 = "gpt-4o"
+        self.source = "openai"
         self.test_dir = tempfile.TemporaryDirectory()
         self.file_path = Path(self.test_dir.name) / "token_counter.json"
 
     def tearDown(self):
         self.test_dir.cleanup()
 
-    def test_singleton_behavior(self):
+    def test_singleton_behavior_same_model(self):
         counter1 = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02, cost_per_1M_output_tokens=0.2
+            self.file_path, source=self.source, model=self.model
         )
         counter2 = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.05, cost_per_1M_output_tokens=0.5
+            self.file_path, source=self.source, model=self.model
         )
-        self.assertIs(counter1, counter2)  # Both should refer to the same instance
-        self.assertEqual(counter1.cost_per_1M_input_tokens, 0.02)
-        self.assertEqual(
-            counter1.cost_per_1M_output_tokens, 0.2
-        )  # The first initialization value is retained
+        self.assertIs(counter1, counter2)
 
-    def test_file_based_initialization(self):
+    def test_singleton_behavior_different_model(self):
         counter1 = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02
-        )
-        usage_stats = TokenUsageStats(
-            total_tokens=1000,
-            prompt_tokens=700,
-            completion_tokens=300,
-            cost=0.02,
-            timestamp=datetime.now(),
-        )
-        counter1.update(usage_stats)
-        counter2 = TestPersistentTokensCounter(self.file_path)
-        self.assertEqual(len(counter2.usage_history), 1)
-        self.assertEqual(counter2.count, 1000)
-
-    def test_update_and_auto_save(self):
-        counter = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02
-        )
-        usage_stats = TokenUsageStats(
-            total_tokens=1000,
-            prompt_tokens=700,
-            completion_tokens=300,
-            cost=0.02,
-            timestamp=datetime.now(),
-        )
-        counter.update(usage_stats)
-        new_counter = TestPersistentTokensCounter(self.file_path)
-        self.assertEqual(new_counter.count, 1000)
-        self.assertEqual(new_counter.prompt_tokens_count, 700)
-        self.assertEqual(new_counter.completion_tokens_count, 300)
-
-    def test_usage_dataframe(self):
-        counter = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02
-        )
-        usage_stats1 = TokenUsageStats(
-            total_tokens=1000,
-            prompt_tokens=700,
-            completion_tokens=300,
-            cost=0.02,
-            timestamp=datetime.now(),
-        )
-        usage_stats2 = TokenUsageStats(
-            total_tokens=500,
-            prompt_tokens=300,
-            completion_tokens=200,
-            cost=0.01,
-            timestamp=datetime.now(),
-        )
-        counter.update(usage_stats1)
-        counter.update(usage_stats2)
-        df = counter.usage()
-        self.assertEqual(len(df), 2)  # Two rows in the DataFrame
-        self.assertEqual(df["total_tokens"].sum(), 1500)
-        self.assertEqual(df["cost"].sum(), 0.03)
-
-    def test_multiple_instances_with_different_paths(self):
-        file_path2 = Path(self.test_dir.name) / "token_counter_2.json"
-        counter1 = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02
+            self.file_path, source=self.source, model=self.model
         )
         counter2 = TestPersistentTokensCounter(
-            file_path2, cost_per_1M_input_tokens=0.05
+            self.file_path, source=self.source, model=self.model2
         )
-        self.assertIsNot(counter1, counter2)  # Different instances
+        self.assertIs(counter1, counter2)
+        self.assertEqual(counter2.model, self.model2)  # Model should be updated
+
+    def test_persistence_with_model_change(self):
+        counter1 = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model
+        )
+        response1 = {"text": "test " * 10}
+        stats1 = counter1.get_usage_stats(response1)
+        counter1.update(stats1)
+        counter2 = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model2
+        )
+        response2 = {"text": "test " * 10}
+        stats2 = counter2.get_usage_stats(response2)
+        counter2.update(stats2)
+        self.assertEqual(len(counter2.usage_history), 2)
+        self.assertEqual(counter2.usage_history[0].model, self.model)
+        self.assertEqual(counter2.usage_history[1].model, self.model2)
         self.assertNotEqual(
-            counter1.cost_per_1M_input_tokens, counter2.cost_per_1M_input_tokens
+            counter2.usage_history[0].cost, counter2.usage_history[1].cost
         )
 
-    def test_empty_file_initialization(self):
-        self.assertFalse(self.file_path.exists())
+    def test_load_with_empty_history(self):
         counter = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02
+            self.file_path, source=self.source, model=self.model
         )
-        self.assertTrue(self.file_path.exists())
-        self.assertEqual(len(counter.usage_history), 0)
+        counter.save()
+        loaded = TestPersistentTokensCounter.load(self.file_path)
+        self.assertEqual(loaded.source, self.source)
+        self.assertEqual(loaded.model, self.model)
+        self.assertEqual(len(loaded.usage_history), 0)
 
-    def test_data_integrity_after_reload(self):
+    def test_load_uses_latest_model(self):
         counter = TestPersistentTokensCounter(
-            self.file_path, cost_per_1M_input_tokens=0.02
+            self.file_path, source=self.source, model=self.model
         )
-        usage_stats = TokenUsageStats(
-            total_tokens=2000,
-            prompt_tokens=1500,
-            completion_tokens=500,
-            cost=3e-5,
-            timestamp=datetime.now(),
+        response1 = {"text": "test " * 10}
+        stats1 = counter.get_usage_stats(response1)
+        counter.update(stats1)
+        counter = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model2
         )
-        counter.update(usage_stats)
-        new_counter = TestPersistentTokensCounter(self.file_path)
-        self.assertEqual(new_counter.total_tokens_count, 2000)
-        self.assertEqual(new_counter.cost, 3e-5)
+        response2 = {"text": "test " * 10}
+        stats2 = counter.get_usage_stats(response2)
+        counter.update(stats2)
+        loaded = TestPersistentTokensCounter.load(self.file_path)
+        self.assertEqual(loaded.model, self.model2)
+        self.assertEqual(loaded.source, self.source)
+
+    def test_cost_calculation_across_models(self):
+        counter = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model
+        )
+        response1 = {"text": "test " * 10}
+        stats1 = counter.get_usage_stats(response1)
+        counter.update(stats1)
+        cost1 = counter.cost
+        counter = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model2
+        )
+        response2 = {"text": "test " * 10}
+        stats2 = counter.get_usage_stats(response2)
+        counter.update(stats2)
+        cost2 = counter.cost - cost1
+        self.assertNotEqual(cost1, cost2)
+        self.assertEqual(counter.total_tokens_count, 20)
+
+    def test_dataframe_output(self):
+        counter = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model
+        )
+        response1 = {"text": "test " * 10}
+        stats1 = counter.get_usage_stats(response1)
+        counter.update(stats1)
+
+        counter = TestPersistentTokensCounter(
+            self.file_path, source=self.source, model=self.model2
+        )
+        response2 = {"text": "test " * 10}
+        stats2 = counter.get_usage_stats(response2)
+        counter.update(stats2)
+
+        df = counter.usage()
+        self.assertEqual(len(df), 2)
+        self.assertEqual(list(df["model"].unique()), [self.model, self.model2])
+        self.assertEqual(list(df["source"].unique()), [self.source])
 
     def test_invalid_file_path(self):
         with self.assertRaises(FileNotFoundError):
-            TestPersistentTokensCounter(
-                "/invalid/path/token_counter.json", cost_per_1M_input_tokens=0.02
-            )
-
-    def test_save_and_load(self):
-        counter = TestPersistentTokensCounter(
-            self.file_path,
-            cost_per_1M_input_tokens=0.02,
-            cost_per_1M_output_tokens=0.05,
-        )
-        usage_stats = TokenUsageStats(
-            total_tokens=1500,
-            prompt_tokens=1000,
-            completion_tokens=500,
-            cost=0.02,
-            timestamp=datetime.now(),
-        )
-        counter.update(usage_stats)
-        counter.save()
-        loaded_counter = TestPersistentTokensCounter.load(self.file_path)
-        self.assertEqual(len(loaded_counter.usage_history), 1)
-        self.assertEqual(loaded_counter.prompt_tokens_count, 1000)
-        self.assertEqual(loaded_counter.completion_tokens_count, 500)
-        self.assertEqual(loaded_counter.total_tokens_count, 1500)
-        self.assertEqual(loaded_counter.cost, 4.5e-5)
+            TestPersistentTokensCounter.load("/invalid/path/token_counter.json")
 
 
 class TestModelRegistry(TestCase):
