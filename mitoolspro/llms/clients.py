@@ -66,30 +66,28 @@ class OpenAIClient(LLMModel):
 
 
 class OpenAITokensCounter(PersistentTokensCounter):
+    def __new__(cls, file_path: Path, model: str = "gpt-4o-mini"):
+        return super().__new__(cls, file_path=file_path, source="openai", model=model)
+
     def __init__(self, file_path: Path, model: str = "gpt-4o-mini"):
-        if model not in self.COST_PER_1M_TOKENS.keys():
-            raise ArgumentValueError(
-                f"Model {model} not supported, must be one of {self.COST_PER_1M_TOKENS.keys()}"
-            )
-        self.model = model
-        registry = ModelRegistry.get_instance("openai")
-        self.model_costs = registry.get_model_costs(self.model)
         super().__init__(
             file_path=file_path,
-            cost_per_1M_input_tokens=self.model_costs["input"],
-            cost_per_1M_output_tokens=self.model_costs["output"],
+            model=model,
+            source="openai",
         )
 
     def get_usage_stats(self, response: ChatCompletion) -> TokenUsageStats:
         total_tokens = response.usage.total_tokens
         return TokenUsageStats(
+            source="openai",
+            model=self.model,
+            model_cost=self.model_cost,
             total_tokens=total_tokens,
             prompt_tokens=response.usage.prompt_tokens,
             completion_tokens=response.usage.completion_tokens,
-            cost=response.usage.prompt_tokens
-            * (self.cost_per_1M_input_tokens / 1_000_000)
+            cost=response.usage.prompt_tokens * (self.model_cost["input"] / 1_000_000)
             + response.usage.completion_tokens
-            * (self.cost_per_1M_output_tokens / 1_000_000),
+            * (self.model_cost["output"] / 1_000_000),
             timestamp=datetime.fromtimestamp(response.created),
         )
 
