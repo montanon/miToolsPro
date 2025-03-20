@@ -151,6 +151,8 @@ class TestTokensCounter(TokensCounter):
 
 class TokensCounterTests(TestCase):
     def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_path = Path(self.temp_dir.name)
         self.source = "openai"
         self.model = "gpt-3.5-turbo"
         self.model_cost = ModelRegistry.get_instance(self.source).get_model_costs(
@@ -160,6 +162,9 @@ class TokensCounterTests(TestCase):
         self.usage_sample = self.counter.get_usage_stats(
             {"text": "This is a sample text with nine tokens total." * 10}
         )
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
 
     def test_initialization(self):
         self.assertEqual(self.counter.source, self.source)
@@ -209,7 +214,7 @@ class TokensCounterTests(TestCase):
         self.assertEqual(data["source"], self.source)
 
     def test_save_to_json(self):
-        file_path = Path("test_tokens_counter.json")
+        file_path = self.temp_path / "test_tokens_counter.json"
         self.counter.update(self.usage_sample)
         self.counter.save(file_path)
         with open(file_path, "r") as f:
@@ -219,21 +224,9 @@ class TokensCounterTests(TestCase):
         self.assertEqual(data["total_tokens_count"], 81)
         self.assertEqual(data["model"], self.model)
         self.assertEqual(data["source"], self.source)
-        file_path.unlink()  # Cleanup
-
-    def test_usage_dataframe(self):
-        self.counter.update(self.usage_sample)
-        df = self.counter.usage()
-        self.assertEqual(df.shape, (1, 8))  # Updated for new TokenUsageStats fields
-        self.assertEqual(df.loc[0, "total_tokens"], 81)
-        self.assertEqual(df.loc[0, "prompt_tokens"], 40)
-        self.assertEqual(df.loc[0, "completion_tokens"], 41)
-        self.assertEqual(df.loc[0, "source"], self.source)
-        self.assertEqual(df.loc[0, "model"], self.model)
-        self.assertAlmostEqual(df.loc[0, "cost"], 0.000448)
 
     def test_load_from_json(self):
-        file_path = Path("test_tokens_counter.json")
+        file_path = self.temp_path / "test_tokens_counter.json"
         self.counter.update(self.usage_sample)
         self.counter.save(file_path)
 
@@ -245,15 +238,25 @@ class TokensCounterTests(TestCase):
         self.assertEqual(loaded_counter.source, self.source)
         self.assertEqual(len(loaded_counter.usage_history), 1)
         self.assertAlmostEqual(loaded_counter.cost, 0.000448)
-        file_path.unlink()  # Cleanup
 
     def test_invalid_file_extension(self):
         with self.assertRaises(ArgumentValueError):
-            self.counter.save("invalid_file.txt")
+            self.counter.save(self.temp_path / "invalid_file.txt")
 
     def test_load_from_nonexistent_file(self):
         with self.assertRaises(FileNotFoundError):
-            TestTokensCounter.load("nonexistent.json")
+            TestTokensCounter.load(self.temp_path / "nonexistent.json")
+
+    def test_usage_dataframe(self):
+        self.counter.update(self.usage_sample)
+        df = self.counter.usage()
+        self.assertEqual(df.shape, (1, 8))  # Updated for new TokenUsageStats fields
+        self.assertEqual(df.loc[0, "total_tokens"], 81)
+        self.assertEqual(df.loc[0, "prompt_tokens"], 40)
+        self.assertEqual(df.loc[0, "completion_tokens"], 41)
+        self.assertEqual(df.loc[0, "source"], self.source)
+        self.assertEqual(df.loc[0, "model"], self.model)
+        self.assertAlmostEqual(df.loc[0, "cost"], 0.000448)
 
     def test_different_model_costs(self):
         gpt4_counter = TestTokensCounter(source="openai", model="gpt-4o")
@@ -322,14 +325,15 @@ class TestPersistentTokensCounter(PersistentTokensCounter):
 
 class PersistentTokensCounterTests(TestCase):
     def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_path = Path(self.temp_dir.name)
         self.model = "gpt-3.5-turbo"
         self.model2 = "gpt-4o"
         self.source = "openai"
-        self.test_dir = tempfile.TemporaryDirectory()
-        self.file_path = Path(self.test_dir.name) / "token_counter.json"
+        self.file_path = self.temp_path / "token_counter.json"
 
     def tearDown(self):
-        self.test_dir.cleanup()
+        self.temp_dir.cleanup()
 
     def test_singleton_behavior_same_model(self):
         counter1 = TestPersistentTokensCounter(
@@ -436,8 +440,9 @@ class PersistentTokensCounterTests(TestCase):
         self.assertEqual(list(df["source"].unique()), [self.source])
 
     def test_invalid_file_path(self):
+        nonexistent_path = self.temp_path / "nonexistent" / "token_counter.json"
         with self.assertRaises(FileNotFoundError):
-            TestPersistentTokensCounter.load("/invalid/path/token_counter.json")
+            TestPersistentTokensCounter.load(nonexistent_path)
 
 
 class TestModelRegistry(TestCase):
