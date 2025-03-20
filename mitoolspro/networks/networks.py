@@ -1,3 +1,4 @@
+import re
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -309,33 +310,36 @@ def assign_net_nodes_attributes(
 def _convert_color(color):
     if isinstance(color, str):
         color_str = color.strip().lower()
-        if color_str.startswith("#"):
-            color_str = color_str[1:]
+        hex_pattern = r"^#?([0-9a-f]{3}|[0-9a-f]{6})$"
+        rgb_pattern = r"^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$"
+        rgba_pattern = r"^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-9.]+)\s*\)$"
+        hex_match = re.match(hex_pattern, color_str)
+        if hex_match:
+            hex_str = hex_match.group(1)
             try:
-                if len(color_str) == 6:
-                    return tuple(int(color_str[i : i + 2], 16) for i in (0, 2, 4))
-                elif len(color_str) == 3:
-                    return tuple(int(c * 2, 16) for c in color_str)
-                else:
-                    return color
+                if len(hex_str) == 6:
+                    return tuple(int(hex_str[i : i + 2], 16) for i in (0, 2, 4))
+                else:  # 3-digit hex
+                    return tuple(int(c * 2, 16) for c in hex_str)
             except Exception:
-                return color
-        elif color_str.startswith(("rgb(", "rgba(")):
+                raise ArgumentValueError(f"Invalid hex color format: {color}")
+        rgb_match = re.match(rgb_pattern, color_str)
+        if rgb_match:
             try:
-                values = color_str[color_str.find("(") + 1 : color_str.find(")")].split(
-                    ","
-                )
-                values = [int(v.strip()) for v in values]
-                if len(values) == 3:  # RGB
-                    return tuple(values)
-                elif len(values) == 4:  # RGBA
-                    return tuple(values)
-                else:
-                    return color
+                return tuple(int(v) for v in rgb_match.groups())
             except Exception:
-                return color
-        else:
-            return color
+                raise ArgumentValueError(f"Invalid RGB color format: {color}")
+        rgba_match = re.match(rgba_pattern, color_str)
+        if rgba_match:
+            try:
+                rgb = [int(v) for v in rgba_match.groups()[:3]]
+                alpha = float(rgba_match.group(4))
+                return tuple(rgb + [alpha])
+            except Exception:
+                raise ArgumentValueError(f"Invalid RGBA color format: {color}")
+        if re.match(r"^[0-9a-f]{3}$|^[0-9a-f]{6}$", color_str):
+            raise ArgumentValueError(f"Invalid hex color format: {color}")
+        return color
     elif isinstance(color, (list, tuple)):
         try:
             return tuple(int(c) for c in color)
