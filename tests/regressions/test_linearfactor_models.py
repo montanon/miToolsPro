@@ -456,7 +456,7 @@ class TestLinearFactorGMMModel(TestCase):
     def test_predict_after_fit(self):
         model = LinearFactorGMMModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         model.fit()
@@ -468,7 +468,7 @@ class TestLinearFactorGMMModel(TestCase):
     def test_predict_with_new_data(self):
         model = LinearFactorGMMModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         model.fit()
@@ -487,7 +487,7 @@ class TestLinearFactorGMMModel(TestCase):
     def test_predict_with_missing_factors(self):
         model = LinearFactorGMMModel(
             self.data,
-            portfolios="portfolio1",
+            portfolios=["portfolio1", "portfolio2", "portfolio3"],
             factors=["factor1", "factor2"],
         )
         model.fit()
