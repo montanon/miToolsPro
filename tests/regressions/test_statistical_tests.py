@@ -61,8 +61,10 @@ class TestStatisticalTestFunctions(TestCase):
         result = shapiro_tests(self.normal_df)
         self.assertIsInstance(result, pd.DataFrame)
         self.assertTrue(all(col in result.columns for col in ["statistic", "p-value"]))
-        self.assertTrue(all(0 <= result["p-value"] <= 1))
-        self.assertTrue(all(result["statistic"] > 0))
+        self.assertTrue(
+            (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
+        )
+        self.assertTrue((result["statistic"] > 0).all())
         expected_stats, expected_pvals = np.array(
             [scipy_shapiro(self.normal_df[col]) for col in self.normal_df.columns]
         ).T
@@ -74,12 +76,14 @@ class TestStatisticalTestFunctions(TestCase):
         )
 
     def test_anderson_test(self):
-        result = anderson_test(self.normal_data, criteria=0.01)
+        result = anderson_test(self.normal_data, criteria=0.05, dist="norm")
         self.assertIsInstance(result, dict)
         self.assertIn("statistic", result)
         self.assertIn("critical_value", result)
         self.assertTrue(result["statistic"] > 0)
         self.assertTrue(result["critical_value"] > 0)
+
+        # Test with expected values from scipy.stats.anderson
         expected_result = scipy_anderson(self.normal_data, dist="norm")
         np.testing.assert_almost_equal(
             result["statistic"], expected_result.statistic, decimal=10
@@ -89,13 +93,15 @@ class TestStatisticalTestFunctions(TestCase):
         )
 
     def test_anderson_tests(self):
-        result = anderson_tests(self.normal_df, criteria=0.01)
+        result = anderson_tests(self.normal_df, criteria=0.05, dist="norm")
         self.assertIsInstance(result, pd.DataFrame)
         self.assertTrue(
             all(col in result.columns for col in ["statistic", "critical_value"])
         )
-        self.assertTrue(all(result["statistic"] > 0))
-        self.assertTrue(all(result["critical_value"] > 0))
+        self.assertTrue((result["statistic"] > 0).all())
+        self.assertTrue((result["critical_value"] > 0).all())
+
+        # Test with expected values from scipy.stats.anderson
         expected_stats = np.array(
             [
                 scipy_anderson(self.normal_df[col], dist="norm").statistic
@@ -142,7 +148,9 @@ class TestStatisticalTestFunctions(TestCase):
                 for col in ["statistic", "p-value", "critical_value_5%"]
             )
         )
-        self.assertTrue(all(0 <= result["p-value"] <= 1))
+        self.assertTrue(
+            (result["p-value"] >= 0).all() and (result["p-value"] <= 1).all()
+        )
         expected_results = np.array(
             [
                 adfuller(self.normal_df[col], autolag="AIC", regression="c")
@@ -156,7 +164,9 @@ class TestStatisticalTestFunctions(TestCase):
             result["p-value"].values, expected_results[:, 1], decimal=10
         )
         np.testing.assert_almost_equal(
-            result["critical_value_5%"].values, expected_results[:, 4]["5%"], decimal=10
+            result["critical_value_5%"].values,
+            np.array([res[4]["5%"] for res in expected_results]),
+            decimal=10,
         )
 
     def test_calculate_vif(self):
@@ -327,7 +337,7 @@ class TestStatisticalTests(TestCase):
 
     def test_anderson_test(self):
         st = StatisticalTests(self.normal_df)
-        result = st.anderson_test(criteria=0.01)
+        result = st.anderson_test(criteria=0.05)
         self.assertIsInstance(result, pd.DataFrame)
         self.assertTrue(
             all(col in result.columns for col in ["statistic", "critical_value"])
