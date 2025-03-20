@@ -6,10 +6,8 @@ from typing import Dict
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
-from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.llms.objects import (
     LLMModel,
-    ModelRegistry,
     PersistentTokensCounter,
     Prompt,
     TokenUsageStats,
