@@ -36,6 +36,8 @@ class ModelRegistry:
 
     @classmethod
     def get_instance(cls, source: Literal["openai", "anthropic", "google"]):
+        if source not in ["openai", "anthropic", "google"]:
+            raise ArgumentValueError(f"Source {source} not supported.")
         if source not in cls._instances:
             cls._instances[source] = cls(source)
         return cls._instances[source]
