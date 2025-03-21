@@ -99,18 +99,14 @@ ORGANIZER:mailto:organizer6@example.com
 END:VEVENT
 END:VCALENDAR"""
 
-        self.temp_dir = tempfile.mkdtemp()
-        self.ics_path = Path(self.temp_dir) / "test.ics"
-        self.complex_ics_path = Path(self.temp_dir) / "complex_test.ics"
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.ics_path = Path(self.temp_dir.name) / "test.ics"
+        self.complex_ics_path = Path(self.temp_dir.name) / "complex_test.ics"
         self.ics_path.write_text(self.sample_ics_content)
         self.complex_ics_path.write_text(self.complex_ics_content)
 
     def tearDown(self):
-        if self.ics_path.exists():
-            self.ics_path.unlink()
-        if self.complex_ics_path.exists():
-            self.complex_ics_path.unlink()
-        os.rmdir(self.temp_dir)
+        self.temp_dir.cleanup()
 
     def test_read_ics_file(self):
         calendar = read_ics_file(self.ics_path)
@@ -121,7 +117,7 @@ END:VCALENDAR"""
         self.assertEqual(len(list(complex_calendar.walk("VEVENT"))), 5)
 
         with self.assertRaises(FileNotFoundError):
-            read_ics_file(Path(self.temp_dir) / "nonexistent.ics")
+            read_ics_file(Path(self.temp_dir.name) / "nonexistent.ics")
 
     def test_extract_events_basic(self):
         calendar = read_ics_file(self.ics_path)
@@ -380,7 +376,7 @@ LOCATION:Test Location
 END:VEVENT
 END:VCALENDAR"""
 
-        malformed_path = Path(self.temp_dir) / "malformed.ics"
+        malformed_path = Path(self.temp_dir.name) / "malformed.ics"
         malformed_path.write_text(malformed_ics_content)
 
         calendar = read_ics_file(malformed_path)
