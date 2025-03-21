@@ -104,12 +104,23 @@ def get_events_between_dates(
 ) -> List[Dict[str, Union[str, List[str], pd.Timestamp, None]]]:
     filtered_events = []
     for event in events:
-        start = event.get("start")
-        if (
-            isinstance(start, pd.Timestamp)
-            and start_date.date() <= start.date() <= end_date.date()
-        ):
+        event_start = event.get("start")
+        event_end = event.get("end")
+
+        if not isinstance(event_start, pd.Timestamp):
+            continue
+
+        if not isinstance(event_end, pd.Timestamp):
+            event_end = event_start
+
+        event_start_date = event_start.date()
+        event_end_date = event_end.date()
+        start_date_obj = start_date.date()
+        end_date_obj = end_date.date()
+
+        if event_start_date <= end_date_obj and event_end_date >= start_date_obj:
             filtered_events.append(event)
+
     return filtered_events
 
 
@@ -121,6 +132,7 @@ def format_event_for_display(
         f"Description: {event.get('description', '')}\n"
         f"Start: {event.get('start', '')}\n"
         f"End: {event.get('end', '')}\n"
+        f"Location: {event.get('location', '')}\n"
         f"Organizer: {event.get('organizer', '')}\n"
         f"Attendees: {', '.join(event.get('attendees', []))}\n"
     )
