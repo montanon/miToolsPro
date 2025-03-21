@@ -28,6 +28,28 @@ class BBox:
     def __repr__(self):
         return f"BBox(x0={self.x0}, y0={self.y0}, x1={self.x1}, y1={self.y1})"
 
+    def __eq__(self, other):
+        if not isinstance(other, BBox):
+            return False
+        return (
+            self.x0 == other.x0
+            and self.y0 == other.y0
+            and self.x1 == other.x1
+            and self.y1 == other.y1
+        )
+
+    def to_json(self):
+        return {"x0": self.x0, "y0": self.y0, "x1": self.x1, "y1": self.y1}
+
+    @classmethod
+    def from_json(cls, json_data):
+        return cls(
+            x0=json_data["x0"],
+            y0=json_data["y0"],
+            x1=json_data["x1"],
+            y1=json_data["y1"],
+        )
+
 
 class Char:
     def __init__(self, text, fontname, size, x0, y0, x1, y1):
@@ -72,6 +94,31 @@ class Char:
     @property
     def italic(self):
         return "italic" in self.fontname.lower() or "oblique" in self.fontname.lower()
+
+    @classmethod
+    def from_json(cls, json_data):
+        return cls(
+            text=json_data["text"],
+            fontname=json_data["fontname"],
+            size=json_data["size"],
+            x0=json_data["x0"],
+            y0=json_data["y0"],
+            x1=json_data["x1"],
+            y1=json_data["y1"],
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, Char):
+            return False
+        return (
+            self.text == other.text
+            and self.fontname == other.fontname
+            and abs(self.size - other.size) < 0.0001
+            and self.x0 == other.x0
+            and self.y0 == other.y0
+            and self.x1 == other.x1
+            and self.y1 == other.y1
+        )
 
 
 class Run:
@@ -139,6 +186,11 @@ class Run:
         size = size or chars[0].size
         return cls(fontname=fontname, size=size, chars=chars)
 
+    @classmethod
+    def from_json(cls, json_data):
+        chars = [Char.from_json(char_data) for char_data in json_data["chars"]]
+        return cls(fontname=json_data["fontname"], size=json_data["size"], chars=chars)
+
     def is_bold(self):
         return "bold" in self.fontname.lower()
 
@@ -186,6 +238,25 @@ class Line:
     def __repr__(self):
         return f"Line(text={self.text!r})"
 
+    @classmethod
+    def from_json(cls, json_data):
+        line = cls(json_data["x0"], json_data["y0"], json_data["x1"], json_data["y1"])
+        for run_data in json_data["runs"]:
+            line.add_run(Run.from_json(run_data))
+        return line
+
+    def __eq__(self, other):
+        if not isinstance(other, Line):
+            return False
+        return (
+            self.x0 == other.x0
+            and self.y0 == other.y0
+            and self.x1 == other.x1
+            and self.y1 == other.y1
+            and len(self.runs) == len(other.runs)
+            and all(r1 == r2 for r1, r2 in zip(self.runs, other.runs))
+        )
+
 
 class Box:
     def __init__(self, x0, y0, x1, y1):
@@ -220,6 +291,25 @@ class Box:
 
     def __repr__(self):
         return f"Box(lines={len(self.lines)})"
+
+    @classmethod
+    def from_json(cls, json_data):
+        box = cls(json_data["x0"], json_data["y0"], json_data["x1"], json_data["y1"])
+        for line_data in json_data["lines"]:
+            box.add_line(Line.from_json(line_data))
+        return box
+
+    def __eq__(self, other):
+        if not isinstance(other, Box):
+            return False
+        return (
+            self.x0 == other.x0
+            and self.y0 == other.y0
+            and self.x1 == other.x1
+            and self.y1 == other.y1
+            and len(self.lines) == len(other.lines)
+            and all(l1 == l2 for l1, l2 in zip(self.lines, other.lines))
+        )
 
 
 class Page:
@@ -258,11 +348,28 @@ class Page:
     def __repr__(self):
         return f"Page({self.width}x{self.height}, boxes={len(self.boxes)})"
 
+    @classmethod
+    def from_json(cls, json_data):
+        page = cls(json_data["width"], json_data["height"])
+        for box_data in json_data["boxes"]:
+            page.add_box(Box.from_json(box_data))
+        return page
+
     def append_run(self, run):
         last_box = self.boxes[-1]
         new_line = Line(last_box.x0, last_box.y0, last_box.x1, last_box.y1)
         new_line.add_run(run)
         last_box.add_line(new_line)
+
+    def __eq__(self, other):
+        if not isinstance(other, Page):
+            return False
+        return (
+            self.width == other.width
+            and self.height == other.height
+            and len(self.boxes) == len(other.boxes)
+            and all(b1 == b2 for b1, b2 in zip(self.boxes, other.boxes))
+        )
 
 
 class Document:
@@ -315,3 +422,17 @@ class Document:
 
     def __repr__(self):
         return f"Document(pages={len(self.pages)})"
+
+    @classmethod
+    def from_json(cls, json_data):
+        doc = cls()
+        for page_data in json_data["pages"]:
+            doc.add_page(Page.from_json(page_data))
+        return doc
+
+    def __eq__(self, other):
+        if not isinstance(other, Document):
+            return False
+        return len(self.pages) == len(other.pages) and all(
+            p1 == p2 for p1, p2 in zip(self.pages, other.pages)
+        )
