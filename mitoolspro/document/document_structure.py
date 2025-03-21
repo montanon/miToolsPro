@@ -1,3 +1,6 @@
+from typing import List
+
+
 class BBox:
     def __init__(self, x0, y0, x1, y1):
         self.x0 = x0
@@ -207,7 +210,11 @@ class Run:
         return BBox(x0, y0, x1, y1)
 
 
-class Line:
+class BoxElement:
+    pass
+
+
+class Line(BoxElement):
     def __init__(self, x0, y0, x1, y1):
         self.x0 = x0
         self.y0 = y0
@@ -258,26 +265,71 @@ class Line:
         )
 
 
+class Image(BoxElement):
+    def __init__(
+        self, bbox: BBox, stream: bytes = None, name: str = "", mimetype: str = None
+    ):
+        self.bbox = bbox
+        self.stream = stream
+        self.name = name
+        self.mimetype = mimetype
+
+    def to_json(self):
+        return {
+            "bbox": self.bbox.to_json(),
+            "stream": self.stream,
+            "name": self.name,
+            "mimetype": self.mimetype,
+        }
+
+    @classmethod
+    def from_json(cls, json_data):
+        return cls(
+            bbox=BBox.from_json(json_data["bbox"]),
+            stream=json_data.get("stream"),
+            name=json_data.get("name", ""),
+            mimetype=json_data.get("mimetype"),
+        )
+
+    def __repr__(self):
+        return f"Image(name={self.name}, bbox={self.bbox})"
+
+
 class Box:
     def __init__(self, x0, y0, x1, y1):
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
         self.y1 = y1
-        self.lines = []
+        self.elements: List[BoxElement] = []
 
     @property
     def text(self):
-        return "\n".join(line.text for line in self.lines)
+        return "\n".join(el.text for el in self.elements if isinstance(el, Line))
 
     def add_line(self, line):
-        self.lines.append(line)
+        if not isinstance(line, Line):
+            raise ValueError("Line must be a Line")
+        self.elements.append(line)
+
+    def add_image(self, image):
+        if not isinstance(image, Image):
+            raise ValueError("Image must be an Image")
+        self.elements.append(image)
 
     def get_all_lines(self):
-        return self.lines
+        return [el for el in self.elements if isinstance(el, Line)]
+
+    def get_all_images(self):
+        return [el for el in self.elements if isinstance(el, Image)]
 
     def get_all_chars(self):
-        return [char for line in self.lines for char in line.get_all_chars()]
+        return [
+            char
+            for el in self.elements
+            if isinstance(el, Line)
+            for char in el.get_all_chars()
+        ]
 
     def to_json(self):
         return {
@@ -286,17 +338,25 @@ class Box:
             "x1": self.x1,
             "y1": self.y1,
             "text": self.text,
-            "lines": [l.to_json() for l in self.lines],
+            "elements": [
+                {"type": "line", **el.to_json()}
+                if isinstance(el, Line)
+                else {"type": "image", **el.to_json()}
+                for el in self.elements
+            ],
         }
 
     def __repr__(self):
-        return f"Box(lines={len(self.lines)})"
+        return f"Box(lines={len(self.get_all_lines())}, images={len(self.get_all_images())})"
 
     @classmethod
     def from_json(cls, json_data):
         box = cls(json_data["x0"], json_data["y0"], json_data["x1"], json_data["y1"])
-        for line_data in json_data["lines"]:
-            box.add_line(Line.from_json(line_data))
+        for el_data in json_data["elements"]:
+            if el_data["type"] == "line":
+                box.add_line(Line.from_json(el_data))
+            elif el_data["type"] == "image":
+                box.add_image(Image.from_json(el_data))
         return box
 
     def __eq__(self, other):
@@ -307,8 +367,8 @@ class Box:
             and self.y0 == other.y0
             and self.x1 == other.x1
             and self.y1 == other.y1
-            and len(self.lines) == len(other.lines)
-            and all(l1 == l2 for l1, l2 in zip(self.lines, other.lines))
+            and len(self.elements) == len(other.elements)
+            and all(l1 == l2 for l1, l2 in zip(self.elements, other.elements))
         )
 
 
