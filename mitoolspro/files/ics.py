@@ -1,129 +1,128 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Union
 
 import pandas as pd
 from icalendar import Calendar, Event
 from pandas import DataFrame
 
 
-def read_ics_file(filepath: str) -> Calendar:
-    with open(filepath, "r") as file:
-        content = file.read()
-    return Calendar.from_ical(content)
+def read_ics_file(filepath: Union[str, Path]) -> Calendar:
+    filepath = Path(filepath)
+    if not filepath.exists():
+        raise FileNotFoundError(f"ICS file not found: {filepath}")
+    with filepath.open("r", encoding="utf-8") as file:
+        return Calendar.from_ical(file.read())
 
 
-def extract_events(cal: Calendar) -> List[Dict[str, Optional[str]]]:
+def _parse_datetime(component: Event, field: str) -> Optional[pd.Timestamp]:
+    try:
+        if component.get(field):
+            return pd.to_datetime(component.decoded(field))
+    except Exception:
+        pass
+    return None
+
+
+def _parse_attendees(attendees_field: Union[List[str], str]) -> List[str]:
+    if not attendees_field:
+        return []
+    if isinstance(attendees_field, list):
+        return [str(a).replace("mailto:", "") for a in attendees_field]
+    return [str(attendees_field).replace("mailto:", "")]
+
+
+def extract_events(
+    cal: Calendar,
+) -> List[Dict[str, Union[str, List[str], pd.Timestamp, None]]]:
     events = []
     for component in cal.walk(name="VEVENT"):
-        attendees = []
-        if component.get("ATTENDEE"):
-            attendees_raw = component.get("ATTENDEE")
-            if isinstance(attendees_raw, list):
-                attendees = [
-                    attendee.replace("mailto:", "") for attendee in attendees_raw
-                ]
-            else:
-                attendees = [attendees_raw.replace("mailto:", "")]
-        event_details = {
-            "summary": str(component.get("SUMMARY", "")),
-            "description": str(component.get("DESCRIPTION", "")),
-            "start": pd.to_datetime(
-                component.decoded("DTSTART").strftime("%Y-%m-%d %H:%M:%S")
-            )
-            if component.get("DTSTART")
-            else None,
-            "end": pd.to_datetime(
-                component.decoded("DTEND").strftime("%Y-%m-%d %H:%M:%S")
-            )
-            if component.get("DTEND")
-            else None,
-            "organizer": component.get("ORGANIZER", "").replace("mailto:", ""),
-            "attendees": [str(attendee) for attendee in attendees],
-            "url": component.get("URL", ""),
-            "uid": str(component.get("UID", "")),
-            "transp": str(component.get("TRANSP", "")),
-            "status": str(component.get("STATUS", "")),
-            "sequence": component.get("SEQUENCE", ""),
-            "rrule": component.get("RRULE", ""),
-            "recurrence_id": component.get("RECURRENCE-ID", ""),
-            "location": str(component.get("LOCATION", "")),
-            "last_modified": pd.to_datetime(
-                component.decoded("LAST-MODIFIED").strftime("%Y-%m-%d %H:%M:%S")
-            )
-            if component.get("LAST-MODIFIED")
-            else None,
-            "exdate": component.get("EXDATE", ""),
-            "dtstamp": pd.to_datetime(
-                component.decoded("DTSTAMP").strftime("%Y-%m-%d %H:%M:%S")
-            )
-            if component.get("DTSTAMP")
-            else None,
-            "created": pd.to_datetime(
-                component.decoded("CREATED").strftime("%Y-%m-%d %H:%M:%S")
-            )
-            if component.get("CREATED")
-            else None,
-            "class": component.get("CLASS", ""),
-            "attach": component.get("ATTACH", ""),
-        }
-        events.append(event_details)
+        events.append(
+            {
+                "summary": str(component.get("SUMMARY", "")),
+                "description": str(component.get("DESCRIPTION", "")),
+                "start": _parse_datetime(component, "DTSTART"),
+                "end": _parse_datetime(component, "DTEND"),
+                "organizer": str(component.get("ORGANIZER", "")).replace("mailto:", ""),
+                "attendees": _parse_attendees(component.get("ATTENDEE")),
+                "url": str(component.get("URL", "")),
+                "uid": str(component.get("UID", "")),
+                "transp": str(component.get("TRANSP", "")),
+                "status": str(component.get("STATUS", "")),
+                "sequence": component.get("SEQUENCE", ""),
+                "rrule": component.get("RRULE", ""),
+                "recurrence_id": str(component.get("RECURRENCE-ID", "")),
+                "location": str(component.get("LOCATION", "")),
+                "last_modified": _parse_datetime(component, "LAST-MODIFIED"),
+                "exdate": component.get("EXDATE", ""),
+                "dtstamp": _parse_datetime(component, "DTSTAMP"),
+                "created": _parse_datetime(component, "CREATED"),
+                "class": str(component.get("CLASS", "")),
+                "attach": component.get("ATTACH", ""),
+            }
+        )
     return events
 
 
-def count_events_by_date(events: List[Dict[str, Optional[str]]]) -> Dict[str, int]:
+def count_events_by_date(
+    events: List[Dict[str, Union[str, List[str], pd.Timestamp, None]]],
+) -> Dict[str, int]:
     event_count = {}
     for event in events:
-        if event["start"]:
-            date_str = event["start"].split(" ")[0]  # Extract date part
-            if date_str in event_count:
-                event_count[date_str] += 1
-            else:
-                event_count[date_str] = 1
+        if isinstance(event["start"], pd.Timestamp):
+            date_str = event["start"].date().isoformat()
+            event_count[date_str] = event_count.get(date_str, 0) + 1
     return event_count
 
 
-def get_unique_organizers(events: List[Dict[str, Optional[str]]]) -> Set[str]:
-    organizers = set()
-    for event in events:
-        if event["organizer"]:
-            organizers.add(event["organizer"])
-    return organizers
+def get_unique_organizers(
+    events: List[Dict[str, Union[str, List[str], pd.Timestamp, None]]],
+) -> Set[str]:
+    return {str(event["organizer"]) for event in events if event.get("organizer")}
 
 
-def get_unique_attendees(events: List[Dict[str, Optional[str]]]) -> Set[str]:
+def get_unique_attendees(
+    events: List[Dict[str, Union[str, List[str], pd.Timestamp, None]]],
+) -> Set[str]:
     attendees = set()
     for event in events:
-        for attendee in event["attendees"]:
-            attendees.add(attendee)
+        attendees.update(event.get("attendees", []))
     return attendees
 
 
-def convert_to_dataframe(events: List[Dict[str, Optional[str]]]) -> DataFrame:
+def convert_to_dataframe(
+    events: List[Dict[str, Union[str, List[str], pd.Timestamp, None]]],
+) -> DataFrame:
     return DataFrame(events)
 
 
 def get_events_between_dates(
-    events: List[Dict[str, Optional[str]]], start_date: datetime, end_date: datetime
-) -> List[Dict[str, Optional[str]]]:
+    events: List[Dict[str, Union[str, List[str], pd.Timestamp, None]]],
+    start_date: datetime,
+    end_date: datetime,
+) -> List[Dict[str, Union[str, List[str], pd.Timestamp, None]]]:
     filtered_events = []
     for event in events:
-        if event["start"]:
-            event_start = datetime.strptime(event["start"], "%Y-%m-%d %H:%M:%S")
-            if start_date.date() <= event_start.date() <= end_date.date():
-                filtered_events.append(event)
+        start = event.get("start")
+        if (
+            isinstance(start, pd.Timestamp)
+            and start_date.date() <= start.date() <= end_date.date()
+        ):
+            filtered_events.append(event)
     return filtered_events
 
 
-def format_event_for_display(event: Dict[str, Optional[str]]) -> str:
+def format_event_for_display(
+    event: Dict[str, Union[str, List[str], pd.Timestamp, None]],
+) -> str:
     return (
-        f"Summary: {event['summary']}\n"
-        f"Description: {event['description']}\n"
-        f"Start: {event['start']}\n"
-        f"End: {event['end']}\n"
-        f"Organizer: {event['organizer']}\n"
-        f"Attendees: {', '.join(event['attendees'])}\n"
+        f"Summary: {event.get('summary', '')}\n"
+        f"Description: {event.get('description', '')}\n"
+        f"Start: {event.get('start', '')}\n"
+        f"End: {event.get('end', '')}\n"
+        f"Organizer: {event.get('organizer', '')}\n"
+        f"Attendees: {', '.join(event.get('attendees', []))}\n"
     )
 
 
