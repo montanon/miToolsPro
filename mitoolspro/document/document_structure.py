@@ -55,40 +55,30 @@ class BBox:
 
 
 class Char:
-    def __init__(self, text, fontname, size, x0, y0, x1, y1):
+    def __init__(self, text, fontname, size, bbox: BBox):
         self.text = text
         self.fontname = fontname
         self.size = size
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
+        self.bbox = bbox
 
     def to_json(self):
         return {
             "text": self.text,
             "fontname": self.fontname,
             "size": self.size,
-            "x0": self.x0,
-            "y0": self.y0,
-            "x1": self.x1,
-            "y1": self.y1,
+            "bbox": self.bbox.to_json(),
         }
 
     def __repr__(self):
         return f"Char({self.text!r}, font={self.fontname}, size={self.size})"
 
     @property
-    def bbox(self):
-        return BBox(self.x0, self.y0, self.x1, self.y1)
-
-    @property
     def width(self):
-        return self.x1 - self.x0
+        return self.bbox.width
 
     @property
     def height(self):
-        return self.y1 - self.y0
+        return self.bbox.height
 
     @property
     def bold(self):
@@ -104,10 +94,7 @@ class Char:
             text=json_data["text"],
             fontname=json_data["fontname"],
             size=json_data["size"],
-            x0=json_data["x0"],
-            y0=json_data["y0"],
-            x1=json_data["x1"],
-            y1=json_data["y1"],
+            bbox=BBox.from_json(json_data["bbox"]),
         )
 
     def __eq__(self, other):
@@ -117,10 +104,7 @@ class Char:
             self.text == other.text
             and self.fontname == other.fontname
             and abs(self.size - other.size) < 0.0001
-            and self.x0 == other.x0
-            and self.y0 == other.y0
-            and self.x1 == other.x1
-            and self.y1 == other.y1
+            and self.bbox == other.bbox
         )
 
 
@@ -132,9 +116,7 @@ class Run:
         if text is not None:
             for char in text:
                 self.chars.append(
-                    Char(
-                        text=char, fontname=fontname, size=size, x0=0, y0=0, x1=0, y1=0
-                    )
+                    Char(text=char, fontname=fontname, size=size, bbox=BBox(0, 0, 0, 0))
                 )
         elif chars is not None:
             self.chars = chars
@@ -142,6 +124,15 @@ class Run:
     @property
     def text(self):
         return "".join(c.text for c in self.chars)
+
+    @property
+    def bbox(self):
+        chars_bboxs = [char.bbox for char in self.chars if char.text != "\n"]
+        x0 = min(bbox.x0 for bbox in chars_bboxs)
+        y0 = min(bbox.y0 for bbox in chars_bboxs)
+        x1 = max(bbox.x1 for bbox in chars_bboxs)
+        y1 = max(bbox.y1 for bbox in chars_bboxs)
+        return BBox(x0, y0, x1, y1)
 
     def append_char(self, char):
         self.chars.append(char)
@@ -160,10 +151,7 @@ class Run:
             and abs(self.size - other.size) < 0.0001
             and self.text == other.text
             and len(self.chars) == len(other.chars)
-            and all(
-                c1.x0 == c2.x0 and c1.y0 == c2.y0 and c1.x1 == c2.x1 and c1.y1 == c2.y1
-                for c1, c2 in zip(self.chars, other.chars)
-            )
+            and all(c1.bbox == c2.bbox for c1, c2 in zip(self.chars, other.chars))
         )
 
     def to_json(self):
@@ -200,35 +188,19 @@ class Run:
     def is_italic(self):
         return "italic" in self.fontname.lower() or "oblique" in self.fontname.lower()
 
-    @property
-    def bbox(self):
-        chars_bboxs = [char.bbox for char in self.chars if char.text != "\n"]
-        x0 = min(bbox.x0 for bbox in chars_bboxs)
-        y0 = min(bbox.y0 for bbox in chars_bboxs)
-        x1 = max(bbox.x1 for bbox in chars_bboxs)
-        y1 = max(bbox.y1 for bbox in chars_bboxs)
-        return BBox(x0, y0, x1, y1)
-
 
 class BoxElement:
     pass
 
 
 class Line(BoxElement):
-    def __init__(self, x0, y0, x1, y1):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-        self.runs = []
+    def __init__(self, runs: List[Run], bbox: BBox):
+        self.runs = runs
+        self.bbox = bbox
 
     @property
     def text(self):
         return "".join(run.text for run in self.runs)
-
-    @property
-    def bbox(self):
-        return BBox(self.x0, self.y0, self.x1, self.y1)
 
     def add_run(self, run):
         self.runs.append(run)
@@ -238,10 +210,7 @@ class Line(BoxElement):
 
     def to_json(self):
         return {
-            "x0": self.x0,
-            "y0": self.y0,
-            "x1": self.x1,
-            "y1": self.y1,
+            "bbox": self.bbox.to_json(),
             "text": self.text,
             "runs": [r.to_json() for r in self.runs],
         }
@@ -251,19 +220,14 @@ class Line(BoxElement):
 
     @classmethod
     def from_json(cls, json_data):
-        line = cls(json_data["x0"], json_data["y0"], json_data["x1"], json_data["y1"])
-        for run_data in json_data["runs"]:
-            line.add_run(Run.from_json(run_data))
-        return line
+        runs = [Run.from_json(run_data) for run_data in json_data["runs"]]
+        return cls(runs=runs, bbox=BBox.from_json(json_data["bbox"]))
 
     def __eq__(self, other):
         if not isinstance(other, Line):
             return False
         return (
-            self.x0 == other.x0
-            and self.y0 == other.y0
-            and self.x1 == other.x1
-            and self.y1 == other.y1
+            self.bbox == other.bbox
             and len(self.runs) == len(other.runs)
             and all(r1 == r2 for r1, r2 in zip(self.runs, other.runs))
         )
@@ -277,10 +241,6 @@ class Image(BoxElement):
         self.stream = stream
         self.name = name
         self.mimetype = mimetype
-
-    @property
-    def bbox(self):
-        return BBox(self.x0, self.y0, self.x1, self.y1)
 
     def to_json(self):
         return {
@@ -314,20 +274,13 @@ class Image(BoxElement):
 
 
 class Box:
-    def __init__(self, x0, y0, x1, y1):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
+    def __init__(self, bbox):
+        self.bbox = bbox
         self.elements: List[BoxElement] = []
 
     @property
     def text(self):
         return "\n".join(el.text for el in self.elements if isinstance(el, Line))
-
-    @property
-    def bbox(self):
-        return BBox(self.x0, self.y0, self.x1, self.y1)
 
     def add_line(self, line):
         if not isinstance(line, Line):
@@ -355,10 +308,7 @@ class Box:
 
     def to_json(self):
         return {
-            "x0": self.x0,
-            "y0": self.y0,
-            "x1": self.x1,
-            "y1": self.y1,
+            "bbox": self.bbox.to_json(),
             "text": self.text,
             "elements": [
                 {"type": "line", **el.to_json()}
@@ -373,7 +323,7 @@ class Box:
 
     @classmethod
     def from_json(cls, json_data):
-        box = cls(json_data["x0"], json_data["y0"], json_data["x1"], json_data["y1"])
+        box = cls(BBox.from_json(json_data["bbox"]))
         for el_data in json_data["elements"]:
             if el_data["type"] == "line":
                 box.add_line(Line.from_json(el_data))
@@ -385,10 +335,7 @@ class Box:
         if not isinstance(other, Box):
             return False
         return (
-            self.x0 == other.x0
-            and self.y0 == other.y0
-            and self.x1 == other.x1
-            and self.y1 == other.y1
+            self.bbox == other.bbox
             and len(self.elements) == len(other.elements)
             and all(l1 == l2 for l1, l2 in zip(self.elements, other.elements))
         )
