@@ -1,11 +1,12 @@
 import unittest
 from unittest import TestCase
 
-from mitoolspro.files.document.document_structure import (
+from mitoolspro.document.document_structure import (
     BBox,
     Box,
     Char,
     Document,
+    Image,
     Line,
     Page,
     Run,
@@ -321,6 +322,12 @@ class TestBox(TestCase):
         self.box.add_line(line1)
         self.box.add_line(line2)
 
+        self.image_bbox = BBox(50, 50, 150, 150)
+        self.image = Image(
+            bbox=self.image_bbox, stream=b"test", name="test.jpg", mimetype="image/jpeg"
+        )
+        self.box.add_image(self.image)
+
     def test_text(self):
         self.assertEqual(self.box.text, "First line\nSecond line")
 
@@ -334,6 +341,15 @@ class TestBox(TestCase):
         chars = self.box.get_all_chars()
         self.assertEqual(len(chars), len(self.text1) + len(self.text2))
 
+    def test_get_all_images(self):
+        images = self.box.get_all_images()
+        self.assertEqual(len(images), 1)
+        self.assertEqual(images[0], self.image)
+
+    def test_add_image_validation(self):
+        with self.assertRaises(ValueError):
+            self.box.add_image("not an image")
+
     def test_to_json(self):
         json_data = self.box.to_json()
         self.assertEqual(json_data["x0"], 0)
@@ -341,6 +357,17 @@ class TestBox(TestCase):
         self.assertEqual(json_data["x1"], 200)
         self.assertEqual(json_data["y1"], 100)
         self.assertEqual(json_data["text"], "First line\nSecond line")
+        self.assertEqual(len(json_data["elements"]), 3)  # 2 lines + 1 image
+
+        line_elements = [el for el in json_data["elements"] if el["type"] == "line"]
+        self.assertEqual(len(line_elements), 2)
+        self.assertEqual(line_elements[0]["text"], "First line")
+        self.assertEqual(line_elements[1]["text"], "Second line")
+
+        image_elements = [el for el in json_data["elements"] if el["type"] == "image"]
+        self.assertEqual(len(image_elements), 1)
+        self.assertEqual(image_elements[0]["bbox"], self.image_bbox.to_json())
+        self.assertEqual(image_elements[0]["name"], "test.jpg")
 
     def test_from_json(self):
         json_data = {
@@ -349,8 +376,9 @@ class TestBox(TestCase):
             "x1": 200,
             "y1": 100,
             "text": "First line\nSecond line",
-            "lines": [
+            "elements": [
                 {
+                    "type": "line",
                     "x0": 0,
                     "y0": 0,
                     "x1": 200,
@@ -377,6 +405,7 @@ class TestBox(TestCase):
                     ],
                 },
                 {
+                    "type": "line",
                     "x0": 0,
                     "y0": 20,
                     "x1": 200,
@@ -402,29 +431,66 @@ class TestBox(TestCase):
                         }
                     ],
                 },
+                {
+                    "type": "image",
+                    "bbox": {"x0": 50, "y0": 50, "x1": 150, "y1": 150},
+                    "name": "test.jpg",
+                    "mimetype": "image/jpeg",
+                    "stream": b"test",
+                },
             ],
         }
         box = Box.from_json(json_data)
         self.assertEqual(box.text, "First line\nSecond line")
-        self.assertEqual(len(box.lines), 2)
-        self.assertEqual(box.lines[0].text, "First line")
-        self.assertEqual(box.lines[1].text, "Second line")
+
+        lines = box.get_all_lines()
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(lines[0].text, "First line")
+        self.assertEqual(lines[1].text, "Second line")
+
+        images = box.get_all_images()
+        self.assertEqual(len(images), 1)
+        self.assertEqual(images[0].name, "test.jpg")
+        self.assertEqual(
+            images[0].bbox.to_json(), {"x0": 50, "y0": 50, "x1": 150, "y1": 150}
+        )
 
     def test_equality(self):
         box1 = Box(0, 0, 200, 100)
         line1 = Line(0, 0, 200, 20)
         line1.add_run(Run.from_text("Test", "Arial", 12))
         box1.add_line(line1)
+        image1 = Image(
+            bbox=BBox(50, 50, 150, 150),
+            stream=b"test",
+            name="test.jpg",
+            mimetype="image/jpeg",
+        )
+        box1.add_image(image1)
 
         box2 = Box(0, 0, 200, 100)
         line2 = Line(0, 0, 200, 20)
         line2.add_run(Run.from_text("Test", "Arial", 12))
         box2.add_line(line2)
+        image2 = Image(
+            bbox=BBox(50, 50, 150, 150),
+            stream=b"test",
+            name="test.jpg",
+            mimetype="image/jpeg",
+        )
+        box2.add_image(image2)
 
         box3 = Box(0, 0, 200, 100)
         line3 = Line(0, 0, 200, 20)
         line3.add_run(Run.from_text("Different", "Arial", 12))
         box3.add_line(line3)
+        image3 = Image(
+            bbox=BBox(60, 60, 160, 160),
+            stream=b"test2",
+            name="test2.jpg",
+            mimetype="image/jpeg",
+        )
+        box3.add_image(image3)
 
         self.assertEqual(box1, box2)
         self.assertNotEqual(box1, box3)
@@ -475,8 +541,9 @@ class TestPage(TestCase):
                     "x1": 545,
                     "y1": 150,
                     "text": "Page content",
-                    "lines": [
+                    "elements": [
                         {
+                            "type": "line",
                             "x0": 50,
                             "y0": 50,
                             "x1": 545,
@@ -603,8 +670,9 @@ class TestDocument(TestCase):
                             "x1": 545,
                             "y1": 150,
                             "text": "Page 1",
-                            "lines": [
+                            "elements": [
                                 {
+                                    "type": "line",
                                     "x0": 50,
                                     "y0": 50,
                                     "x1": 545,
@@ -645,8 +713,9 @@ class TestDocument(TestCase):
                             "x1": 545,
                             "y1": 150,
                             "text": "Page 2",
-                            "lines": [
+                            "elements": [
                                 {
+                                    "type": "line",
                                     "x0": 50,
                                     "y0": 50,
                                     "x1": 545,
@@ -718,6 +787,67 @@ class TestDocument(TestCase):
         self.assertEqual(doc1, doc2)
         self.assertNotEqual(doc1, doc3)
         self.assertNotEqual(doc1, "not a document")
+
+
+class TestImage(TestCase):
+    def setUp(self):
+        self.bbox = BBox(10, 20, 100, 150)
+        self.image = Image(
+            bbox=self.bbox, stream=b"test", name="test.jpg", mimetype="image/jpeg"
+        )
+
+    def test_init(self):
+        self.assertEqual(self.image.bbox, self.bbox)
+        self.assertEqual(self.image.stream, b"test")
+        self.assertEqual(self.image.name, "test.jpg")
+        self.assertEqual(self.image.mimetype, "image/jpeg")
+
+    def test_to_json(self):
+        json_data = self.image.to_json()
+        self.assertEqual(json_data["bbox"], self.bbox.to_json())
+        self.assertEqual(json_data["stream"], b"test")
+        self.assertEqual(json_data["name"], "test.jpg")
+        self.assertEqual(json_data["mimetype"], "image/jpeg")
+
+    def test_from_json(self):
+        json_data = {
+            "bbox": {"x0": 10, "y0": 20, "x1": 100, "y1": 150},
+            "stream": b"test",
+            "name": "test.jpg",
+            "mimetype": "image/jpeg",
+        }
+        image = Image.from_json(json_data)
+        self.assertEqual(image.bbox, self.bbox)
+        self.assertEqual(image.stream, b"test")
+        self.assertEqual(image.name, "test.jpg")
+        self.assertEqual(image.mimetype, "image/jpeg")
+
+    def test_repr(self):
+        self.assertEqual(repr(self.image), f"Image(name=test.jpg, bbox={self.bbox})")
+
+    def test_equality(self):
+        image1 = Image(
+            bbox=BBox(10, 20, 100, 150),
+            stream=b"test",
+            name="test.jpg",
+            mimetype="image/jpeg",
+        )
+        image2 = Image(
+            bbox=BBox(10, 20, 100, 150),
+            stream=b"test",
+            name="test.jpg",
+            mimetype="image/jpeg",
+        )
+        image3 = Image(
+            bbox=BBox(20, 30, 110, 160),
+            stream=b"different",
+            name="different.jpg",
+            mimetype="image/png",
+        )
+
+        self.assertEqual(image1, image2)
+        self.assertNotEqual(image1, image3)
+        self.assertNotEqual(image1, "not an image")
 
 
 if __name__ == "__main__":

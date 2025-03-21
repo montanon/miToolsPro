@@ -294,6 +294,16 @@ class Image(BoxElement):
     def __repr__(self):
         return f"Image(name={self.name}, bbox={self.bbox})"
 
+    def __eq__(self, other):
+        if not isinstance(other, Image):
+            return False
+        return (
+            self.bbox == other.bbox
+            and self.stream == other.stream
+            and self.name == other.name
+            and self.mimetype == other.mimetype
+        )
+
 
 class Box:
     def __init__(self, x0, y0, x1, y1):
