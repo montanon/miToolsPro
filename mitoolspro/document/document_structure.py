@@ -226,6 +226,10 @@ class Line(BoxElement):
     def text(self):
         return "".join(run.text for run in self.runs)
 
+    @property
+    def bbox(self):
+        return BBox(self.x0, self.y0, self.x1, self.y1)
+
     def add_run(self, run):
         self.runs.append(run)
 
@@ -274,6 +278,10 @@ class Image(BoxElement):
         self.name = name
         self.mimetype = mimetype
 
+    @property
+    def bbox(self):
+        return BBox(self.x0, self.y0, self.x1, self.y1)
+
     def to_json(self):
         return {
             "bbox": self.bbox.to_json(),
@@ -316,6 +324,10 @@ class Box:
     @property
     def text(self):
         return "\n".join(el.text for el in self.elements if isinstance(el, Line))
+
+    @property
+    def bbox(self):
+        return BBox(self.x0, self.y0, self.x1, self.y1)
 
     def add_line(self, line):
         if not isinstance(line, Line):
