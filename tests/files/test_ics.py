@@ -1,14 +1,13 @@
-import os
 import tempfile
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from unittest import TestCase
 
 import pandas as pd
-from icalendar import Calendar, Event, vRecur
+from icalendar import Calendar, vRecur
 
-from mitoolspro.files.ics import (
+from mitoolspro.files.ics_handler import (
     convert_to_dataframe,
     count_events_by_date,
     extract_events,
@@ -20,7 +19,7 @@ from mitoolspro.files.ics import (
 )
 
 
-class TestICSFunctionality(TestCase):
+class TestICSHandler(TestCase):
     def setUp(self):
         self.sample_ics_content = """BEGIN:VCALENDAR
 VERSION:2.0
