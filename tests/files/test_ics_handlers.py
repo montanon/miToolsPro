@@ -7,7 +7,7 @@ from unittest import TestCase
 import pandas as pd
 from icalendar import Calendar, vRecur
 
-from mitoolspro.files.ics_handler import (
+from mitoolspro.files.ics_handlers import (
     convert_to_dataframe,
     count_events_by_date,
     extract_events,
