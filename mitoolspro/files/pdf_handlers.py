@@ -26,9 +26,10 @@ def extract_pdf_metadata(pdf_filename: PathLike) -> Union[Dict[str, str], None]:
             doc_info = pdf_reader.metadata or {}
             for key, value in doc_info.items():
                 sanitized_key = key.lstrip("/")
-                metadata[sanitized_key] = (
-                    str(value).encode("utf-8", errors="ignore").decode("utf-8")
-                )
+                text_value = str(value).encode("utf-8", errors="ignore").decode("utf-8")
+                if sanitized_key == "Producer" and text_value == "PyPDF2":
+                    text_value = "mtp"
+                metadata[sanitized_key] = text_value
     except (FileNotFoundError, PyPDF2.errors.PdfReadError) as e:
         raise ArgumentValueError(f"Error reading PDF '{pdf_filename}': {e}")
     except Exception as e:
