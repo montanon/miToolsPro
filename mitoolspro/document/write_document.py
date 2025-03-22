@@ -33,15 +33,14 @@ def write_pdf(doc: Document, output_path: Path):
         for box in page.boxes:
             for element in box.elements:
                 if isinstance(element, Line):
-                    for line in box.get_all_lines():
-                        for run in line.runs:
-                            font_used = select_font(
-                                fontfamily="arial", fontname=run.fontname
-                            )
-                            for char in run.chars:
-                                if char.bbox.x0 != 0 or char.bbox.y0 != 0:
-                                    c.setFont(font_used, char.size)
-                                    c.drawString(char.bbox.x0, char.bbox.y0, char.text)
+                    for run in element.runs:
+                        font_used = select_font(
+                            fontfamily="arial", fontname=run.fontname
+                        )
+                        for char in run.chars:
+                            if char.bbox.x0 != 0 or char.bbox.y0 != 0:
+                                c.setFont(font_used, char.size)
+                                c.drawString(char.bbox.x0, char.bbox.y0, char.text)
                 elif isinstance(element, Image):
                     if not element.stream:
                         continue
