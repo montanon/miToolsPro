@@ -79,6 +79,9 @@ def _create_docx(
 
 
 def write_docx(doc: Document, output_path: Path):
+    if not doc.pages:
+        raise ArgumentValueError("Document has no pages")
+
     docx = _create_docx()
 
     for page in doc.pages:
