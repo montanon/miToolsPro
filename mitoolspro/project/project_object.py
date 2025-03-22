@@ -227,7 +227,7 @@ class Project:
         metadata = self.versions_metadata[version]
         return {
             "name": version,
-            "created_at": metadata.created_at,
+            "creation": metadata.creation,
             "state": metadata.state.value,
             "description": metadata.description,
             "subfolders": self.list_version_subfolders(version),
@@ -476,7 +476,7 @@ class Project:
         )
 
     def create_project_notebook(self) -> None:
-        notebook = ProjectNotebook(self.name).notebook()
+        notebook = ProjectNotebook(self.name)
         if not self.project_notebook.exists():
             notebook.write(self.project_notebook)
 
