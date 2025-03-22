@@ -9,7 +9,8 @@ import pymupdf4llm
 import PyPDF2
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
-from mitoolspro.files import remove_characters_from_string, rename_file
+from mitoolspro.files import rename_file
+from mitoolspro.utils.string_functions import remove_characters_from_string
 
 logger = logging.getLogger("mtp")
 PATTERN = "^([A-Za-z0-9.]+-)+[A-Za-z0-9]+.pdf$"

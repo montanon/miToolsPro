@@ -7,7 +7,7 @@ from typing import Callable, List, Optional, Union
 from treelib import Tree
 
 from mitoolspro.exceptions import ArgumentValueError
-from mitoolspro.utils.functions import remove_characters_from_string
+from mitoolspro.utils.string_functions import remove_characters_from_string
 
 
 def build_dir_tree(
