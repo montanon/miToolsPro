@@ -194,8 +194,8 @@ class BoxElement:
 
 
 class Line(BoxElement):
-    def __init__(self, runs: List[Run], bbox: BBox):
-        self.runs = runs
+    def __init__(self, bbox: BBox):
+        self.runs = []
         self.bbox = bbox
 
     @property
@@ -221,7 +221,9 @@ class Line(BoxElement):
     @classmethod
     def from_json(cls, json_data):
         runs = [Run.from_json(run_data) for run_data in json_data["runs"]]
-        return cls(runs=runs, bbox=BBox.from_json(json_data["bbox"]))
+        line = cls(bbox=BBox.from_json(json_data["bbox"]))
+        line.runs = runs
+        return line
 
     def __eq__(self, other):
         if not isinstance(other, Line):
@@ -386,7 +388,7 @@ class Page:
 
     def append_run(self, run):
         last_box = self.boxes[-1]
-        new_line = Line(last_box.x0, last_box.y0, last_box.x1, last_box.y1)
+        new_line = Line(last_box.bbox)
         new_line.add_run(run)
         last_box.add_line(new_line)
 

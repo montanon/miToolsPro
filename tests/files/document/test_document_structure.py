@@ -60,7 +60,7 @@ class TestBBox(TestCase):
 
 class TestChar(TestCase):
     def setUp(self):
-        self.char = Char("A", "Arial-Bold", 12, 10, 20, 20, 32)
+        self.char = Char("A", "Arial-Bold", 12, BBox(10, 20, 20, 32))
 
     def test_bbox(self):
         bbox = self.char.bbox
@@ -77,15 +77,15 @@ class TestChar(TestCase):
 
     def test_bold(self):
         self.assertTrue(self.char.bold)
-        char2 = Char("B", "Arial", 12, 10, 20, 20, 32)
+        char2 = Char("B", "Arial", 12, BBox(10, 20, 20, 32))
         self.assertFalse(char2.bold)
 
     def test_italic(self):
-        char1 = Char("A", "Arial-Italic", 12, 10, 20, 20, 32)
+        char1 = Char("A", "Arial-Italic", 12, BBox(10, 20, 20, 32))
         self.assertTrue(char1.italic)
-        char2 = Char("B", "Arial-Oblique", 12, 10, 20, 20, 32)
+        char2 = Char("B", "Arial-Oblique", 12, BBox(10, 20, 20, 32))
         self.assertTrue(char2.italic)
-        char3 = Char("C", "Arial", 12, 10, 20, 20, 32)
+        char3 = Char("C", "Arial", 12, BBox(10, 20, 20, 32))
         self.assertFalse(char3.italic)
 
     def test_to_json(self):
@@ -93,10 +93,12 @@ class TestChar(TestCase):
             "text": "A",
             "fontname": "Arial-Bold",
             "size": 12,
-            "x0": 10,
-            "y0": 20,
-            "x1": 20,
-            "y1": 32,
+            "bbox": {
+                "x0": 10,
+                "y0": 20,
+                "x1": 20,
+                "y1": 32,
+            },
         }
         self.assertEqual(self.char.to_json(), expected)
 
@@ -105,24 +107,26 @@ class TestChar(TestCase):
             "text": "A",
             "fontname": "Arial-Bold",
             "size": 12,
-            "x0": 10,
-            "y0": 20,
-            "x1": 20,
-            "y1": 32,
+            "bbox": {
+                "x0": 10,
+                "y0": 20,
+                "x1": 20,
+                "y1": 32,
+            },
         }
         char = Char.from_json(json_data)
         self.assertEqual(char.text, "A")
         self.assertEqual(char.fontname, "Arial-Bold")
         self.assertEqual(char.size, 12)
-        self.assertEqual(char.x0, 10)
-        self.assertEqual(char.y0, 20)
-        self.assertEqual(char.x1, 20)
-        self.assertEqual(char.y1, 32)
+        self.assertEqual(char.bbox.x0, 10)
+        self.assertEqual(char.bbox.y0, 20)
+        self.assertEqual(char.bbox.x1, 20)
+        self.assertEqual(char.bbox.y1, 32)
 
     def test_equality(self):
-        char1 = Char("A", "Arial-Bold", 12, 10, 20, 20, 32)
-        char2 = Char("A", "Arial-Bold", 12, 10, 20, 20, 32)
-        char3 = Char("B", "Arial-Bold", 12, 10, 20, 20, 32)
+        char1 = Char("A", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+        char2 = Char("A", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+        char3 = Char("B", "Arial-Bold", 12, BBox(10, 20, 20, 32))
 
         self.assertEqual(char1, char2)
         self.assertNotEqual(char1, char3)
@@ -132,8 +136,8 @@ class TestChar(TestCase):
 class TestRun(TestCase):
     def setUp(self):
         self.chars = [
-            Char("H", "Arial", 12, 0, 0, 10, 12),
-            Char("i", "Arial", 12, 10, 0, 15, 12),
+            Char("H", "Arial", 12, BBox(0, 0, 10, 12)),
+            Char("i", "Arial", 12, BBox(10, 0, 15, 12)),
         ]
         self.run = Run(fontname="Arial", size=12, chars=self.chars)
 
@@ -141,12 +145,12 @@ class TestRun(TestCase):
         self.assertEqual(self.run.text, "Hi")
 
     def test_append_char(self):
-        new_char = Char("!", "Arial", 12, 15, 0, 20, 12)
+        new_char = Char("!", "Arial", 12, BBox(15, 0, 20, 12))
         self.run.append_char(new_char)
         self.assertEqual(self.run.text, "Hi!")
 
     def test_add_runs(self):
-        other_chars = [Char("!", "Arial", 12, 15, 0, 20, 12)]
+        other_chars = [Char("!", "Arial", 12, BBox(15, 0, 20, 12))]
         other_run = Run(fontname="Arial", size=12, chars=other_chars)
         combined = self.run + other_run
         self.assertEqual(combined.text, "Hi!")
@@ -187,19 +191,23 @@ class TestRun(TestCase):
                     "text": "H",
                     "fontname": "Arial",
                     "size": 12,
-                    "x0": 0,
-                    "y0": 0,
-                    "x1": 10,
-                    "y1": 12,
+                    "bbox": {
+                        "x0": 0,
+                        "y0": 0,
+                        "x1": 10,
+                        "y1": 12,
+                    },
                 },
                 {
                     "text": "i",
                     "fontname": "Arial",
                     "size": 12,
-                    "x0": 10,
-                    "y0": 0,
-                    "x1": 15,
-                    "y1": 12,
+                    "bbox": {
+                        "x0": 10,
+                        "y0": 0,
+                        "x1": 15,
+                        "y1": 12,
+                    },
                 },
             ],
         }
@@ -223,11 +231,18 @@ class TestRun(TestCase):
 
 class TestLine(TestCase):
     def setUp(self):
-        self.line = Line(0, 0, 100, 20)
+        self.line = Line(BBox(0, 0, 100, 20))
         run1 = Run.from_text("Hello", "Arial", 12)
         run2 = Run.from_text(" World", "Arial-Bold", 12)
         self.line.add_run(run1)
         self.line.add_run(run2)
+
+    def test_bbox(self):
+        bbox = self.line.bbox
+        self.assertEqual(bbox.x0, 0)
+        self.assertEqual(bbox.y0, 0)
+        self.assertEqual(bbox.x1, 100)
+        self.assertEqual(bbox.y1, 20)
 
     def test_text(self):
         self.assertEqual(self.line.text, "Hello World")
@@ -239,18 +254,20 @@ class TestLine(TestCase):
 
     def test_to_json(self):
         json_data = self.line.to_json()
-        self.assertEqual(json_data["x0"], 0)
-        self.assertEqual(json_data["y0"], 0)
-        self.assertEqual(json_data["x1"], 100)
-        self.assertEqual(json_data["y1"], 20)
+        self.assertEqual(json_data["bbox"]["x0"], 0)
+        self.assertEqual(json_data["bbox"]["y0"], 0)
+        self.assertEqual(json_data["bbox"]["x1"], 100)
+        self.assertEqual(json_data["bbox"]["y1"], 20)
         self.assertEqual(json_data["text"], "Hello World")
 
     def test_from_json(self):
         json_data = {
-            "x0": 0,
-            "y0": 0,
-            "x1": 100,
-            "y1": 20,
+            "bbox": {
+                "x0": 0,
+                "y0": 0,
+                "x1": 100,
+                "y1": 20,
+            },
             "text": "Hello World",
             "runs": [
                 {
@@ -262,10 +279,12 @@ class TestLine(TestCase):
                             "text": char,
                             "fontname": "Arial",
                             "size": 12,
-                            "x0": i * 10,
-                            "y0": 0,
-                            "x1": (i + 1) * 10,
-                            "y1": 12,
+                            "bbox": {
+                                "x0": i * 10,
+                                "y0": 0,
+                                "x1": (i + 1) * 10,
+                                "y1": 12,
+                            },
                         }
                         for i, char in enumerate("Hello")
                     ],
@@ -279,10 +298,12 @@ class TestLine(TestCase):
                             "text": char,
                             "fontname": "Arial-Bold",
                             "size": 12,
-                            "x0": (i + 5) * 10,
-                            "y0": 0,
-                            "x1": (i + 6) * 10,
-                            "y1": 12,
+                            "bbox": {
+                                "x0": (i + 5) * 10,
+                                "y0": 0,
+                                "x1": (i + 6) * 10,
+                                "y1": 12,
+                            },
                         }
                         for i, char in enumerate(" World")
                     ],
@@ -296,13 +317,13 @@ class TestLine(TestCase):
         self.assertEqual(line.runs[1].text, " World")
 
     def test_equality(self):
-        line1 = Line(0, 0, 100, 20)
+        line1 = Line(BBox(0, 0, 100, 20))
         line1.add_run(Run.from_text("Test", "Arial", 12))
 
-        line2 = Line(0, 0, 100, 20)
+        line2 = Line(BBox(0, 0, 100, 20))
         line2.add_run(Run.from_text("Test", "Arial", 12))
 
-        line3 = Line(0, 0, 100, 20)
+        line3 = Line(BBox(0, 0, 100, 20))
         line3.add_run(Run.from_text("Different", "Arial", 12))
 
         self.assertEqual(line1, line2)
@@ -314,10 +335,10 @@ class TestBox(TestCase):
     def setUp(self):
         self.text1 = "First line"
         self.text2 = "Second line"
-        self.box = Box(0, 0, 200, 100)
-        line1 = Line(0, 0, 200, 20)
+        self.box = Box(BBox(0, 0, 200, 100))
+        line1 = Line(BBox(0, 0, 200, 20))
         line1.add_run(Run.from_text(self.text1, "Arial", 12))
-        line2 = Line(0, 20, 200, 40)
+        line2 = Line(BBox(0, 20, 200, 40))
         line2.add_run(Run.from_text(self.text2, "Arial", 12))
         self.box.add_line(line1)
         self.box.add_line(line2)
@@ -327,6 +348,13 @@ class TestBox(TestCase):
             bbox=self.image_bbox, stream=b"test", name="test.jpg", mimetype="image/jpeg"
         )
         self.box.add_image(self.image)
+
+    def test_bbox(self):
+        bbox = self.box.bbox
+        self.assertEqual(bbox.x0, 0)
+        self.assertEqual(bbox.y0, 0)
+        self.assertEqual(bbox.x1, 200)
+        self.assertEqual(bbox.y1, 100)
 
     def test_text(self):
         self.assertEqual(self.box.text, "First line\nSecond line")
@@ -352,10 +380,10 @@ class TestBox(TestCase):
 
     def test_to_json(self):
         json_data = self.box.to_json()
-        self.assertEqual(json_data["x0"], 0)
-        self.assertEqual(json_data["y0"], 0)
-        self.assertEqual(json_data["x1"], 200)
-        self.assertEqual(json_data["y1"], 100)
+        self.assertEqual(json_data["bbox"]["x0"], 0)
+        self.assertEqual(json_data["bbox"]["y0"], 0)
+        self.assertEqual(json_data["bbox"]["x1"], 200)
+        self.assertEqual(json_data["bbox"]["y1"], 100)
         self.assertEqual(json_data["text"], "First line\nSecond line")
         self.assertEqual(len(json_data["elements"]), 3)  # 2 lines + 1 image
 
@@ -371,18 +399,22 @@ class TestBox(TestCase):
 
     def test_from_json(self):
         json_data = {
-            "x0": 0,
-            "y0": 0,
-            "x1": 200,
-            "y1": 100,
+            "bbox": {
+                "x0": 0,
+                "y0": 0,
+                "x1": 200,
+                "y1": 100,
+            },
             "text": "First line\nSecond line",
             "elements": [
                 {
                     "type": "line",
-                    "x0": 0,
-                    "y0": 0,
-                    "x1": 200,
-                    "y1": 20,
+                    "bbox": {
+                        "x0": 0,
+                        "y0": 0,
+                        "x1": 200,
+                        "y1": 20,
+                    },
                     "text": "First line",
                     "runs": [
                         {
@@ -394,10 +426,12 @@ class TestBox(TestCase):
                                     "text": char,
                                     "fontname": "Arial",
                                     "size": 12,
-                                    "x0": i * 10,
-                                    "y0": 0,
-                                    "x1": (i + 1) * 10,
-                                    "y1": 12,
+                                    "bbox": {
+                                        "x0": i * 10,
+                                        "y0": 0,
+                                        "x1": (i + 1) * 10,
+                                        "y1": 12,
+                                    },
                                 }
                                 for i, char in enumerate("First line")
                             ],
@@ -406,10 +440,12 @@ class TestBox(TestCase):
                 },
                 {
                     "type": "line",
-                    "x0": 0,
-                    "y0": 20,
-                    "x1": 200,
-                    "y1": 40,
+                    "bbox": {
+                        "x0": 0,
+                        "y0": 20,
+                        "x1": 200,
+                        "y1": 40,
+                    },
                     "text": "Second line",
                     "runs": [
                         {
@@ -421,10 +457,12 @@ class TestBox(TestCase):
                                     "text": char,
                                     "fontname": "Arial",
                                     "size": 12,
-                                    "x0": i * 10,
-                                    "y0": 20,
-                                    "x1": (i + 1) * 10,
-                                    "y1": 32,
+                                    "bbox": {
+                                        "x0": i * 10,
+                                        "y0": 20,
+                                        "x1": (i + 1) * 10,
+                                        "y1": 32,
+                                    },
                                 }
                                 for i, char in enumerate("Second line")
                             ],
@@ -456,8 +494,8 @@ class TestBox(TestCase):
         )
 
     def test_equality(self):
-        box1 = Box(0, 0, 200, 100)
-        line1 = Line(0, 0, 200, 20)
+        box1 = Box(BBox(0, 0, 200, 100))
+        line1 = Line(BBox(0, 0, 200, 20))
         line1.add_run(Run.from_text("Test", "Arial", 12))
         box1.add_line(line1)
         image1 = Image(
@@ -468,8 +506,8 @@ class TestBox(TestCase):
         )
         box1.add_image(image1)
 
-        box2 = Box(0, 0, 200, 100)
-        line2 = Line(0, 0, 200, 20)
+        box2 = Box(BBox(0, 0, 200, 100))
+        line2 = Line(BBox(0, 0, 200, 20))
         line2.add_run(Run.from_text("Test", "Arial", 12))
         box2.add_line(line2)
         image2 = Image(
@@ -480,8 +518,8 @@ class TestBox(TestCase):
         )
         box2.add_image(image2)
 
-        box3 = Box(0, 0, 200, 100)
-        line3 = Line(0, 0, 200, 20)
+        box3 = Box(BBox(0, 0, 200, 100))
+        line3 = Line(BBox(0, 0, 200, 20))
         line3.add_run(Run.from_text("Different", "Arial", 12))
         box3.add_line(line3)
         image3 = Image(
@@ -500,8 +538,8 @@ class TestBox(TestCase):
 class TestPage(TestCase):
     def setUp(self):
         self.page = Page(595, 842)
-        box1 = Box(50, 50, 545, 150)
-        line1 = Line(50, 50, 545, 70)
+        box1 = Box(BBox(50, 50, 545, 150))
+        line1 = Line(BBox(50, 50, 545, 70))
         line1.add_run(Run.from_text("Page content", "Arial", 12))
         box1.add_line(line1)
         self.page.add_box(box1)
@@ -536,18 +574,22 @@ class TestPage(TestCase):
             "text": "Page content",
             "boxes": [
                 {
-                    "x0": 50,
-                    "y0": 50,
-                    "x1": 545,
-                    "y1": 150,
+                    "bbox": {
+                        "x0": 50,
+                        "y0": 50,
+                        "x1": 545,
+                        "y1": 150,
+                    },
                     "text": "Page content",
                     "elements": [
                         {
                             "type": "line",
-                            "x0": 50,
-                            "y0": 50,
-                            "x1": 545,
-                            "y1": 70,
+                            "bbox": {
+                                "x0": 50,
+                                "y0": 50,
+                                "x1": 545,
+                                "y1": 70,
+                            },
                             "text": "Page content",
                             "runs": [
                                 {
@@ -559,10 +601,12 @@ class TestPage(TestCase):
                                             "text": char,
                                             "fontname": "Arial",
                                             "size": 12,
-                                            "x0": 50 + i * 10,
-                                            "y0": 50,
-                                            "x1": 50 + (i + 1) * 10,
-                                            "y1": 62,
+                                            "bbox": {
+                                                "x0": 50 + i * 10,
+                                                "y0": 50,
+                                                "x1": 50 + (i + 1) * 10,
+                                                "y1": 62,
+                                            },
                                         }
                                         for i, char in enumerate("Page content")
                                     ],
@@ -582,22 +626,22 @@ class TestPage(TestCase):
 
     def test_equality(self):
         page1 = Page(595, 842)
-        box1 = Box(50, 50, 545, 150)
-        line1 = Line(50, 50, 545, 70)
+        box1 = Box(BBox(50, 50, 545, 150))
+        line1 = Line(BBox(50, 50, 545, 70))
         line1.add_run(Run.from_text("Test", "Arial", 12))
         box1.add_line(line1)
         page1.add_box(box1)
 
         page2 = Page(595, 842)
-        box2 = Box(50, 50, 545, 150)
-        line2 = Line(50, 50, 545, 70)
+        box2 = Box(BBox(50, 50, 545, 150))
+        line2 = Line(BBox(50, 50, 545, 70))
         line2.add_run(Run.from_text("Test", "Arial", 12))
         box2.add_line(line2)
         page2.add_box(box2)
 
         page3 = Page(595, 842)
-        box3 = Box(50, 50, 545, 150)
-        line3 = Line(50, 50, 545, 70)
+        box3 = Box(BBox(50, 50, 545, 150))
+        line3 = Line(BBox(50, 50, 545, 70))
         line3.add_run(Run.from_text("Different", "Arial", 12))
         box3.add_line(line3)
         page3.add_box(box3)
@@ -611,15 +655,15 @@ class TestDocument(TestCase):
     def setUp(self):
         self.document = Document()
         page1 = Page(595, 842)
-        box1 = Box(50, 50, 545, 150)
-        line1 = Line(50, 50, 545, 70)
+        box1 = Box(BBox(50, 50, 545, 150))
+        line1 = Line(BBox(50, 50, 545, 70))
         line1.add_run(Run.from_text("Page 1", "Arial", 12))
         box1.add_line(line1)
         page1.add_box(box1)
 
         page2 = Page(595, 842)
-        box2 = Box(50, 50, 545, 150)
-        line2 = Line(50, 50, 545, 70)
+        box2 = Box(BBox(50, 50, 545, 150))
+        line2 = Line(BBox(50, 50, 545, 70))
         line2.add_run(Run.from_text("Page 2", "Arial", 12))
         box2.add_line(line2)
         page2.add_box(box2)
@@ -665,18 +709,22 @@ class TestDocument(TestCase):
                     "text": "Page 1",
                     "boxes": [
                         {
-                            "x0": 50,
-                            "y0": 50,
-                            "x1": 545,
-                            "y1": 150,
+                            "bbox": {
+                                "x0": 50,
+                                "y0": 50,
+                                "x1": 545,
+                                "y1": 150,
+                            },
                             "text": "Page 1",
                             "elements": [
                                 {
                                     "type": "line",
-                                    "x0": 50,
-                                    "y0": 50,
-                                    "x1": 545,
-                                    "y1": 70,
+                                    "bbox": {
+                                        "x0": 50,
+                                        "y0": 50,
+                                        "x1": 545,
+                                        "y1": 70,
+                                    },
                                     "text": "Page 1",
                                     "runs": [
                                         {
@@ -688,10 +736,12 @@ class TestDocument(TestCase):
                                                     "text": char,
                                                     "fontname": "Arial",
                                                     "size": 12,
-                                                    "x0": 50 + i * 10,
-                                                    "y0": 50,
-                                                    "x1": 50 + (i + 1) * 10,
-                                                    "y1": 62,
+                                                    "bbox": {
+                                                        "x0": 50 + i * 10,
+                                                        "y0": 50,
+                                                        "x1": 50 + (i + 1) * 10,
+                                                        "y1": 62,
+                                                    },
                                                 }
                                                 for i, char in enumerate("Page 1")
                                             ],
@@ -708,18 +758,22 @@ class TestDocument(TestCase):
                     "text": "Page 2",
                     "boxes": [
                         {
-                            "x0": 50,
-                            "y0": 50,
-                            "x1": 545,
-                            "y1": 150,
+                            "bbox": {
+                                "x0": 50,
+                                "y0": 50,
+                                "x1": 545,
+                                "y1": 150,
+                            },
                             "text": "Page 2",
                             "elements": [
                                 {
                                     "type": "line",
-                                    "x0": 50,
-                                    "y0": 50,
-                                    "x1": 545,
-                                    "y1": 70,
+                                    "bbox": {
+                                        "x0": 50,
+                                        "y0": 50,
+                                        "x1": 545,
+                                        "y1": 70,
+                                    },
                                     "text": "Page 2",
                                     "runs": [
                                         {
@@ -731,10 +785,12 @@ class TestDocument(TestCase):
                                                     "text": char,
                                                     "fontname": "Arial",
                                                     "size": 12,
-                                                    "x0": 50 + i * 10,
-                                                    "y0": 50,
-                                                    "x1": 50 + (i + 1) * 10,
-                                                    "y1": 62,
+                                                    "bbox": {
+                                                        "x0": 50 + i * 10,
+                                                        "y0": 50,
+                                                        "x1": 50 + (i + 1) * 10,
+                                                        "y1": 62,
+                                                    },
                                                 }
                                                 for i, char in enumerate("Page 2")
                                             ],
@@ -759,8 +815,8 @@ class TestDocument(TestCase):
     def test_equality(self):
         doc1 = Document()
         page1 = Page(595, 842)
-        box1 = Box(50, 50, 545, 150)
-        line1 = Line(50, 50, 545, 70)
+        box1 = Box(BBox(50, 50, 545, 150))
+        line1 = Line(BBox(50, 50, 545, 70))
         line1.add_run(Run.from_text("Test", "Arial", 12))
         box1.add_line(line1)
         page1.add_box(box1)
@@ -768,8 +824,8 @@ class TestDocument(TestCase):
 
         doc2 = Document()
         page2 = Page(595, 842)
-        box2 = Box(50, 50, 545, 150)
-        line2 = Line(50, 50, 545, 70)
+        box2 = Box(BBox(50, 50, 545, 150))
+        line2 = Line(BBox(50, 50, 545, 70))
         line2.add_run(Run.from_text("Test", "Arial", 12))
         box2.add_line(line2)
         page2.add_box(box2)
@@ -777,8 +833,8 @@ class TestDocument(TestCase):
 
         doc3 = Document()
         page3 = Page(595, 842)
-        box3 = Box(50, 50, 545, 150)
-        line3 = Line(50, 50, 545, 70)
+        box3 = Box(BBox(50, 50, 545, 150))
+        line3 = Line(BBox(50, 50, 545, 70))
         line3.add_run(Run.from_text("Different", "Arial", 12))
         box3.add_line(line3)
         page3.add_box(box3)
@@ -795,6 +851,14 @@ class TestImage(TestCase):
         self.image = Image(
             bbox=self.bbox, stream=b"test", name="test.jpg", mimetype="image/jpeg"
         )
+
+    def test_bbox(self):
+        bbox = self.image.bbox
+        self.assertEqual(bbox.x0, 10)
+        self.assertEqual(bbox.y0, 20)
+        self.assertEqual(bbox.x1, 100)
+        self.assertEqual(bbox.y1, 150)
+        self.assertEqual(bbox, self.bbox)
 
     def test_init(self):
         self.assertEqual(self.image.bbox, self.bbox)
