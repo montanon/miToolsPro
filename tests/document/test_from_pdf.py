@@ -6,6 +6,8 @@ from unittest import TestCase
 import fitz
 from PIL import Image as PILImage
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
 
 from mitoolspro.document.document_structure import BBox, Box, Document
 from mitoolspro.document.document_structure import Image as DocImage
@@ -28,30 +30,52 @@ class TestFromPDF(TestCase):
         doc = fitz.open()
         page = doc.new_page()
 
-        # Add text
-        page.insert_text((72, 72), "This is normal text")
-        page.insert_text((72, 100), "This is bold text")
-        page.insert_text((72, 128), "Special chars: áéíóú ñ")
-        page.insert_text((72, 156), "First paragraph\nwith multiple lines")
-        page.insert_text((72, 184), "Second paragraph")
+        # Add text with specific fonts and sizes
+        page.insert_text(
+            (72, 72), "This is normal text", fontname="Helvetica", fontsize=12
+        )
+        page.insert_text(
+            (72, 100), "This is bold text", fontname="Helvetica-Bold", fontsize=14
+        )
+        page.insert_text(
+            (72, 128), "Special chars: áéíóú ñ", fontname="Helvetica", fontsize=12
+        )
+        page.insert_text(
+            (72, 156),
+            "First paragraph\nwith multiple lines",
+            fontname="Helvetica",
+            fontsize=12,
+        )
+        page.insert_text(
+            (72, 184), "Second paragraph", fontname="Helvetica", fontsize=12
+        )
+
+        # Add text before first image
+        page.insert_text(
+            (72, 212), "Text before image", fontname="Helvetica", fontsize=12
+        )
 
         # Read image data once
         with open(cls.image_path, "rb") as f:
             img_data = f.read()
 
         # Add first image
-        img_rect1 = fitz.Rect(72, 212, 216, 356)  # 2 inch square
+        img_rect1 = fitz.Rect(72, 240, 216, 384)  # 2 inch square
         page.insert_image(img_rect1, stream=img_data, keep_proportion=True)
 
         # Add text between images
-        page.insert_text((72, 384), "Text before image")
+        page.insert_text(
+            (72, 412), "Text between images", fontname="Helvetica", fontsize=12
+        )
 
         # Add second image with different size
-        img_rect2 = fitz.Rect(72, 412, 144, 484)  # 1 inch square
+        img_rect2 = fitz.Rect(72, 440, 144, 512)  # 1 inch square
         page.insert_image(img_rect2, stream=img_data, keep_proportion=True)
 
         # Add final text
-        page.insert_text((72, 512), "Text after image")
+        page.insert_text(
+            (72, 540), "Text after image", fontname="Helvetica", fontsize=12
+        )
 
         # Save the PDF with high quality settings
         doc.save(str(cls.pdf_path), garbage=4, deflate=True, clean=True)
@@ -103,6 +127,147 @@ class TestFromPDF(TestCase):
                 self.assertEqual(image.mimetype, "image/png")
 
         doc.close()
+
+    def test_extract_images_from_reportlab_pdf(self):
+        # Create a new PDF with reportlab
+        reportlab_pdf_path = Path(self.temp_dir) / "reportlab_test.pdf"
+
+        # Create the PDF
+        c = canvas.Canvas(str(reportlab_pdf_path), pagesize=letter)
+        page_height = letter[1]  # Need this for coordinate conversion
+
+        # Add some text for context
+        c.drawString(1 * inch, 10 * inch, "Test PDF with multiple images")
+
+        # Add first image at specific coordinates (2x2 inches)
+        first_img_y = 7 * inch
+        c.drawImage(
+            str(self.image_path), 1 * inch, first_img_y, width=2 * inch, height=2 * inch
+        )
+
+        # Add some text between images
+        c.drawString(1 * inch, 6 * inch, "Text between images")
+
+        # Add second image at different coordinates (1x1 inch)
+        second_img_y = 3 * inch
+        c.drawImage(
+            str(self.image_path),
+            1 * inch,
+            second_img_y,
+            width=1 * inch,
+            height=1 * inch,
+        )
+
+        # Add final text
+        c.drawString(1 * inch, 2 * inch, "Text after images")
+
+        c.save()
+
+        # Now test the image extraction
+        try:
+            image_boxes = extract_images_from_pdf(reportlab_pdf_path)
+
+            # Debug information
+            doc = fitz.open(reportlab_pdf_path)
+            page = doc.load_page(0)
+
+            # Print debug info
+            blocks = page.get_text("dict")["blocks"]
+            image_blocks = [b for b in blocks if b["type"] == 1]
+            print(f"\nReportlab PDF: Found {len(image_blocks)} image blocks")
+
+            images = page.get_images()
+            print(f"Reportlab PDF: Found {len(images)} raw images")
+
+            # Verify basic structure
+            self.assertEqual(len(image_boxes), 1, "Expected 1 page")
+            self.assertEqual(len(image_boxes[0]), 2, "Expected 2 images")
+
+            # Test the extracted images
+            boxes = image_boxes[0]  # Get boxes from first page
+
+            # Find the larger and smaller images
+            if (
+                boxes[0].bbox.y1 - boxes[0].bbox.y0
+                > boxes[1].bbox.y1 - boxes[1].bbox.y0
+            ):
+                larger_box = boxes[0]
+                smaller_box = boxes[1]
+            else:
+                larger_box = boxes[1]
+                smaller_box = boxes[0]
+
+            # Verify larger image (2x2 inches)
+            larger_height = larger_box.bbox.y1 - larger_box.bbox.y0
+            larger_width = larger_box.bbox.x1 - larger_box.bbox.x0
+            self.assertAlmostEqual(
+                larger_height,
+                2 * inch,
+                delta=5,
+                msg="Larger image height should be 2 inches",
+            )
+            self.assertAlmostEqual(
+                larger_width,
+                2 * inch,
+                delta=5,
+                msg="Larger image width should be 2 inches",
+            )
+
+            # Convert reportlab y-coordinate to PyMuPDF coordinate system
+            expected_larger_y = page_height - (
+                first_img_y + 2 * inch
+            )  # Add height since y is from bottom
+            self.assertAlmostEqual(
+                larger_box.bbox.y0,
+                expected_larger_y,
+                delta=5,
+                msg="Larger image should be at correct y-position",
+            )
+
+            # Verify smaller image (1x1 inch)
+            smaller_height = smaller_box.bbox.y1 - smaller_box.bbox.y0
+            smaller_width = smaller_box.bbox.x1 - smaller_box.bbox.x0
+            self.assertAlmostEqual(
+                smaller_height,
+                1 * inch,
+                delta=5,
+                msg="Smaller image height should be 1 inch",
+            )
+            self.assertAlmostEqual(
+                smaller_width,
+                1 * inch,
+                delta=5,
+                msg="Smaller image width should be 1 inch",
+            )
+
+            # Convert reportlab y-coordinate to PyMuPDF coordinate system
+            expected_smaller_y = page_height - (
+                second_img_y + 1 * inch
+            )  # Add height since y is from bottom
+            self.assertAlmostEqual(
+                smaller_box.bbox.y0,
+                expected_smaller_y,
+                delta=5,
+                msg="Smaller image should be at correct y-position",
+            )
+
+            # Verify each image's basic properties
+            for box in boxes:
+                self.assertIsInstance(box, Box)
+                self.assertEqual(len(box.get_all_images()), 1)
+
+                image = box.get_all_images()[0]
+                self.assertIsInstance(image, DocImage)
+                self.assertIsInstance(image.bbox, BBox)
+                self.assertIsNotNone(image.stream)
+                self.assertTrue(image.name.endswith(".png"))
+                self.assertEqual(image.mimetype, "image/png")
+
+            doc.close()
+        finally:
+            # Clean up
+            if reportlab_pdf_path.exists():
+                os.unlink(reportlab_pdf_path)
 
     def test_pdf_to_document_structure(self):
         # Test full PDF conversion
