@@ -1,3 +1,7 @@
+from mitoolspro.plotting.axes_functions import (
+    adjust_axes_array_limits,
+    is_ax_empty,
+)
 from mitoolspro.plotting.composers import AxesComposer, PlotComposer
 from mitoolspro.plotting.plots.bar_plotter import BarPlotter
 from mitoolspro.plotting.plots.box_plotter import BoxPlotter
