@@ -57,6 +57,17 @@ class TestBBox(TestCase):
         self.assertEqual(bbox.x1, 30)
         self.assertEqual(bbox.y1, 50)
 
+    def test_overlaps(self):
+        bbox1 = BBox(10, 20, 30, 50)
+        bbox2 = BBox(15, 25, 35, 55)
+        self.assertTrue(bbox1.overlaps(bbox2))
+
+        bbox3 = BBox(40, 60, 60, 80)
+        self.assertFalse(bbox1.overlaps(bbox3))
+
+        bbox4 = BBox(5, 10, 25, 45)
+        self.assertTrue(bbox1.overlaps(bbox4))
+
 
 class TestChar(TestCase):
     def setUp(self):
