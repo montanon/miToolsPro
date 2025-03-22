@@ -205,13 +205,6 @@ def pdf_to_document(pdf_path: Path) -> Document:
     except Exception as e:
         raise ValueError(f"Failed to extract images from PDF: {e}")
 
-    def boxes_overlap(box1: Box, box2: Box, tolerance: float = 1.0) -> bool:
-        # Check if two boxes overlap vertically with a small tolerance
-        return not (
-            box1.bbox.y0 >= box2.bbox.y1 + tolerance
-            or box2.bbox.y0 >= box1.bbox.y1 + tolerance
-        )
-
     def merge_overlapping_boxes(boxes: list[Box]) -> list[Box]:
         if not boxes:
             return boxes
@@ -223,7 +216,7 @@ def pdf_to_document(pdf_path: Path) -> Document:
         current_box = boxes[0]
 
         for next_box in boxes[1:]:
-            if boxes_overlap(current_box, next_box):
+            if current_box.bbox.overlaps(next_box.bbox):
                 # If boxes overlap and are of the same type (both text or both image)
                 if bool(current_box.get_all_images()) == bool(
                     next_box.get_all_images()
