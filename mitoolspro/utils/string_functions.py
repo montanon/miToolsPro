@@ -2,7 +2,7 @@ import re
 import string
 from typing import Iterable, List, Optional, Pattern, Union
 
-from fuzzywuzzy import fuzz
+from thefuzz import fuzz
 
 PUNCTUATION_REGEX = re.compile(
     "[" + "".join(re.escape(p) for p in string.punctuation) + "]"
