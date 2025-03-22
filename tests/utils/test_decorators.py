@@ -21,6 +21,7 @@ from mitoolspro.utils.decorators import (
     validate_dataframe_structure,
 )
 from mitoolspro.utils.dev_object import Dev, get_dev_var
+from mitoolspro.utils.functions import remove_characters_from_strings
 from mitoolspro.utils.validation_templates import sankey_plot_validation
 
 
@@ -550,79 +551,98 @@ class TestCachedProperty(TestCase):
         self.assertEqual(obj2.compute_count, 1)
 
 
-class TestParallelDecorator(TestCase):
-    def test_basic_parallel_execution(self):
-        @parallel(n_threads=2, chunk_size=2)
-        def square(x):
-            return x * x
+def clean_string_chunk(chunk, characters=None):
+    return list(remove_characters_from_strings(chunk, characters))
 
-        input_data = [1, 2, 3, 4, 5]
-        result = square(input_data)
-        expected = [1, 4, 9, 16, 25]
-        self.assertEqual(result, expected)
 
-    def test_empty_input(self):
-        @parallel(n_threads=2, chunk_size=2)
-        def square(x):
-            return x * x
+def invalid_chunk(chunk, characters=None):
+    return 123  # Invalid return type (not iterable)
 
-        result = square([])
+
+def fail_on_keyword(chunk, characters=None):
+    for s in chunk:
+        if "log" in s:
+            raise ValueError("triggered error")
+    return chunk
+
+
+class TestParallelDecorator(unittest.TestCase):
+    def setUp(self):
+        self.filenames = [
+            "report_01?.pdf",
+            "data*log.txt",
+            "summary<final>.doc",
+            "image|backup.jpg",
+            "file:name.csv",
+            "presentation%.ppt",
+        ]
+        self.default_expected = [
+            "report_01.pdf",
+            "datalog.txt",
+            "summaryfinal.doc",
+            "imagebackup.jpg",
+            "filename.csv",
+            "presentation.ppt",
+        ]
+        self.custom_characters = r"[aeiou]"
+        self.custom_expected = [
+            "rprt_01?.pdf",
+            "dt*lg.txt",
+            "smmry<fnl>.dc",
+            "mg|bckp.jpg",
+            "fl:nm.csv",
+            "prsnttn%.ppt",
+        ]
+
+    def test_parallel_default_characters(self):
+        decorated = parallel(n_threads=2, chunk_size=2)(clean_string_chunk)
+        result = decorated(self.filenames)
+        self.assertEqual(result, self.default_expected)
+
+    def test_parallel_custom_characters(self):
+        decorated = parallel(n_threads=3, chunk_size=3)(clean_string_chunk)
+        result = decorated(self.filenames, self.custom_characters)
+        self.assertEqual(result, self.custom_expected)
+
+    def test_parallel_empty_input(self):
+        decorated = parallel(n_threads=2, chunk_size=1)(clean_string_chunk)
+        result = decorated([])
         self.assertEqual(result, [])
 
-    def test_single_chunk(self):
-        @parallel(n_threads=2, chunk_size=5)
-        def square(x):
-            return x * x
+    def test_parallel_chunk_size_larger_than_data(self):
+        decorated = parallel(n_threads=4, chunk_size=100)(clean_string_chunk)
+        result = decorated(self.filenames)
+        self.assertEqual(result, self.default_expected)
 
-        input_data = [1, 2, 3, 4, 5]
-        result = square(input_data)
-        expected = [1, 4, 9, 16, 25]
-        self.assertEqual(result, expected)
+    def test_parallel_one_thread(self):
+        decorated = parallel(n_threads=1, chunk_size=2)(clean_string_chunk)
+        result = decorated(self.filenames)
+        self.assertEqual(result, self.default_expected)
 
-    def test_multiple_threads(self):
-        @parallel(n_threads=4, chunk_size=1)
-        def square(x):
-            return x * x
+    def test_parallel_thread_pool(self):
+        decorated = parallel(n_threads=2, chunk_size=2, use_threads=True)(
+            clean_string_chunk
+        )
+        result = decorated(self.filenames)
+        self.assertEqual(result, self.default_expected)
 
-        input_data = [1, 2, 3, 4, 5]
-        result = square(input_data)
-        expected = [1, 4, 9, 16, 25]
-        self.assertEqual(result, expected)
+    def test_parallel_invalid_return_type(self):
+        decorated = parallel(n_threads=2, chunk_size=3)(invalid_chunk)
+        with self.assertRaises(RuntimeError) as context:
+            decorated(self.filenames)
+        self.assertIn("Expected iterable return", str(context.exception))
 
-    def test_with_additional_args(self):
-        @parallel(n_threads=2, chunk_size=2)
-        def multiply(x, factor):
-            return x * factor
+    def test_parallel_function_raises(self):
+        decorated = parallel(n_threads=2, chunk_size=2)(fail_on_keyword)
+        with self.assertRaises(RuntimeError) as context:
+            decorated(self.filenames)
+        self.assertIn("triggered error", str(context.exception))
 
-        input_data = [1, 2, 3, 4, 5]
-        result = multiply(input_data, 2)
-        expected = [2, 4, 6, 8, 10]
-        self.assertEqual(result, expected)
-
-    def test_with_multiple_additional_args(self):
-        @parallel(n_threads=2, chunk_size=2)
-        def complex_operation(x, factor, offset):
-            return (x * factor) + offset
-
-        input_data = [1, 2, 3, 4, 5]
-        result = complex_operation(input_data, 2, 1)
-        expected = [3, 5, 7, 9, 11]
-        self.assertEqual(result, expected)
-
-    def test_preserves_function_name(self):
-        @parallel(n_threads=2, chunk_size=2)
-        def test_func(x):
-            return x
-
-        self.assertEqual(test_func.__name__, "test_func")
-
-    def test_preserves_docstring(self):
-        @parallel(n_threads=2, chunk_size=2)
-        def test_func(x):
-            """Test docstring."""
-            return x
-
-        self.assertEqual(test_func.__doc__, "Test docstring.")
+    def test_parallel_preserves_flattening(self):
+        decorated = parallel(n_threads=2, chunk_size=2)(clean_string_chunk)
+        result = decorated(self.filenames)
+        self.assertEqual(len(result), len(self.filenames))
+        self.assertTrue(all(isinstance(s, str) for s in result))
 
 
 class TestSuppressUserWarningDecorator(TestCase):

@@ -1,8 +1,10 @@
 import inspect
+import math
 import warnings
 from functools import wraps
 from multiprocessing import Pool
-from typing import Any, Callable, Iterable
+from multiprocessing.pool import ThreadPool
+from typing import Any, Callable, Iterable, Optional
 
 from pandas import DataFrame
 from tqdm import tqdm
@@ -12,18 +14,44 @@ from mitoolspro.utils.dev_object import store_dev_var
 from mitoolspro.utils.functions import iterable_chunks
 
 
-def parallel(n_threads: int, chunk_size: int):
+def parallel(
+    n_threads: int,
+    chunk_size: Optional[int] = None,
+    use_threads: bool = False,
+):
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(iterable: Iterable, *args, **kwargs):
-            chunks = list(iterable_chunks(iterable, chunk_size))
+            items = list(iterable)
+            total_items = len(items)
+            if n_threads <= 1 or total_items <= 1:
+                return func(items, *args, **kwargs)
+
+            nonlocal chunk_size
+            if chunk_size is None:
+                chunk_size = math.ceil(total_items / n_threads)
+
+            chunks = list(iterable_chunks(items, chunk_size))
+            PoolType = ThreadPool if use_threads else Pool
             results = []
-            with Pool(processes=n_threads) as pool:
+
+            with PoolType(processes=n_threads) as pool:
                 async_results = [
-                    pool.apply_async(func, (chunk, *args)) for chunk in chunks
+                    pool.apply_async(func, (chunk, *args), kwargs) for chunk in chunks
                 ]
-                for async_result in tqdm(async_results, total=len(chunks)):
-                    results.append(async_result.get())
+                for i, async_result in enumerate(
+                    tqdm(async_results, total=len(chunks))
+                ):
+                    try:
+                        result = async_result.get()
+                        if not hasattr(result, "__iter__"):
+                            raise TypeError(
+                                f"Expected iterable return for chunk {i}, got {type(result)}"
+                            )
+                        results.append(result)
+                    except Exception as e:
+                        raise RuntimeError(f"Error in chunk {i}: {e}") from e
+
             return [item for sublist in results for item in sublist]
 
         return wrapper
