@@ -32,6 +32,30 @@ class TestBBox(TestCase):
     def test_ycenter(self):
         self.assertEqual(self.bbox.ycenter, 35)
 
+    def test_clone(self):
+        cloned = self.bbox.clone()
+        self.assertEqual(cloned, self.bbox)
+        cloned.x0 = 100
+        self.assertNotEqual(cloned.x0, self.bbox.x0)
+
+    def test_merge(self):
+        bbox1 = BBox(10, 20, 30, 40)
+        bbox2 = BBox(20, 30, 40, 50)
+        merged = bbox1.merge(bbox2)
+
+        self.assertEqual(merged.x0, min(bbox1.x0, bbox2.x0))  # min of x0s
+        self.assertEqual(merged.y0, min(bbox1.y0, bbox2.y0))  # min of y0s
+        self.assertEqual(merged.x1, max(bbox1.x1, bbox2.x1))  # max of x1s
+        self.assertEqual(merged.y1, max(bbox1.y1, bbox2.y1))  # max of y1s
+
+        # Test merging with non-overlapping box
+        bbox3 = BBox(100, 100, 200, 200)
+        merged = bbox1.merge(bbox3)
+        self.assertEqual(merged.x0, min(bbox1.x0, bbox3.x0))
+        self.assertEqual(merged.y0, min(bbox1.y0, bbox3.y0))
+        self.assertEqual(merged.x1, max(bbox1.x1, bbox3.x1))
+        self.assertEqual(merged.y1, max(bbox1.y1, bbox3.y1))
+
     def test_equality(self):
         bbox1 = BBox(10, 20, 30, 50)
         bbox2 = BBox(10, 20, 30, 50)
@@ -544,6 +568,45 @@ class TestBox(TestCase):
         self.assertEqual(box1, box2)
         self.assertNotEqual(box1, box3)
         self.assertNotEqual(box1, "not a box")
+
+    def test_merge(self):
+        # Create two boxes with different content
+        box1 = Box(BBox(0, 0, 100, 50))
+        line1 = Line(BBox(0, 0, 100, 20))
+        line1.add_run(Run.from_text("Box 1 text", "Arial", 12))
+        box1.add_line(line1)
+        image1 = Image(BBox(0, 20, 50, 50), b"test1", "img1.jpg", "image/jpeg")
+        box1.add_image(image1)
+
+        box2 = Box(BBox(50, 25, 150, 75))
+        line2 = Line(BBox(50, 25, 150, 45))
+        line2.add_run(Run.from_text("Box 2 text", "Arial", 12))
+        box2.add_line(line2)
+        image2 = Image(BBox(50, 45, 100, 75), b"test2", "img2.jpg", "image/jpeg")
+        box2.add_image(image2)
+
+        # Merge boxes
+        merged = box1.merge(box2)
+
+        # Test merged bbox
+        self.assertEqual(merged.bbox.x0, 0)
+        self.assertEqual(merged.bbox.y0, 0)
+        self.assertEqual(merged.bbox.x1, 150)
+        self.assertEqual(merged.bbox.y1, 75)
+
+        # Test merged content
+        self.assertEqual(len(merged.get_all_lines()), 2)
+        self.assertEqual(len(merged.get_all_images()), 2)
+        self.assertEqual(merged.get_all_lines()[0].text, "Box 1 text")
+        self.assertEqual(merged.get_all_lines()[1].text, "Box 2 text")
+        self.assertEqual(merged.get_all_images()[0].name, "img1.jpg")
+        self.assertEqual(merged.get_all_images()[1].name, "img2.jpg")
+
+        # Verify original boxes are unchanged
+        self.assertEqual(len(box1.get_all_lines()), 1)
+        self.assertEqual(len(box1.get_all_images()), 1)
+        self.assertEqual(len(box2.get_all_lines()), 1)
+        self.assertEqual(len(box2.get_all_images()), 1)
 
 
 class TestPage(TestCase):
