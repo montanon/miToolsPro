@@ -21,31 +21,119 @@ from mitoolspro.document.document_structure import (
 def extract_images_from_pdf(
     pdf_path: Path, image_extension: str = "png"
 ) -> list[list[Box]]:
-    doc = fitz.open(pdf_path)
-    all_boxes = []
-    for page_index, page in enumerate(doc):
-        boxes = []
-        blocks = page.get_text("dict")["blocks"]
-        for block in blocks:
-            if block["type"] == 1:  # image block
-                bbox = BBox(*block["bbox"])
-                xref = block["image"]
-                try:
-                    pix = fitz.Pixmap(doc, xref)
-                    img_bytes = pix.tobytes("png")
-                except Exception:
-                    continue  # skip problematic images
-                image = Image(
-                    bbox=bbox,
-                    stream=img_bytes,
-                    name=f"image_page{page_index}_xref{xref}.{image_extension}",
-                    mimetype=f"image/{image_extension}",
+    try:
+        doc = fitz.open(pdf_path)
+        all_boxes = []
+
+        for page_index, page in enumerate(doc):
+            boxes = []
+            found_xrefs = {}  # Changed to dict to track count of each xref
+
+            try:
+                images_info = page.get_images(full=True)
+                print(f"Found {len(images_info)} images on page {page_index}")
+                xref_to_info = {img[0]: img for img in images_info}
+            except Exception as e:
+                print(f"Error getting images info: {str(e)}")
+                continue
+
+            try:
+                blocks = page.get_text("dict")["blocks"]
+                print(f"Found {len(blocks)} blocks on page {page_index}")
+            except Exception as e:
+                print(f"Error getting blocks: {str(e)}")
+                continue
+
+            # Method 1: Try extracting images from blocks
+            for block in blocks:
+                if block["type"] == 1:  # image block
+                    xref = block["image"]
+                    print(f"Processing block image xref: {xref}")
+
+                    # Get count of this xref
+                    count = found_xrefs.get(xref, 0)
+
+                    try:
+                        bbox = BBox(*block["bbox"])
+                        img_info = xref_to_info.get(xref)
+                        if not img_info:
+                            continue
+
+                        pix = fitz.Pixmap(doc, xref)
+                        if pix.width > 0 and pix.height > 0:
+                            if pix.n - pix.alpha > 3:
+                                pix = fitz.Pixmap(fitz.csRGB, pix)
+                            img_bytes = pix.tobytes("png")
+                            image = Image(
+                                bbox=bbox,
+                                stream=img_bytes,
+                                name=f"image_page{page_index}_xref{xref}_{count}.{image_extension}",
+                                mimetype=f"image/{image_extension}",
+                            )
+                            box = Box(bbox)
+                            box.add_image(image)
+                            boxes.append(box)
+                            found_xrefs[xref] = count + 1
+                            print(
+                                f"Successfully extracted block image {xref} (instance {count})"
+                            )
+                    except Exception as e:
+                        print(f"Error processing block image {xref}: {str(e)}")
+                        continue
+
+            # Method 2: Process any remaining images
+            for img_info in images_info:
+                xref = img_info[0]
+                width = img_info[2]
+                height = img_info[3]
+                print(
+                    f"Processing remaining image: xref={xref}, width={width}, height={height}"
                 )
-                box = Box(bbox)
-                box.add_image(image)
-                boxes.append(box)
-        all_boxes.append(boxes)
-    return all_boxes
+
+                # Get count of this xref
+                count = found_xrefs.get(xref, 0)
+
+                try:
+                    # Create bbox from image dimensions
+                    # Position it at (72, 72) if we can't find a better position
+                    # (72 points = 1 inch margin)
+                    x_offset = 72 + (count * (width + 72))  # Space images apart
+                    bbox = BBox(x_offset, 72, x_offset + width, 72 + height)
+
+                    pix = fitz.Pixmap(doc, xref)
+                    if pix.width > 0 and pix.height > 0:
+                        if pix.n - pix.alpha > 3:
+                            pix = fitz.Pixmap(fitz.csRGB, pix)
+                        img_bytes = pix.tobytes("png")
+
+                        name = f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
+                        print(f"Creating image with name: {name}")
+                        image = Image(
+                            bbox=bbox,
+                            stream=img_bytes,
+                            name=name,
+                            mimetype=f"image/{image_extension}",
+                        )
+                        box = Box(bbox)
+                        box.add_image(image)
+                        boxes.append(box)
+                        found_xrefs[xref] = count + 1
+                        print(
+                            f"Successfully extracted remaining image {xref} (instance {count})"
+                        )
+                except Exception as e:
+                    print(f"Error processing remaining image {xref}: {str(e)}")
+                    continue
+
+            all_boxes.append(boxes)
+
+        doc.close()
+        return all_boxes
+    except Exception as e:
+        print(f"Top level error: {str(e)}")
+        if "doc" in locals():
+            doc.close()
+        raise
 
 
 def extract_lines_from_pdf(line_obj: LTTextLineHorizontal) -> Line:
