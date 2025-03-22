@@ -271,3 +271,19 @@ def select_columns(
     if invalid_columns:
         raise ArgumentValueError(f"Invalid columns: {invalid_columns}")
     return dataframe.loc[:, columns]
+
+
+def remove_dataframe_duplicates(dfs: List[DataFrame]) -> List[DataFrame]:
+    unique_dfs = []
+    for i in range(len(dfs)):
+        if not any(dfs[i].equals(dfs[j]) for j in range(i + 1, len(dfs))):
+            unique_dfs.append(dfs[i])
+    return unique_dfs
+
+
+def save_dataframes_to_excel(
+    dataframes_dict: Dict[str, DataFrame], filename: PathLike
+) -> None:
+    with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
+        for sheet_name, dataframe in dataframes_dict.items():
+            dataframe.to_excel(writer, sheet_name=sheet_name)
