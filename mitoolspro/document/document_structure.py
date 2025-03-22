@@ -30,6 +30,14 @@ class BBox:
     def ycenter(self):
         return (self.y0 + self.y1) / 2
 
+    def overlaps(self, other: "BBox", tolerance: float = 1.0) -> bool:
+        return not (
+            self.y0 >= other.y1 + tolerance
+            or other.y0 >= self.y1 + tolerance
+            or self.x1 <= other.x0 - tolerance
+            or other.x1 <= self.x0 - tolerance
+        )
+
     def __repr__(self):
         return f"BBox(x0={self.x0}, y0={self.y0}, x1={self.x1}, y1={self.y1})"
 
