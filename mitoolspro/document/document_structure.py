@@ -1,5 +1,7 @@
 from typing import List
 
+from mitoolspro.document.runs_utils import merge_runs
+
 CHAR_SIZE_TOLERANCE = 0.001
 
 
@@ -480,11 +482,11 @@ class Document:
             chars.extend(p.get_all_chars())
         return chars
 
-    def get_all_runs(self):
+    def get_all_runs(self, merged=True):
         runs = []
         for line in self.get_all_lines():
             runs.extend(line.runs)
-        return runs
+        return merge_runs(runs) if merged else runs
 
     def get_text(self):
         return "\n".join(page.text for page in self.pages)
