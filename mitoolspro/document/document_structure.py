@@ -38,6 +38,17 @@ class BBox:
             or other.x1 <= self.x0 - tolerance
         )
 
+    def clone(self) -> "BBox":
+        return BBox(self.x0, self.y0, self.x1, self.y1)
+
+    def merge(self, other: "BBox") -> "BBox":
+        return BBox(
+            min(self.x0, other.x0),
+            min(self.y0, other.y0),
+            max(self.x1, other.x1),
+            max(self.y1, other.y1),
+        )
+
     def __repr__(self):
         return f"BBox(x0={self.x0}, y0={self.y0}, x1={self.x1}, y1={self.y1})"
 
@@ -319,6 +330,24 @@ class Box:
             if isinstance(el, Line)
             for char in el.get_all_chars()
         ]
+
+    def merge(self, other: "Box") -> "Box":
+        new_bbox = self.bbox.merge(other.bbox)
+        merged_box = Box(new_bbox)
+
+        for element in self.elements:
+            if isinstance(element, Line):
+                merged_box.add_line(element)
+            elif isinstance(element, Image):
+                merged_box.add_image(element)
+
+        for element in other.elements:
+            if isinstance(element, Line):
+                merged_box.add_line(element)
+            elif isinstance(element, Image):
+                merged_box.add_image(element)
+
+        return merged_box
 
     def to_json(self):
         return {
