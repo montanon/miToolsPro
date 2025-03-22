@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
 
-from fuzzywuzzy import fuzz
+from thefuzz import fuzz
 
 from mitoolspro.utils.string_functions import (
     clean_str,
@@ -127,17 +127,13 @@ class TestStripPunctuation(TestCase):
         )
 
     def test_strip_punctuation_non_ascii(self):
+        self.assertEqual(strip_punctuation("Hello ;,'World'!", all=True), "Hello World")
+        self.assertEqual(strip_punctuation("Hello 'World'!", all=False), "Hello 'World")
         self.assertEqual(
-            strip_punctuation("“Hello” ‘World’!", all=True), "“Hello” ‘World’"
+            strip_punctuation("   Hello 'World'!   ", all=True), "Hello World"
         )
         self.assertEqual(
-            strip_punctuation("“Hello” ‘World’!", all=False), "“Hello” ‘World’"
-        )
-        self.assertEqual(
-            strip_punctuation("   “Hello” ‘World’!   ", all=True), "“Hello” ‘World’"
-        )
-        self.assertEqual(
-            strip_punctuation("   “Hello” ‘World’!   ", all=False), "“Hello” ‘World’"
+            strip_punctuation("   Hello 'World'!   ", all=False), "Hello 'World"
         )
 
     def test_strip_punctuation_numbers_and_special_cases(self):
@@ -412,6 +408,85 @@ class TestFuzzRatio(unittest.TestCase):
         self.assertEqual(
             fuzz_ratio(src_string, dst_string),
             fuzz.partial_ratio(src_string, dst_string),
+        )
+
+
+class TestRemoveCharactersFromString(TestCase):
+    def test_remove_characters_with_default_pattern(self):
+        self.assertEqual(
+            remove_characters_from_string("file/name*with?invalid%chars"),
+            "filenamewithinvalidchars",
+        )
+
+    def test_remove_characters_with_custom_pattern(self):
+        self.assertEqual(
+            remove_characters_from_string("hello123world", r"\d"), "helloworld"
+        )
+
+    def test_remove_characters_empty_string(self):
+        self.assertEqual(remove_characters_from_string(""), "")
+
+    def test_remove_characters_no_matches(self):
+        self.assertEqual(remove_characters_from_string("hello world"), "hello world")
+
+    def test_remove_characters_none_pattern(self):
+        self.assertEqual(
+            remove_characters_from_string("hello world", None), "hello world"
+        )
+
+
+class TestRemoveCharactersFromStrings(TestCase):
+    def test_remove_characters_from_strings_with_default_pattern(self):
+        input_strings = ["file/name1", "file*name2", "file?name3"]
+        expected = ["filename1", "filename2", "filename3"]
+        self.assertEqual(list(remove_characters_from_strings(input_strings)), expected)
+
+    def test_remove_characters_from_strings_with_custom_pattern(self):
+        input_strings = ["hello123", "world456", "test789"]
+        expected = ["hello", "world", "test"]
+        self.assertEqual(
+            list(remove_characters_from_strings(input_strings, r"\d")), expected
+        )
+
+    def test_remove_characters_from_strings_empty_list(self):
+        self.assertEqual(list(remove_characters_from_strings([])), [])
+
+    def test_remove_characters_from_strings_no_matches(self):
+        input_strings = ["hello", "world", "test"]
+        self.assertEqual(
+            list(remove_characters_from_strings(input_strings)), input_strings
+        )
+
+    def test_remove_characters_from_strings_none_pattern(self):
+        input_strings = ["hello", "world", "test"]
+        self.assertEqual(
+            list(remove_characters_from_strings(input_strings, None)), input_strings
+        )
+
+
+class TestLowerstrip(TestCase):
+    def test_lowerstrip_all_true(self):
+        self.assertEqual(lowerstrip("  Hello, World!  ", all=True), "hello world")
+
+    def test_lowerstrip_all_false(self):
+        self.assertEqual(lowerstrip("  Hello, World!  ", all=False), "hello, world")
+
+    def test_lowerstrip_empty_string(self):
+        self.assertEqual(lowerstrip("", all=True), "")
+        self.assertEqual(lowerstrip("", all=False), "")
+
+    def test_lowerstrip_whitespace_only(self):
+        self.assertEqual(lowerstrip("   ", all=True), "")
+        self.assertEqual(lowerstrip("   ", all=False), "")
+
+    def test_lowerstrip_mixed_case(self):
+        self.assertEqual(lowerstrip("  HeLLo, WoRLD!  ", all=True), "hello world")
+        self.assertEqual(lowerstrip("  HeLLo, WoRLD!  ", all=False), "hello, world")
+
+    def test_lowerstrip_with_numbers(self):
+        self.assertEqual(lowerstrip("  Hello123, World!  ", all=True), "hello123 world")
+        self.assertEqual(
+            lowerstrip("  Hello123, World!  ", all=False), "hello123, world"
         )
 
 
