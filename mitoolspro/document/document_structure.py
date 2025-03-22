@@ -4,7 +4,7 @@ CHAR_SIZE_TOLERANCE = 0.001
 
 
 class BBox:
-    def __init__(self, x0, y0, x1, y1):
+    def __init__(self, x0: float, y0: float, x1: float, y1: float):
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
@@ -57,7 +57,7 @@ class BBox:
 
 
 class Char:
-    def __init__(self, text, fontname, size, bbox: BBox):
+    def __init__(self, text: str, fontname: str, size: float, bbox: BBox):
         self.text = text
         self.fontname = fontname
         self.size = size
@@ -111,7 +111,9 @@ class Char:
 
 
 class Run:
-    def __init__(self, fontname, size, text=None, chars=None):
+    def __init__(
+        self, fontname: str, size: float, text: str = None, chars: List[Char] = None
+    ):
         self.fontname = fontname
         self.size = size
         self.chars = []
@@ -278,7 +280,7 @@ class Image(BoxElement):
 
 
 class Box:
-    def __init__(self, bbox):
+    def __init__(self, bbox: BBox):
         self.bbox = bbox
         self.elements: List[BoxElement] = []
 
@@ -346,7 +348,7 @@ class Box:
 
 
 class Page:
-    def __init__(self, width, height):
+    def __init__(self, width: float, height: float):
         self.width = width
         self.height = height
         self.boxes = []
