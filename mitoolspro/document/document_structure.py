@@ -1,5 +1,7 @@
 from typing import List
 
+CHAR_SIZE_TOLERANCE = 0.001
+
 
 class BBox:
     def __init__(self, x0, y0, x1, y1):
@@ -103,7 +105,7 @@ class Char:
         return (
             self.text == other.text
             and self.fontname == other.fontname
-            and abs(self.size - other.size) < 0.0001
+            and abs(self.size - other.size) < CHAR_SIZE_TOLERANCE
             and self.bbox == other.bbox
         )
 
@@ -148,7 +150,7 @@ class Run:
             return False
         return (
             self.fontname == other.fontname
-            and abs(self.size - other.size) < 0.0001
+            and abs(self.size - other.size) < CHAR_SIZE_TOLERANCE
             and self.text == other.text
             and len(self.chars) == len(other.chars)
             and all(c1.bbox == c2.bbox for c1, c2 in zip(self.chars, other.chars))
