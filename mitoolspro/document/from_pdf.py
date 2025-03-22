@@ -205,10 +205,66 @@ def pdf_to_document(pdf_path: Path) -> Document:
     except Exception as e:
         raise ValueError(f"Failed to extract images from PDF: {e}")
 
+    def boxes_overlap(box1: Box, box2: Box, tolerance: float = 1.0) -> bool:
+        # Check if two boxes overlap vertically with a small tolerance
+        return not (
+            box1.bbox.y0 >= box2.bbox.y1 + tolerance
+            or box2.bbox.y0 >= box1.bbox.y1 + tolerance
+        )
+
+    def merge_overlapping_boxes(boxes: list[Box]) -> list[Box]:
+        if not boxes:
+            return boxes
+
+        # Sort boxes by top edge (y1) descending, then left edge (x0)
+        boxes.sort(key=lambda b: (-b.bbox.y1, b.bbox.x0))
+
+        merged = []
+        current_box = boxes[0]
+
+        for next_box in boxes[1:]:
+            if boxes_overlap(current_box, next_box):
+                # If boxes overlap and are of the same type (both text or both image)
+                if bool(current_box.get_all_images()) == bool(
+                    next_box.get_all_images()
+                ):
+                    # Merge boxes by extending the bbox
+                    new_bbox = BBox(
+                        min(current_box.bbox.x0, next_box.bbox.x0),
+                        min(current_box.bbox.y0, next_box.bbox.y0),
+                        max(current_box.bbox.x1, next_box.bbox.x1),
+                        max(current_box.bbox.y1, next_box.bbox.y1),
+                    )
+                    merged_box = Box(new_bbox)
+
+                    # Copy content from both boxes
+                    for line in current_box.get_all_lines():
+                        merged_box.add_line(line)
+                    for line in next_box.get_all_lines():
+                        merged_box.add_line(line)
+                    for image in current_box.get_all_images():
+                        merged_box.add_image(image)
+                    for image in next_box.get_all_images():
+                        merged_box.add_image(image)
+
+                    current_box = merged_box
+                else:
+                    # If different types, keep them separate but adjust positions
+                    next_box.bbox.y1 = min(next_box.bbox.y1, current_box.bbox.y0)
+                    merged.append(current_box)
+                    current_box = next_box
+            else:
+                merged.append(current_box)
+                current_box = next_box
+
+        merged.append(current_box)
+        return merged
+
     for page_index, page_layout in enumerate(page_layouts):
         page = Page(page_layout.width, page_layout.height)
         boxes = []
 
+        # Collect text boxes
         for element in page_layout:
             if isinstance(element, LTTextBoxHorizontal):
                 bbox = BBox(element.x0, element.y0, element.x1, element.y1)
@@ -219,11 +275,12 @@ def pdf_to_document(pdf_path: Path) -> Document:
                         box.add_line(line)
                 boxes.append(box)
 
+        # Add image boxes
         boxes.extend(image_boxes_per_page[page_index])
 
-        boxes.sort(key=lambda b: (-b.bbox.y1, b.bbox.x0))
-
-        for box in boxes:
+        # Merge overlapping boxes and add to page
+        merged_boxes = merge_overlapping_boxes(boxes)
+        for box in merged_boxes:
             page.add_box(box)
 
         doc.add_page(page)
