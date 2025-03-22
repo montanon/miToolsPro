@@ -18,7 +18,7 @@ from mitoolspro.document.document_structure import (
 )
 
 
-def _extract_image_boxes(
+def extract_images_from_pdf(
     pdf_path: Path, image_extension: str = "png"
 ) -> list[list[Box]]:
     doc = fitz.open(pdf_path)
@@ -48,7 +48,7 @@ def _extract_image_boxes(
     return all_boxes
 
 
-def _parse_line_from_lt_line(line_obj: LTTextLineHorizontal) -> Line:
+def extract_lines_from_pdf(line_obj: LTTextLineHorizontal) -> Line:
     line = Line(BBox(line_obj.x0, line_obj.y0, line_obj.x1, line_obj.y1))
     current_run = None
     for char_obj in line_obj:
@@ -82,14 +82,14 @@ def _parse_line_from_lt_line(line_obj: LTTextLineHorizontal) -> Line:
     return line
 
 
-def parse_pdf_to_structure(pdf_path: Path) -> Document:
+def pdf_to_document(pdf_path: Path) -> Document:
     doc = Document()
     try:
         page_layouts = extract_pages(pdf_path)
     except Exception as e:
         raise ValueError(f"Failed to parse PDF: {e}")
     try:
-        image_boxes_per_page = _extract_image_boxes(pdf_path)
+        image_boxes_per_page = extract_images_from_pdf(pdf_path)
     except Exception as e:
         raise ValueError(f"Failed to extract images from PDF: {e}")
 
@@ -103,7 +103,7 @@ def parse_pdf_to_structure(pdf_path: Path) -> Document:
                 box = Box(bbox)
                 for line_obj in element:
                     if isinstance(line_obj, LTTextLineHorizontal):
-                        line = _parse_line_from_lt_line(line_obj)
+                        line = extract_lines_from_pdf(line_obj)
                         box.add_line(line)
                 boxes.append(box)
 
