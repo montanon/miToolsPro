@@ -21,7 +21,7 @@ from mitoolspro.utils.decorators import (
     validate_dataframe_structure,
 )
 from mitoolspro.utils.dev_object import Dev, get_dev_var
-from mitoolspro.utils.functions import remove_characters_from_strings
+from mitoolspro.utils.string_functions import remove_characters_from_strings
 from mitoolspro.utils.validation_templates import sankey_plot_validation
 
 
