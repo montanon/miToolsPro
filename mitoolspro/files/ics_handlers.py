@@ -17,11 +17,8 @@ def read_ics_file(filepath: Union[str, Path]) -> Calendar:
 
 
 def _parse_datetime(component: Event, field: str) -> Optional[pd.Timestamp]:
-    try:
-        if component.get(field):
-            return pd.to_datetime(component.decoded(field))
-    except Exception:
-        pass
+    if component.get(field):
+        return pd.to_datetime(component.decoded(field))
     return None
 
 

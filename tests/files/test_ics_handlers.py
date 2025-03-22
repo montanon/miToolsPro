@@ -388,6 +388,64 @@ END:VCALENDAR"""
 
         malformed_path.unlink()
 
+    def test_get_events_between_dates_with_invalid_dates(self):
+        calendar = read_ics_file(self.complex_ics_path)
+        events = extract_events(calendar)
+
+        invalid_event = {
+            "summary": "Invalid Date Event",
+            "start": "not a timestamp",
+            "end": "also not a timestamp",
+        }
+        events.append(invalid_event)
+
+        start_date = datetime(2024, 1, 1)
+        end_date = datetime(2024, 12, 31)
+        filtered_events = get_events_between_dates(events, start_date, end_date)
+
+        self.assertNotIn("Invalid Date Event", [e["summary"] for e in filtered_events])
+        self.assertEqual(len(filtered_events), 5)  # Original number of valid events
+
+    def test_parse_datetime_with_various_formats(self):
+        calendar = read_ics_file(self.complex_ics_path)
+        events = extract_events(calendar)
+
+        malformed_ics_content = """BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:Invalid Format Event
+DTSTART:2024-13-45
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Empty Date Event
+DTSTART:
+DTEND:
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Invalid String Event
+DTSTART:hello world
+DTEND:goodbye world
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Invalid String Event
+DTSTART:2024-12-25
+DTEND:goodbye world
+END:VEVENT
+END:VCALENDAR"""
+
+        malformed_path = Path(self.temp_dir.name) / "malformed_dates.ics"
+        malformed_path.write_text(malformed_ics_content)
+
+        calendar = read_ics_file(malformed_path)
+        events = extract_events(calendar)
+
+        self.assertEqual(len(events), 4)
+        for event in events:
+            self.assertIsNone(event["start"])
+            self.assertIsNone(event["end"])
+
+        malformed_path.unlink()
+
 
 if __name__ == "__main__":
     unittest.main()
