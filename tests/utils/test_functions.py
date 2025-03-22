@@ -69,16 +69,16 @@ class TestDictFromKwargs(TestCase):
 
 class TestAddSignificance(TestCase):
     def test_add_significance_very_significant(self):
-        row = Series(["Test (0.001)"])
-        self.assertEqual(row.apply(add_significance)[0], "Test (0.001)***")
+        row = Series(["Test (0.0009)"])
+        self.assertEqual(row.apply(add_significance)[0], "Test (0.0009)***")
 
     def test_add_significance_significant(self):
-        row = Series(["Test (0.03)"])
-        self.assertEqual(row.apply(add_significance)[0], "Test (0.03)**")
+        row = Series(["Test (0.009)"])
+        self.assertEqual(row.apply(add_significance)[0], "Test (0.009)**")
 
     def test_add_significance_moderately_significant(self):
-        row = Series(["Test (0.07)"])
-        self.assertEqual(row.apply(add_significance)[0], "Test (0.07)*")
+        row = Series(["Test (0.049)"])
+        self.assertEqual(row.apply(add_significance)[0], "Test (0.049)*")
 
     def test_add_significance_not_significant(self):
         row = Series(["Test (0.2)"])
