@@ -243,7 +243,7 @@ class TestFindStrLineNumberInText(TestCase):
         self.assertEqual(find_str_line_number_in_text(text, substring), None)
 
 
-class TestLcsSimilarity(unittest.TestCase):
+class TestLcsSimilarity(TestCase):
     def test_identical_strings(self):
         self.assertEqual(lcs_similarity("abc", "abc"), 1.0)
 
@@ -259,7 +259,7 @@ class TestLcsSimilarity(unittest.TestCase):
         self.assertEqual(lcs_similarity("", ""), 0.0)
 
 
-class TestCleanStr(unittest.TestCase):
+class TestCleanStr(TestCase):
     def test_clean_str_no_pattern(self):
         string = "Hello, World!"
         result = clean_str(string, None)
@@ -279,7 +279,7 @@ class TestCleanStr(unittest.TestCase):
         self.assertEqual(result, "Hello; World!")
 
 
-class TestStretchString(unittest.TestCase):
+class TestStretchString(TestCase):
     def test_normal_case(self):
         self.assertEqual(
             stretch_string("This is a sample string for testing purposes", 10),
@@ -310,7 +310,7 @@ class TestStretchString(unittest.TestCase):
         )
 
 
-class TestRemoveChars(unittest.TestCase):
+class TestRemoveChars(TestCase):
     def test_basic_removal(self):
         self.assertEqual(remove_chars("Hello, World!", "lo"), "He, Wrd!")
 
@@ -330,7 +330,7 @@ class TestRemoveChars(unittest.TestCase):
         self.assertEqual(remove_chars("H@#llo, W$rld!", "@#$"), "Hllo, Wrld!")
 
 
-class TestSplitStrings(unittest.TestCase):
+class TestSplitStrings(TestCase):
     def test_split_strings(self):
         str_list = ["HelloWorld", "GoodByeWorld"]
         self.assertEqual(
@@ -346,7 +346,7 @@ class TestSplitStrings(unittest.TestCase):
         self.assertEqual(split_strings(str_list), [])
 
 
-class TestReplacePrefix(unittest.TestCase):
+class TestReplacePrefix(TestCase):
     def test_replace_prefix(self):
         string = "Hello World"
         prefix = "Hello"
@@ -366,7 +366,7 @@ class TestReplacePrefix(unittest.TestCase):
         self.assertEqual(replace_prefix(string, prefix, replacement), "")
 
 
-class TestFuzzStringInString(unittest.TestCase):
+class TestFuzzStringInString(TestCase):
     def test_fuzz_string_in_string_exact_match(self):
         src_string = "Hello World"
         dst_string = "Hello World"
@@ -388,7 +388,7 @@ class TestFuzzStringInString(unittest.TestCase):
         self.assertTrue(fuzz_string_in_string(src_string, dst_string, 50))
 
 
-class TestFuzzRatio(unittest.TestCase):
+class TestFuzzRatio(TestCase):
     def test_fuzz_ratio_exact_match(self):
         src_string = "Hello World"
         dst_string = "Hello World"
