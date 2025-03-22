@@ -765,8 +765,12 @@ class TestDocument(TestCase):
         self.assertEqual(len(chars), 12)
 
     def test_get_all_runs(self):
-        runs = self.document.get_all_runs()
+        runs = self.document.get_all_runs(merge=False)
         self.assertEqual(len(runs), 2)
+
+    def test_get_all_runs_merged(self):
+        runs = self.document.get_all_runs(merge=True)
+        self.assertEqual(len(runs), 1)
 
     def test_to_json(self):
         json_data = self.document.to_json()
@@ -884,7 +888,8 @@ class TestDocument(TestCase):
         self.assertEqual(doc.pages[1].text, "Page 2")
         self.assertEqual(len(doc.get_all_boxes()), 2)
         self.assertEqual(len(doc.get_all_lines()), 2)
-        self.assertEqual(len(doc.get_all_runs()), 2)
+        self.assertEqual(len(doc.get_all_runs(merge=False)), 2)
+        self.assertEqual(len(doc.get_all_runs(merge=True)), 1)
 
     def test_equality(self):
         doc1 = Document()
