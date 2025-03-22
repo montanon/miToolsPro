@@ -1,5 +1,6 @@
 from math import isclose
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import fitz
 from pdfminer.high_level import extract_pages
@@ -20,168 +21,143 @@ from mitoolspro.document.document_structure import (
 
 def extract_images_from_pdf(
     pdf_path: Path, image_extension: str = "png"
-) -> list[list[Box]]:
+) -> List[List[Box]]:
+    def to_bbox(coords: Union[Tuple[float, float, float, float], fitz.Rect]) -> BBox:
+        if isinstance(coords, fitz.Rect):
+            return BBox(coords.x0, coords.y0, coords.x1, coords.y1)
+        return BBox(*coords)
+
+    def build_image_box(bbox: BBox, img_bytes: bytes, name: str, mimetype: str) -> Box:
+        image = Image(bbox=bbox, stream=img_bytes, name=name, mimetype=mimetype)
+        box = Box(bbox)
+        box.add_image(image)
+        return box
+
+    all_boxes: List[List[Box]] = []
+    doc = fitz.open(pdf_path)
+
     try:
-        doc = fitz.open(pdf_path)
-        all_boxes = []
-
         for page_index, page in enumerate(doc):
-            boxes = []
-            found_xrefs = {}  # Track count of each xref
-            image_positions = {}  # Track original positions of images
-            processed_blocks = set()  # Track which blocks we've processed
+            boxes: List[Box] = []
+            found_xrefs: Dict[int, int] = {}
+            image_positions: Dict[Union[int, bytes], List[Tuple[int, Tuple]]] = {}
+            processed_blocks: set = set()
 
+            # Get image info and block structure
             try:
-                images_info = page.get_images(full=True)
-                print(f"Found {len(images_info)} images on page {page_index}")
-                xref_to_info = {img[0]: img for img in images_info}
-            except Exception as e:
-                print(f"Error getting images info: {str(e)}")
-                continue
-
-            try:
+                xref_to_info = {img[0]: img for img in page.get_images(full=True)}
                 blocks = page.get_text("dict")["blocks"]
-                print(f"Found {len(blocks)} blocks on page {page_index}")
-            except Exception as e:
-                print(f"Error getting blocks: {str(e)}")
+            except Exception:
+                all_boxes.append([])
                 continue
 
-            # First pass: collect all image positions from blocks
+            # Collect block image positions
             for block_idx, block in enumerate(blocks):
                 if block["type"] == 1:  # image block
                     xref = block["image"]
                     bbox = block["bbox"]
-                    if xref not in image_positions:
-                        image_positions[xref] = []
-                    image_positions[xref].append((block_idx, bbox))
+                    image_positions.setdefault(xref, []).append((block_idx, bbox))
 
-            # Method 1: Process all image blocks
+            # Process block images
             for block_idx, block in enumerate(blocks):
-                if (
-                    block["type"] == 1 and block_idx not in processed_blocks
-                ):  # image block
-                    xref = block["image"]
-                    print(f"Processing block image xref: {xref}")
+                if block["type"] != 1 or block_idx in processed_blocks:
+                    continue
 
-                    try:
-                        bbox = BBox(*block["bbox"])
+                xref = block["image"]
+                bbox = to_bbox(block["bbox"])
 
-                        # Handle case where xref is raw image data
-                        if isinstance(xref, bytes):
-                            img_bytes = xref
-                            image = Image(
-                                bbox=bbox,
-                                stream=img_bytes,
-                                name=f"image_page{page_index}_block{block_idx}.{image_extension}",
-                                mimetype=f"image/{image_extension}",
-                            )
-                            box = Box(bbox)
-                            box.add_image(image)
-                            boxes.append(box)
-                            processed_blocks.add(block_idx)
-                            print(
-                                f"Successfully extracted block image from raw data (block {block_idx})"
-                            )
-                            continue
-
-                        # Normal case: xref is a reference
-                        img_info = xref_to_info.get(xref)
-                        if not img_info:
-                            continue
-
-                        pix = fitz.Pixmap(doc, xref)
-                        if pix.width > 0 and pix.height > 0:
-                            if pix.n - pix.alpha > 3:
-                                pix = fitz.Pixmap(fitz.csRGB, pix)
-                            img_bytes = pix.tobytes("png")
-
-                            # Get instance count for this block position
-                            count = found_xrefs.get(xref, 0)
-
-                            image = Image(
-                                bbox=bbox,
-                                stream=img_bytes,
-                                name=f"image_page{page_index}_xref{xref}_{count}.{image_extension}",
-                                mimetype=f"image/{image_extension}",
-                            )
-                            box = Box(bbox)
-                            box.add_image(image)
-                            boxes.append(box)
-                            found_xrefs[xref] = count + 1
-                            processed_blocks.add(block_idx)
-                            print(
-                                f"Successfully extracted block image {xref} (instance {count})"
-                            )
-                    except Exception as e:
-                        print(f"Error processing block image {xref}: {str(e)}")
+                try:
+                    if isinstance(xref, bytes):
+                        name = (
+                            f"image_page{page_index}_block{block_idx}.{image_extension}"
+                        )
+                        box = build_image_box(
+                            bbox=bbox,
+                            img_bytes=xref,
+                            name=name,
+                            mimetype=f"image/{image_extension}",
+                        )
+                        boxes.append(box)
+                        processed_blocks.add(block_idx)
                         continue
 
-            # Method 2: Process any remaining image positions
+                    if xref not in xref_to_info:
+                        continue
+
+                    pix = fitz.Pixmap(doc, xref)
+                    if pix.n - pix.alpha > 3:
+                        pix = fitz.Pixmap(fitz.csRGB, pix)
+
+                    img_bytes = pix.tobytes(image_extension)
+                    count = found_xrefs.get(xref, 0)
+                    name = (
+                        f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
+                    )
+
+                    box = build_image_box(
+                        bbox=bbox,
+                        img_bytes=img_bytes,
+                        name=name,
+                        mimetype=f"image/{image_extension}",
+                    )
+                    boxes.append(box)
+                    found_xrefs[xref] = count + 1
+                    processed_blocks.add(block_idx)
+
+                except Exception:
+                    continue  # skip problematic images
+
+            # Process any remaining xrefs not picked up by block method
             for xref, positions in image_positions.items():
-                for block_idx, bbox in positions:
+                for block_idx, bbox_coords in positions:
                     if block_idx in processed_blocks:
                         continue
 
+                    bbox = to_bbox(bbox_coords)
+
                     try:
-                        # Handle case where xref is raw image data
                         if isinstance(xref, bytes):
-                            img_bytes = xref
-                            image = Image(
-                                bbox=BBox(*bbox),
-                                stream=img_bytes,
-                                name=f"image_page{page_index}_block{block_idx}.{image_extension}",
-                                mimetype=f"image/{image_extension}",
-                            )
-                            box = Box(BBox(*bbox))
-                            box.add_image(image)
-                            boxes.append(box)
-                            processed_blocks.add(block_idx)
-                            print(
-                                f"Successfully extracted remaining image from raw data (block {block_idx})"
-                            )
-                            continue
-
-                        # Normal case: xref is a reference
-                        img_info = xref_to_info.get(xref)
-                        if not img_info:
-                            continue
-
-                        pix = fitz.Pixmap(doc, xref)
-                        if pix.width > 0 and pix.height > 0:
-                            if pix.n - pix.alpha > 3:
-                                pix = fitz.Pixmap(fitz.csRGB, pix)
-                            img_bytes = pix.tobytes("png")
-
-                            count = found_xrefs.get(xref, 0)
-                            name = f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
-                            print(f"Creating image with name: {name}")
-                            image = Image(
-                                bbox=BBox(*bbox),
-                                stream=img_bytes,
+                            name = f"image_page{page_index}_block{block_idx}.{image_extension}"
+                            box = build_image_box(
+                                bbox=bbox,
+                                img_bytes=xref,
                                 name=name,
                                 mimetype=f"image/{image_extension}",
                             )
-                            box = Box(BBox(*bbox))
-                            box.add_image(image)
                             boxes.append(box)
-                            found_xrefs[xref] = count + 1
                             processed_blocks.add(block_idx)
-                            print(
-                                f"Successfully extracted remaining image {xref} (instance {count})"
-                            )
-                    except Exception as e:
-                        print(f"Error processing remaining image {xref}: {str(e)}")
+                            continue
+
+                        if xref not in xref_to_info:
+                            continue
+
+                        pix = fitz.Pixmap(doc, xref)
+                        if pix.n - pix.alpha > 3:
+                            pix = fitz.Pixmap(fitz.csRGB, pix)
+
+                        img_bytes = pix.tobytes(image_extension)
+                        count = found_xrefs.get(xref, 0)
+                        name = f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
+
+                        box = build_image_box(
+                            bbox=bbox,
+                            img_bytes=img_bytes,
+                            name=name,
+                            mimetype=f"image/{image_extension}",
+                        )
+                        boxes.append(box)
+                        found_xrefs[xref] = count + 1
+                        processed_blocks.add(block_idx)
+
+                    except Exception:
                         continue
 
             all_boxes.append(boxes)
 
+    finally:
         doc.close()
-        return all_boxes
-    except Exception as e:
-        print(f"Top level error: {str(e)}")
-        if "doc" in locals():
-            doc.close()
-        raise
+
+    return all_boxes
 
 
 def extract_lines_from_pdf(line_obj: LTTextLineHorizontal) -> Line:
