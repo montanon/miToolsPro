@@ -27,7 +27,8 @@ def extract_images_from_pdf(
 
         for page_index, page in enumerate(doc):
             boxes = []
-            found_xrefs = {}  # Changed to dict to track count of each xref
+            found_xrefs = {}  # Track count and position of each xref
+            image_positions = {}  # Track original positions of images
 
             try:
                 images_info = page.get_images(full=True)
@@ -43,6 +44,15 @@ def extract_images_from_pdf(
             except Exception as e:
                 print(f"Error getting blocks: {str(e)}")
                 continue
+
+            # First pass: collect all image positions from blocks
+            for block in blocks:
+                if block["type"] == 1:  # image block
+                    xref = block["image"]
+                    bbox = block["bbox"]
+                    if xref not in image_positions:
+                        image_positions[xref] = []
+                    image_positions[xref].append(bbox)
 
             # Method 1: Try extracting images from blocks
             for block in blocks:
@@ -94,11 +104,31 @@ def extract_images_from_pdf(
                 count = found_xrefs.get(xref, 0)
 
                 try:
-                    # Create bbox from image dimensions
-                    # Position it at (72, 72) if we can't find a better position
-                    # (72 points = 1 inch margin)
-                    x_offset = 72 + (count * (width + 72))  # Space images apart
-                    bbox = BBox(x_offset, 72, x_offset + width, 72 + height)
+                    # Use stored position if available, otherwise use original block position
+                    if xref in image_positions and count < len(image_positions[xref]):
+                        bbox = BBox(*image_positions[xref][count])
+                    else:
+                        # Fallback to using the first known position with an offset
+                        if xref in image_positions and image_positions[xref]:
+                            base_bbox = image_positions[xref][0]
+                            # Offset by the width of the image plus some padding
+                            x_offset = (
+                                base_bbox[2] - base_bbox[0] + 20
+                            )  # 20 points padding
+                            bbox = BBox(
+                                base_bbox[0] + (count * x_offset),
+                                base_bbox[1],
+                                base_bbox[0] + width + (count * x_offset),
+                                base_bbox[1] + height,
+                            )
+                        else:
+                            # Last resort: place at origin with some spacing
+                            bbox = BBox(
+                                count * (width + 20),
+                                0,
+                                (count + 1) * width + (count * 20),
+                                height,
+                            )
 
                     pix = fitz.Pixmap(doc, xref)
                     if pix.width > 0 and pix.height > 0:
