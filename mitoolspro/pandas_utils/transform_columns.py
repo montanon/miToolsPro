@@ -3,7 +3,7 @@ from typing import Callable, Iterable, Optional, Tuple, Union
 from pandas import DataFrame, MultiIndex
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
-from mitoolspro.pandas.utils import select_columns
+from mitoolspro.pandas_utils.utils import select_columns
 
 GROWTH_COLUMN_NAME = "growth_{:d}"
 GROWTH_PCT_COLUMN_NAME = "growth%_{:d}"

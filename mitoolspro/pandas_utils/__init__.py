@@ -1,4 +1,4 @@
-from mitoolspro.pandas.prepare_columns import (
+from mitoolspro.pandas_utils.prepare_columns import (
     prepare_bin_columns,
     prepare_bool_columns,
     prepare_categorical_columns,
@@ -11,7 +11,7 @@ from mitoolspro.pandas.prepare_columns import (
     prepare_str_columns,
     validate_columns,
 )
-from mitoolspro.pandas.transform_columns import (
+from mitoolspro.pandas_utils.transform_columns import (
     add_columns,
     divide_columns,
     growth_columns,
@@ -20,7 +20,7 @@ from mitoolspro.pandas.transform_columns import (
     subtract_columns,
     transform_columns,
 )
-from mitoolspro.pandas.transform_frame import (
+from mitoolspro.pandas_utils.transform_frame import (
     get_entities_data,
     get_entity_data,
     long_to_wide_dataframe,
@@ -30,7 +30,7 @@ from mitoolspro.pandas.transform_frame import (
     reshape_groups_subgroups,
     wide_to_long_dataframe,
 )
-from mitoolspro.pandas.utils import (
+from mitoolspro.pandas_utils.utils import (
     check_if_dataframe_sequence,
     dataframe_to_latex,
     idxslice,
