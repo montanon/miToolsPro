@@ -1,4 +1,5 @@
 import unittest
+import warnings
 from typing import Dict, List, Optional
 from unittest import TestCase
 
@@ -547,6 +548,165 @@ class TestCachedProperty(TestCase):
         self.assertEqual(obj2.computed_property, 16)
         self.assertEqual(obj1.compute_count, 1)
         self.assertEqual(obj2.compute_count, 1)
+
+
+class TestParallelDecorator(TestCase):
+    def test_basic_parallel_execution(self):
+        @parallel(n_threads=2, chunk_size=2)
+        def square(x):
+            return x * x
+
+        input_data = [1, 2, 3, 4, 5]
+        result = square(input_data)
+        expected = [1, 4, 9, 16, 25]
+        self.assertEqual(result, expected)
+
+    def test_empty_input(self):
+        @parallel(n_threads=2, chunk_size=2)
+        def square(x):
+            return x * x
+
+        result = square([])
+        self.assertEqual(result, [])
+
+    def test_single_chunk(self):
+        @parallel(n_threads=2, chunk_size=5)
+        def square(x):
+            return x * x
+
+        input_data = [1, 2, 3, 4, 5]
+        result = square(input_data)
+        expected = [1, 4, 9, 16, 25]
+        self.assertEqual(result, expected)
+
+    def test_multiple_threads(self):
+        @parallel(n_threads=4, chunk_size=1)
+        def square(x):
+            return x * x
+
+        input_data = [1, 2, 3, 4, 5]
+        result = square(input_data)
+        expected = [1, 4, 9, 16, 25]
+        self.assertEqual(result, expected)
+
+    def test_with_additional_args(self):
+        @parallel(n_threads=2, chunk_size=2)
+        def multiply(x, factor):
+            return x * factor
+
+        input_data = [1, 2, 3, 4, 5]
+        result = multiply(input_data, 2)
+        expected = [2, 4, 6, 8, 10]
+        self.assertEqual(result, expected)
+
+    def test_with_multiple_additional_args(self):
+        @parallel(n_threads=2, chunk_size=2)
+        def complex_operation(x, factor, offset):
+            return (x * factor) + offset
+
+        input_data = [1, 2, 3, 4, 5]
+        result = complex_operation(input_data, 2, 1)
+        expected = [3, 5, 7, 9, 11]
+        self.assertEqual(result, expected)
+
+    def test_preserves_function_name(self):
+        @parallel(n_threads=2, chunk_size=2)
+        def test_func(x):
+            return x
+
+        self.assertEqual(test_func.__name__, "test_func")
+
+    def test_preserves_docstring(self):
+        @parallel(n_threads=2, chunk_size=2)
+        def test_func(x):
+            """Test docstring."""
+            return x
+
+        self.assertEqual(test_func.__doc__, "Test docstring.")
+
+
+class TestSuppressUserWarningDecorator(TestCase):
+    def test_suppresses_user_warning(self):
+        @suppress_user_warning
+        def warning_function():
+            warnings.warn("This is a test warning", UserWarning)
+            return True
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = warning_function()
+            self.assertTrue(result)
+
+    def test_does_not_suppress_other_warnings(self):
+        @suppress_user_warning
+        def warning_function():
+            warnings.warn("This is a test warning", RuntimeWarning)
+            return True
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            with self.assertRaises(RuntimeWarning):
+                warning_function()
+
+    def test_multiple_warnings(self):
+        @suppress_user_warning
+        def warning_function():
+            warnings.warn("First warning", UserWarning)
+            warnings.warn("Second warning", UserWarning)
+            return True
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = warning_function()
+            self.assertTrue(result)
+
+    def test_with_arguments(self):
+        @suppress_user_warning
+        def warning_function(x):
+            warnings.warn("Test warning", UserWarning)
+            return x * 2
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = warning_function(5)
+            self.assertEqual(result, 10)
+
+    def test_with_multiple_arguments(self):
+        @suppress_user_warning
+        def warning_function(x, y):
+            warnings.warn("Test warning", UserWarning)
+            return x + y
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = warning_function(3, 4)
+            self.assertEqual(result, 7)
+
+    def test_with_keyword_arguments(self):
+        @suppress_user_warning
+        def warning_function(x=1, y=2):
+            warnings.warn("Test warning", UserWarning)
+            return x + y
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = warning_function(x=5, y=3)
+            self.assertEqual(result, 8)
+
+    def test_preserves_function_name(self):
+        @suppress_user_warning
+        def test_func():
+            return True
+
+        self.assertEqual(test_func.__name__, "test_func")
+
+    def test_preserves_docstring(self):
+        @suppress_user_warning
+        def test_func():
+            """Test docstring."""
+            return True
+
+        self.assertEqual(test_func.__doc__, "Test docstring.")
 
 
 if __name__ == "__main__":
