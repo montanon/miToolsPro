@@ -61,23 +61,6 @@ def iterate_all_runs(sections):
             run_index += 1
 
 
-def merge_runs(runs: List):
-    if not runs:
-        return []
-    merged_runs = []
-    current_run = runs[0]
-    for next_run in runs[1:]:
-        same_font = next_run.fontname == current_run.fontname
-        same_size = isclose(next_run.size, current_run.size, abs_tol=0.01)
-        if same_font and same_size:
-            current_run = current_run + next_run
-        else:
-            merged_runs.append(current_run)
-            current_run = next_run
-    merged_runs.append(current_run)
-    return merged_runs
-
-
 def create_run_in_bbox(
     text: str, fontname: str, size: float, bbox: BBox, chars_data: DataFrame
 ):

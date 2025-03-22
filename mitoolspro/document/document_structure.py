@@ -1,6 +1,5 @@
+from math import isclose
 from typing import List
-
-from mitoolspro.document.runs_utils import merge_runs
 
 CHAR_SIZE_TOLERANCE = 0.001
 
@@ -510,3 +509,20 @@ class Document:
         return len(self.pages) == len(other.pages) and all(
             p1 == p2 for p1, p2 in zip(self.pages, other.pages)
         )
+
+
+def merge_runs(runs: List):
+    if not runs:
+        return []
+    merged_runs = []
+    current_run = runs[0]
+    for next_run in runs[1:]:
+        same_font = next_run.fontname == current_run.fontname
+        same_size = isclose(next_run.size, current_run.size, abs_tol=0.01)
+        if same_font and same_size:
+            current_run = current_run + next_run
+        else:
+            merged_runs.append(current_run)
+            current_run = next_run
+    merged_runs.append(current_run)
+    return merged_runs
