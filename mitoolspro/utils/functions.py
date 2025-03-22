@@ -1,11 +1,19 @@
 import re
-from typing import Generator, Iterable
+from typing import Generator, Iterable, Optional
 
 
-def remove_characters_from_string(string: str, characters: str = None) -> str:
+def remove_characters_from_string(string: str, characters: Optional[str] = None) -> str:
     if characters is None:
         characters = r'[\\/*?%&:"<>|]'
     return re.sub(characters, "", string)
+
+
+def remove_characters_from_strings(
+    strings: Iterable[str], characters: Optional[str] = None
+) -> Iterable[str]:
+    if characters is None:
+        characters = r'[\\/*?%&:"<>|]'
+    return [re.sub(characters, "", string) for string in strings]
 
 
 def iterable_chunks(
