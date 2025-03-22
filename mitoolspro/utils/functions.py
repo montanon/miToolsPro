@@ -1,7 +1,5 @@
-import json
 import sys
 from os import PathLike
-from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -15,10 +13,9 @@ from typing import (
     Type,
 )
 
+import chardet
 import numpy as np
-import openpyxl
 from numpy import ndarray
-from openpyxl.worksheet.worksheet import Worksheet
 from pandas import DataFrame, Series
 
 from mitoolspro.exceptions import ArgumentValueError
@@ -51,14 +48,6 @@ def add_significance(row: Series) -> Series:
         return row
 
 
-def remove_dataframe_duplicates(dfs: List[DataFrame]) -> List[DataFrame]:
-    unique_dfs = []
-    for i in range(len(dfs)):
-        if not any(dfs[i].equals(dfs[j]) for j in range(i + 1, len(dfs))):
-            unique_dfs.append(dfs[i])
-    return unique_dfs
-
-
 def can_convert_to(items: Iterable, type: Type) -> bool:
     try:
         return all(isinstance(type(item), type) for item in items)
@@ -78,34 +67,6 @@ def check_symmetrical_matrix(
 
 def unpack_list_of_lists(list_of_lists: List[List]) -> List:
     return [item for sub_list in list_of_lists for item in sub_list]
-
-
-def auto_adjust_excel_columns_width(excel_path: Path) -> None:
-    book = openpyxl.load_workbook(excel_path)
-    for sheet_name in book.sheetnames:
-        sheet = book[sheet_name]
-        auto_adjust_sheet_columns_width(sheet)
-    book.save(excel_path)
-
-
-def auto_adjust_sheet_columns_width(sheet: Worksheet) -> None:
-    for column in sheet.columns:
-        max_length = 0
-        column = [cell for cell in column if cell.value]  # Filter out None values
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except Exception:
-                pass
-        adjusted_width = max_length + 1  # Adding a little extra width
-        sheet.column_dimensions[
-            openpyxl.utils.get_column_letter(column[0].column)
-        ].width = adjusted_width
-
-
-def pretty_dict_str(dictionary: Dict) -> str:
-    return json.dumps(dictionary, indent=4, sort_keys=True)
 
 
 def display_env_variables(
