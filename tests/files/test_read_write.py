@@ -6,9 +6,11 @@ from pathlib import Path
 
 from mitoolspro.files.read_write import (
     load_pkl,
+    read_html,
     read_json,
     read_text,
     store_pkl,
+    write_html,
     write_json,
     write_text,
 )
@@ -145,6 +147,45 @@ class TestStoreLoadPkl(unittest.TestCase):
         store_pkl(custom_obj, test_file)
         loaded_obj = load_pkl(test_file)
         self.assertEqual(loaded_obj.value, 42)
+
+
+class TestReadHtml(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_path = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_read_html(self):
+        test_file = self.temp_path / "test.html"
+        test_content = "<html><body><h1>Hello, World! 🚀</h1></body></html>"
+        test_file.write_text(test_content)
+        self.assertEqual(read_html(test_file), test_content)
+
+    def test_read_html_nonexistent(self):
+        with self.assertRaises(FileNotFoundError):
+            read_html(self.temp_path / "nonexistent.html")
+
+
+class TestWriteHtml(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_path = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_write_html(self):
+        test_file = self.temp_path / "test.html"
+        test_content = "<html><body><h1>Hello, World! 🚀</h1></body></html>"
+        write_html(test_content, test_file)
+        self.assertEqual(test_file.read_text(), test_content)
+
+    def test_write_html_invalid_encoding(self):
+        test_file = self.temp_path / "test.html"
+        with self.assertRaises(LookupError):
+            write_html("test", test_file, encoding="invalid_encoding")
 
 
 if __name__ == "__main__":

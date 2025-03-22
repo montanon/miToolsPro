@@ -71,3 +71,27 @@ def load_pkl(filename: Union[str, PathLike]) -> Any:
             return pickle.load(input_file)
     except (pickle.UnpicklingError, EOFError) as e:
         raise ValueError(f"Failed to unpickle file: {e}")
+
+
+def read_html(html_path: Union[str, PathLike], encoding: str = "utf-8") -> str:
+    html_path = Path(html_path)
+    if not html_path.exists():
+        raise FileNotFoundError(f"File not found: {html_path}")
+    try:
+        with open(html_path, "r", encoding=encoding) as f:
+            return f.read()
+    except UnicodeDecodeError:
+        raise ValueError(
+            f"Failed to decode HTML file with encoding {encoding}: {html_path}"
+        )
+
+
+def write_html(
+    html_content: str, html_path: Union[str, PathLike], encoding: str = "utf-8"
+) -> None:
+    html_path = Path(html_path)
+    try:
+        with open(html_path, "w", encoding=encoding) as f:
+            f.write(html_content)
+    except UnicodeEncodeError:
+        raise ValueError(f"Failed to encode HTML content with encoding {encoding}")
