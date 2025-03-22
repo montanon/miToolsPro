@@ -5,6 +5,8 @@ from pathlib import Path
 from docx import Document as DocxDocument
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Inches, Pt
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from mitoolspro.document.document_structure import (
@@ -12,8 +14,10 @@ from mitoolspro.document.document_structure import (
     Image,
     Line,
 )
-from mitoolspro.document.fonts import select_font
+from mitoolspro.document.fonts.fonts import register_fonts, select_font
 from mitoolspro.exceptions import ArgumentValueError
+
+register_fonts(fontfamily="arial")
 
 
 def write_pdf(doc: Document, output_path: Path):
@@ -27,13 +31,30 @@ def write_pdf(doc: Document, output_path: Path):
         c.setPageSize((page.width, page.height))
 
         for box in page.boxes:
-            for line in box.get_all_lines():
-                for run in line.runs:
-                    font_used = select_font(run.fontname)
-                    for char in run.chars:
-                        if char.bbox.x0 != 0 or char.bbox.y0 != 0:
-                            c.setFont(font_used, char.size)
-                            c.drawString(char.bbox.x0, char.bbox.y0, char.text)
+            for element in box.elements:
+                if isinstance(element, Line):
+                    for line in box.get_all_lines():
+                        for run in line.runs:
+                            font_used = select_font(
+                                fontfamily="arial", fontname=run.fontname
+                            )
+                            for char in run.chars:
+                                if char.bbox.x0 != 0 or char.bbox.y0 != 0:
+                                    c.setFont(font_used, char.size)
+                                    c.drawString(char.bbox.x0, char.bbox.y0, char.text)
+                elif isinstance(element, Image):
+                    if not element.stream:
+                        continue
+                    width = element.bbox.width
+                    height = element.bbox.height
+                    image = ImageReader(BytesIO(element.stream))
+                    c.drawImage(
+                        image,
+                        element.bbox.x0,
+                        element.bbox.y0,
+                        width=width,
+                        height=height,
+                    )
 
         c.showPage()
     c.save()
