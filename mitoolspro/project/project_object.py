@@ -230,7 +230,7 @@ class Project:
             "creation": metadata.creation,
             "state": metadata.state.value,
             "description": metadata.description,
-            "subfolders": self.list_version_subfolders(version),
+            "subfolders": self.list_version_subfolders(),
         }
 
     def clear_version(self) -> None:

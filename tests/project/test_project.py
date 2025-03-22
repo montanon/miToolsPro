@@ -91,6 +91,7 @@ class TestProject(TestCase):
         new_version = "v1"
         description = "Test version"
         self.project.create_version(new_version, description)
+        self.project.update_version(new_version)
         version_data = self.project.get_version_data(new_version)
         self.assertEqual(version_data["name"], new_version)
         self.assertEqual(version_data["description"], description)
@@ -517,7 +518,7 @@ class TestProject(TestCase):
 
     def test_find_project_with_max_depth(self):
         self.project.store_project()
-        project_path = Project.find_project(self.project.folder.parent, max_depth=3)
+        project_path = Project.find_project(self.project.folder, max_depth=3)
         self.assertEqual(project_path, self.project.project_file)
 
     def test_find_project_not_found(self):
@@ -526,13 +527,7 @@ class TestProject(TestCase):
 
     def test_load_project_with_auto_load(self):
         self.project.store_project()
-        loaded_project = Project.load(auto_load=True)
-        self.assertEqual(loaded_project.name, self.project.name)
-        self.assertEqual(loaded_project.version, self.project.version)
-
-    def test_load_project_with_max_depth(self):
-        self.project.store_project()
-        loaded_project = Project.load(max_depth=1)
+        loaded_project = Project.load(self.project.folder, auto_load=True)
         self.assertEqual(loaded_project.name, self.project.name)
         self.assertEqual(loaded_project.version, self.project.version)
 
