@@ -320,7 +320,7 @@ class TestFromPDF(TestCase):
         self.assertEqual(images_found, 2, "Expected 2 images in the document")
 
     def test_pdf_to_document_layout(self):
-        # Test layout preservation
+        # Test layout preservation for PyMuPDF PDF
         doc = pdf_to_document(self.pdf_path)
         page = doc.pages[0]
 
@@ -333,13 +333,136 @@ class TestFromPDF(TestCase):
             self.assertGreaterEqual(
                 y_positions[i][0],
                 y_positions[i + 1][1] - 1,  # 1 point tolerance
-                "Boxes overlap vertically",
+                "Boxes overlap vertically in PyMuPDF PDF",
             )
 
         # Verify horizontal alignment
         for box in boxes:
-            self.assertGreater(box.bbox.x0, 0)  # Should have left margin
-            self.assertLess(box.bbox.x1, letter[0])  # Should be within page width
+            self.assertGreater(
+                box.bbox.x0, 0, "Box should have left margin in PyMuPDF PDF"
+            )
+            self.assertLess(
+                box.bbox.x1, letter[0], "Box should be within page width in PyMuPDF PDF"
+            )
+
+    def test_reportlab_pdf_to_document_layout(self):
+        # Create a new PDF with reportlab
+        reportlab_pdf_path = Path(self.temp_dir) / "reportlab_test.pdf"
+
+        # Create the PDF with ReportLab
+        c = canvas.Canvas(str(reportlab_pdf_path), pagesize=letter)
+        page_height = letter[1]
+
+        # Define image positions
+        first_img_y = 7 * inch  # Position of larger image
+        second_img_y = 3 * inch  # Position of smaller image
+
+        # Add text and images with specific positions
+        c.drawString(1 * inch, 10 * inch, "Test PDF with multiple images")
+        c.drawImage(
+            str(self.image_path), 1 * inch, first_img_y, width=2 * inch, height=2 * inch
+        )
+        c.drawString(1 * inch, 6 * inch, "Text between images")
+        c.drawImage(
+            str(self.image_path),
+            1 * inch,
+            second_img_y,
+            width=1 * inch,
+            height=1 * inch,
+        )
+        c.drawString(1 * inch, 2 * inch, "Text after images")
+        c.save()
+
+        try:
+            # Test the ReportLab PDF layout
+            doc = pdf_to_document(reportlab_pdf_path)
+            page = doc.pages[0]
+            boxes = page.boxes
+
+            # Test vertical ordering
+            y_positions = [(box.bbox.y0, box.bbox.y1) for box in boxes]
+            for i in range(len(y_positions) - 1):
+                self.assertGreaterEqual(
+                    y_positions[i][0],
+                    y_positions[i + 1][1] - 1,  # 1 point tolerance
+                    "Boxes overlap vertically in ReportLab PDF",
+                )
+
+            # Test horizontal alignment
+            for box in boxes:
+                self.assertGreater(
+                    box.bbox.x0, 0, "Box should have left margin in ReportLab PDF"
+                )
+                self.assertLess(
+                    box.bbox.x1,
+                    letter[0],
+                    "Box should be within page width in ReportLab PDF",
+                )
+
+            # Test image content and sizes
+            images = []
+            for box in boxes:
+                images.extend(box.get_all_images())
+
+            self.assertEqual(len(images), 2, "Should have 2 images in ReportLab PDF")
+
+            # Sort images by size (larger first)
+            images.sort(
+                key=lambda img: (img.bbox.y1 - img.bbox.y0)
+                * (img.bbox.x1 - img.bbox.x0),
+                reverse=True,
+            )
+
+            # Test larger image (2x2 inches)
+            larger_img = images[0]
+            self.assertAlmostEqual(
+                larger_img.bbox.x1 - larger_img.bbox.x0,
+                2 * inch,
+                delta=5,
+                msg="Larger image width should be 2 inches",
+            )
+            self.assertAlmostEqual(
+                larger_img.bbox.y1 - larger_img.bbox.y0,
+                2 * inch,
+                delta=5,
+                msg="Larger image height should be 2 inches",
+            )
+
+            # Test smaller image (1x1 inch)
+            smaller_img = images[1]
+            self.assertAlmostEqual(
+                smaller_img.bbox.x1 - smaller_img.bbox.x0,
+                1 * inch,
+                delta=5,
+                msg="Smaller image width should be 1 inch",
+            )
+            self.assertAlmostEqual(
+                smaller_img.bbox.y1 - smaller_img.bbox.y0,
+                1 * inch,
+                delta=5,
+                msg="Smaller image height should be 1 inch",
+            )
+
+            # Test vertical positioning
+            expected_larger_y = page_height - (first_img_y + 2 * inch)
+            expected_smaller_y = page_height - (second_img_y + 1 * inch)
+
+            self.assertAlmostEqual(
+                larger_img.bbox.y0,
+                expected_larger_y,
+                delta=5,
+                msg="Larger image should be at correct y-position",
+            )
+            self.assertAlmostEqual(
+                smaller_img.bbox.y0,
+                expected_smaller_y,
+                delta=5,
+                msg="Smaller image should be at correct y-position",
+            )
+
+        finally:
+            if reportlab_pdf_path.exists():
+                os.unlink(reportlab_pdf_path)
 
     def test_pdf_to_document_error_handling(self):
         # Test with non-existent file
