@@ -5,7 +5,12 @@ from mitoolspro.exceptions.custom_exceptions import (
     ArgumentTypeError,
     ArgumentValueError,
     AxesComposerException,
+    ColumnTypeError,
+    ColumnValidationError,
+    IndexTypeError,
+    IndexValidationError,
     ProjectError,
     ProjectFolderError,
     ProjectVersionError,
+    ValuesTypeError,
 )
