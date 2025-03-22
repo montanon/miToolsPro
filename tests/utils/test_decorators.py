@@ -141,7 +141,7 @@ class TestStoreSignatureInDev(TestCase):
         self.assertEqual(named_func.__name__, "named_func")
 
 
-class TestValidateTypesDecorator(TestCase):
+class TestValidateArgsTypesDecorator(TestCase):
     def test_correct_types_positional_arguments(self):
         @validate_args_types(x=int, y=str)
         def test_func(x, y):
