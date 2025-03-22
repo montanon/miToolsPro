@@ -89,6 +89,8 @@ def mask_matrix(matrix: DataFrame, threshold: Union[float, int]) -> DataFrame:
 
 
 def calculate_proximity_matrix(dataframe: DataFrame, symmetric: Optional[bool] = True):
+    if dataframe.empty:
+        raise ArgumentValueError("The dataframe must not be empty!")
     if dataframe.isna().any().any():
         raise ArgumentValueError("The dataframe must not contain non-numeric values!")
     ubiquity = dataframe.sum(axis=0)
