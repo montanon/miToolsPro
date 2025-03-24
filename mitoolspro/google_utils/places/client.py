@@ -1,3 +1,5 @@
+import random
+import traceback
 from typing import Any, Dict, List, Optional, Union
 
 import requests
@@ -9,7 +11,11 @@ from mitoolspro.google_utils.places.models import (
     DummyResponse,
     NewNearbySearchRequest,
     NewPlace,
-    create_dummy_response,
+    NewPlacesResponse,
+)
+from mitoolspro.google_utils.places.utils import (
+    generate_unique_place_id,
+    meters_to_degree,
 )
 from mitoolspro.utils.context_vars import ContextVar
 
@@ -59,12 +65,26 @@ RESTAURANT_TYPES = [
 
 FIELD_MASK = (
     "places.accessibilityOptions,places.addressComponents,places.adrFormatAddress,places.businessStatus,"
-    "places.displayName,places.formattedAddress,places.googleMapsUri,places.iconBackgroundColor,"
-    "places.iconMaskBaseUri,places.id,places.location,places.name,places.primaryType,places.primaryTypeDisplayName,places.plusCode,"
-    "places.shortFormattedAddress,places.subDestinations,places.types,places.utcOffsetMinutes,places.viewport,"
-    "places.currentOpeningHours,places.currentSecondaryOpeningHours,places.internationalPhoneNumber,places.nationalPhoneNumber,"
-    "places.priceLevel,places.rating,places.regularOpeningHours,places.regularSecondaryOpeningHours,places.userRatingCount,places.websiteUri"
+    + "places.displayName,places.formattedAddress,places.googleMapsUri,places.iconBackgroundColor,"
+    + "places.iconMaskBaseUri,places.id,places.location,places.name,places.primaryType,places.primaryTypeDisplayName,places.plusCode,"
+    + "places.shortFormattedAddress,places.subDestinations,places.types,places.utcOffsetMinutes,places.viewport,"
+    + "places.currentOpeningHours,places.currentSecondaryOpeningHours,places.internationalPhoneNumber,places.nationalPhoneNumber,"
+    + "places.priceLevel,places.rating,places.regularOpeningHours,places.regularSecondaryOpeningHours,places.userRatingCount,places.websiteUri"
 )
+
+
+def create_dummy_response(
+    query: Dict[str, Any],
+    has_places: bool = None,
+) -> DummyResponse:
+    has_places = (
+        random.choice([True, False, False]) if has_places is None else has_places
+    )
+    data = {}
+    if has_places:
+        places_n = random.randint(1, 21)
+        data["places"] = [create_dummy_place(query) for _ in range(places_n)]
+    return DummyResponse(data=data)
 
 
 class GooglePlacesClient:
@@ -115,13 +135,9 @@ class GooglePlacesClient:
                 timeout=10,
             )
             response.raise_for_status()
-            return self._parse_response(response.json())
+            return NewPlacesResponse.model_validate(response.json())
         except requests.RequestException as e:
             raise RuntimeError(f"Google Places request failed: {e}")
-
-    def _parse_response(self, response_json: Dict[str, Any]) -> List[NewPlace]:
-        places = response_json.get("places", [])
-        return [NewPlace.from_json(p) for p in places]
 
     def _dummy_response(
         self, query: Dict[str, Any], has_places: Optional[bool] = None
@@ -133,12 +149,9 @@ class GooglePlacesClient:
         response_id: str,
         places: List[NewPlace],
     ) -> DataFrame:
-        places_series = []
-        for place in places:
-            places_series = place.to_series()
-            places_series["circle"] = response_id
-            places_series.append(places_series)
-        return DataFrame(places_series)
+        places = DataFrame([place.model_dump(mode="python") for place in places])
+        places["circle"] = response_id
+        return places
 
     def search_for_places(
         self,
@@ -152,14 +165,63 @@ class GooglePlacesClient:
             raise ArgumentTypeError("Invalid 'center_point' is not of type Point.")
 
         try:
-            places = self.search_nearby(
+            places_response = self.search_nearby(
                 center_point=center_point,
                 radius_in_meters=radius_in_meters,
                 included_types=included_types,
                 has_places=has_places,
             )
-            places_df = self.get_response_places(response_id, places)
+            places_df = self.get_response_places(response_id, places_response.places)
             return places_df
         except Exception as e:
-            print(f"[search_for_places] Unrecoverable error: {e}")
+            print(
+                f"[search_for_places] Unrecoverable error: {e}\n{traceback.format_exc()}"
+            )
             return None
+
+
+def create_dummy_place(query: Dict[str, Any]) -> Dict[str, Any]:
+    latitude = query["locationRestriction"]["circle"]["center"]["latitude"]
+    longitude = query["locationRestriction"]["circle"]["center"]["longitude"]
+    radius = query["locationRestriction"]["circle"]["radius"]
+    distance_in_deg = meters_to_degree(radius, latitude)
+    random_types = random.sample(
+        RESTAURANT_TYPES,
+        random.randint(1, min(len(RESTAURANT_TYPES), random.randint(1, 5))),
+    )
+    unique_id = generate_unique_place_id()
+    random_latitude = random.uniform(
+        latitude - distance_in_deg, latitude + distance_in_deg
+    )
+    random_longitude = random.uniform(
+        longitude - distance_in_deg, longitude + distance_in_deg
+    )
+    place_data = {
+        "id": unique_id,
+        "types": random_types,
+        "location": {
+            "latitude": random_latitude,
+            "longitude": random_longitude,
+        },
+    }
+    place_data.update(
+        {
+            "displayName": {"text": f"Name {unique_id}"},
+            "primaryType": random.choice(random_types),
+            "primaryTypeDisplayName": {"text": random.choice(random_types)},
+            "formattedAddress": f"{unique_id} Some Address",
+            "addressComponents": [
+                {
+                    "longText": "City",
+                    "shortText": "C",
+                    "types": ["locality"],
+                    "languageCode": "en",
+                }
+            ],
+            "googleMapsUri": f"https://maps.google.com/?q={random_latitude},{random_longitude}",
+            "priceLevel": str(random.choice([1, 2, 3, 4, 5])),
+            "rating": random.uniform(1.0, 5.0),
+            "userRatingCount": random.randint(1, 500),
+        }
+    )
+    return place_data
