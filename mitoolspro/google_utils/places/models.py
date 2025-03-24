@@ -61,8 +61,8 @@ class TimePeriod(BaseModel):
 
 
 class Period(BaseModel):
-    open: TimePeriod
-    close: TimePeriod
+    open: TimePeriod = None
+    close: TimePeriod = None
 
 
 class OpeningHours(BaseModel):
@@ -90,7 +90,7 @@ class NewPlace(BaseModel):
     types: List[str]
     formattedAddress: Optional[str] = None
     shortFormattedAddress: Optional[str] = None
-    adrFormatAddress: Optional[str] = None  # raw HTML, to be handled separately
+    adrFormatAddress: Optional[str] = None
     addressComponents: Optional[List[AddressComponent]] = None
 
     plusCode: Optional[PlusCode] = None
@@ -122,9 +122,16 @@ class NewPlace(BaseModel):
 
     accessibilityOptions: Optional[AccessibilityOptions] = None
 
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        self.latitude = self.location.latitude
+        self.longitude = self.location.longitude
+
 
 class NewPlacesResponse(BaseModel):
-    places: List[NewPlace]
+    places: List[NewPlace] = Field(default_factory=list)
 
 
 class DummyResponse:
