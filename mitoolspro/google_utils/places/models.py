@@ -124,10 +124,12 @@ class NewPlace(BaseModel):
 
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    place_name: Optional[str] = None
 
     def model_post_init(self, __context: Any) -> None:
         self.latitude = self.location.latitude
         self.longitude = self.location.longitude
+        self.place_name = self.displayName.text
 
 
 class NewPlacesResponse(BaseModel):
