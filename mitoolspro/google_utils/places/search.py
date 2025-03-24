@@ -10,9 +10,10 @@ from shapely.geometry import Polygon
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
 from mitoolspro.google_utils.places.client import GooglePlacesClient
-from mitoolspro.google_utils.places.places_old import (
-    _plot_polygon_with_circles,
-    _plot_polygon_with_circles_and_points,
+from mitoolspro.google_utils.places.places_old import CircleType
+from mitoolspro.google_utils.places.plots import (
+    polygon_plot_with_circles_and_points,
+    polygon_plot_with_sampling_circles,
 )
 from mitoolspro.google_utils.places.process import process_circles
 from mitoolspro.google_utils.places.saturation import (
@@ -143,6 +144,25 @@ def search_places_in_polygon(
     return circles, found_places
 
 
+def _plot_polygon_with_circles(
+    polygon: Polygon,
+    circles: List[CircleType],
+    output_path: Path,
+    show: bool,
+    point_of_interest: Polygon = None,
+    zoom_level: float = None,
+) -> None:
+    _ = polygon_plot_with_sampling_circles(
+        polygon=polygon,
+        circles=circles,
+        point_of_interest=point_of_interest,
+        zoom_level=zoom_level,
+        output_file_path=output_path,
+    )
+    if show:
+        plt.show()
+
+
 def _generate_sampling_plots(
     polygon: Polygon,
     circles: GeoSeries,
@@ -172,13 +192,13 @@ def _generate_results_plots(
     show: bool,
 ) -> None:
     points = found_places[["longitude", "latitude"]].values.tolist()
-    _plot_polygon_with_circles_and_points(
+    _ = polygon_plot_with_circles_and_points(
         polygon, circles, points, plot_paths["places"], show
     )
 
     random_circle = random.choice(circles.geometry.tolist())
     zoom_level = 5 * meters_to_degree(radius_in_meters, random_circle.centroid.y)
-    _plot_polygon_with_circles_and_points(
+    _ = polygon_plot_with_circles_and_points(
         polygon,
         circles,
         points,
@@ -187,6 +207,8 @@ def _generate_results_plots(
         random_circle,
         zoom_level,
     )
+    if show:
+        plt.show()
 
 
 def _generate_plot_paths(plot_folder: Path, tag: str) -> Dict[str, Path]:
