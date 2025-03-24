@@ -13,8 +13,8 @@ def reshape_country_indicators(
     indicator_column: str,
     country_column: str,
     region_column: str,
-    year_column: str,
-    aggregation_function: str = "first",
+    time_column: str,
+    agg_func: str = "first",
 ) -> DataFrame:
     """
     Reshapes data for a specific country by aggregating and pivoting regional indicators over years.
@@ -25,11 +25,11 @@ def reshape_country_indicators(
         indicator_column (str): The column containing indicator values (e.g., GDP, population).
         country_column (str): The column identifying countries.
         region_column (str): The column identifying regions or sub-regions within countries.
-        year_column (str): The column representing years.
+        time_column (str): The column representing years.
         agg_func (str): The aggregation function to apply to the indicators (default is 'first').
 
     Returns:
-        DataFrame: A pivoted DataFrame with `year_column` as the index,
+        DataFrame: A pivoted DataFrame with `time_column` as the index,
                    `region_column` values as columns, and aggregated indicators.
     """
     return reshape_group_data(
@@ -38,8 +38,8 @@ def reshape_country_indicators(
         value_column=indicator_column,
         group_column=country_column,
         subgroup_column=region_column,
-        time_column=year_column,
-        agg_func=aggregation_function,
+        time_column=time_column,
+        agg_func=agg_func,
     )
 
 
