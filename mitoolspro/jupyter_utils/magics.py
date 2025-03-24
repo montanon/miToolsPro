@@ -57,3 +57,12 @@ def unload_ipython_extension(shell):
     """Unregisters the magics when the extension unloads."""
     del shell.magics_manager.magics["cell"]["execute"]
     del shell.magics_manager.magics["line"]["alarm"]
+
+
+def _register_magics():
+    ip = get_ipython()
+    if ip is not None:
+        load_ipython_extension(ip)
+
+
+_register_magics()
