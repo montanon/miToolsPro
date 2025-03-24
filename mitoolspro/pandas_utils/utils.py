@@ -97,51 +97,6 @@ def load_dataframe_parquet(
     return dataframe
 
 
-def dataframe_to_latex(dataframe: DataFrame):
-    def regex_symbol_replacement(match):
-        return rf"\{match.group(0)}"
-
-    symbols_pattern = r"([\ \_\-\&\%\$\#])"
-    table = dataframe.rename(
-        columns=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
-        if isinstance(x, str)
-        else str(round(x, 1)),
-        index=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
-        if isinstance(x, str)
-        else str(round(x, 1)),
-    ).to_latex(multirow=True, multicolumn=True, multicolumn_format="c")
-    table = (
-        "\\begin{adjustbox}{width=\\textwidth,center}\n"
-        + f"{table}"
-        + "\end{adjustbox}\n"
-    )
-    return table
-
-
-def check_if_dataframe_sequence(
-    data_dir: PathLike,
-    name: str,
-    sequence_values: Optional[List[Union[str, int]]] = None,
-) -> bool:
-    sequence_dir = data_dir / name
-    if not sequence_dir.exists():
-        return False
-    if sequence_values is not None:
-        try:
-            sequence_files = [
-                int(file.stem.split("_")[-1])
-                if file.stem.split("_")[-1].isdigit()
-                else file.stem.split("_")[-1]
-                for file in sequence_dir.glob("*.parquet")
-            ]
-        except (ValueError, TypeError, IndexError) as e:
-            raise ArgumentValueError(f"Invalid sequence value in filenames: {e}")
-        sequence_files = sequence_dir.glob("*.parquet")
-        sequence_files = [int(file.stem.split("_")[-1]) for file in sequence_files]
-        return set(sequence_values) == set(sequence_files)
-    return False
-
-
 def store_dataframe_sequence(
     dataframes: Dict[Union[str, int], DataFrame], name: str, data_dir: PathLike
 ) -> None:
@@ -189,6 +144,30 @@ def load_dataframe_sequence(
             f"No dataframes were loaded from the provided 'sequence_values={sequence_values}'"
         )
     return dataframes
+
+
+def check_if_dataframe_sequence(
+    data_dir: PathLike,
+    name: str,
+    sequence_values: Optional[List[Union[str, int]]] = None,
+) -> bool:
+    sequence_dir = data_dir / name
+    if not sequence_dir.exists():
+        return False
+    if sequence_values is not None:
+        try:
+            sequence_files = [
+                int(file.stem.split("_")[-1])
+                if file.stem.split("_")[-1].isdigit()
+                else file.stem.split("_")[-1]
+                for file in sequence_dir.glob("*.parquet")
+            ]
+        except (ValueError, TypeError, IndexError) as e:
+            raise ArgumentValueError(f"Invalid sequence value in filenames: {e}")
+        sequence_files = sequence_dir.glob("*.parquet")
+        sequence_files = [int(file.stem.split("_")[-1]) for file in sequence_files]
+        return set(sequence_values) == set(sequence_files)
+    return False
 
 
 def select_index(
@@ -287,3 +266,24 @@ def save_dataframes_to_excel(
     with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
         for sheet_name, dataframe in dataframes_dict.items():
             dataframe.to_excel(writer, sheet_name=sheet_name)
+
+
+def dataframe_to_latex(dataframe: DataFrame):
+    def regex_symbol_replacement(match):
+        return rf"\{match.group(0)}"
+
+    symbols_pattern = r"([\ \_\-\&\%\$\#])"
+    table = dataframe.rename(
+        columns=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
+        if isinstance(x, str)
+        else str(round(x, 1)),
+        index=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
+        if isinstance(x, str)
+        else str(round(x, 1)),
+    ).to_latex(multirow=True, multicolumn=True, multicolumn_format="c")
+    table = (
+        "\\begin{adjustbox}{width=\\textwidth,center}\n"
+        + f"{table}"
+        + "\end{adjustbox}\n"
+    )
+    return table
