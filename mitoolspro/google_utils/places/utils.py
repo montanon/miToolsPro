@@ -10,7 +10,7 @@ from geopandas import GeoDataFrame
 from shapely.geometry import MultiPolygon, Point, Polygon
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
-from mitoolspro.google_utils.places.places_objects import intersection_condition_factory
+from mitoolspro.google_utils.places.models import intersection_condition_factory
 
 CircleType = NewType("CircleType", Polygon)
 
@@ -113,8 +113,10 @@ def get_circles_search(
 ) -> GeoDataFrame:
     if not circles_path or not isinstance(circles_path, Path):
         raise ArgumentValueError("`circles_path` must be a valid Path object.")
-    if not isinstance(polygon, Polygon):
-        raise ArgumentTypeError("`polygon` must be a Shapely Polygon object.")
+    if not isinstance(polygon, (Polygon, MultiPolygon)):
+        raise ArgumentTypeError(
+            "`polygon` must be a Shapely Polygon or MultiPolygon object."
+        )
     if recalculate or not circles_path.exists():
         circles = sample_polygons_with_circles(
             polygons=polygon,
@@ -162,3 +164,8 @@ def create_subsampled_circles(
 
 def generate_unique_place_id():
     return datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+
+def convert_shp_to_geojson(shp_path: str, output_path: str) -> None:
+    gdf = gpd.read_file(shp_path)
+    gdf.to_file(output_path, driver="GeoJSON")

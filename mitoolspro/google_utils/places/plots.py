@@ -13,7 +13,7 @@ from shapely.ops import transform
 from tqdm import tqdm
 
 from mitoolspro.exceptions import ArgumentTypeError
-from mitoolspro.google_utils.places.places_objects import NewPlace
+from mitoolspro.google_utils.places.models import NewPlace
 
 CircleType = NewType("CircleType", Polygon)
 
@@ -78,7 +78,7 @@ def polygon_plot_with_sampling_circles(
     zoom_level: Optional[float] = 1.0,
     output_file_path: PathLike = None,
 ) -> Axes:
-    if not isinstance(polygon, Polygon):
+    if not isinstance(polygon, (Polygon, MultiPolygon)):
         raise ArgumentTypeError(
             f"'polygon' of type {type(polygon)} must of be type Polyong."
         )

@@ -6,11 +6,11 @@ from typing import Dict, List, Optional, Tuple
 import matplotlib.pyplot as plt
 from geopandas import GeoDataFrame, GeoSeries
 from pandas import DataFrame
-from shapely.geometry import Polygon
+from shapely.geometry import MultiPolygon, Polygon
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
 from mitoolspro.google_utils.places.client import GooglePlacesClient
-from mitoolspro.google_utils.places.places_old import CircleType
+from mitoolspro.google_utils.places.models import CircleType
 from mitoolspro.google_utils.places.plots import (
     polygon_plot_with_circles_and_points,
     polygon_plot_with_sampling_circles,
@@ -41,6 +41,10 @@ def places_search_step(
         raise ArgumentValueError(f"Invalid folder path: {project_folder}")
     if not plots_folder.exists() or not plots_folder.is_dir():
         raise ArgumentValueError(f"Invalid folder path: {plots_folder}")
+    if not isinstance(polygon, (Polygon, MultiPolygon)):
+        raise ArgumentTypeError(
+            f"Invalid 'polygon' of type {type(polygon)} is not of type Polygon."
+        )
 
     circles, found_places = search_places_in_polygon(
         root_folder=project_folder,
@@ -98,7 +102,7 @@ def search_places_in_polygon(
         raise ArgumentValueError("`root_folder` must be a valid Path object.")
     if not isinstance(plot_folder, Path) or not plot_folder.exists():
         raise ArgumentValueError("`plot_folder` must be a valid Path object.")
-    if not isinstance(polygon, Polygon):
+    if not isinstance(polygon, (Polygon, MultiPolygon)):
         raise ArgumentTypeError(
             f"Invalid 'polygon' of type {type(polygon)} is not of type Polygon."
         )
@@ -170,7 +174,7 @@ def _generate_sampling_plots(
     radius_in_meters: float,
     show: bool,
 ) -> None:
-    if not isinstance(polygon, Polygon):
+    if not isinstance(polygon, (Polygon, MultiPolygon)):
         raise ArgumentTypeError("Invalid 'polygon' is not of type Polygon.")
     if not isinstance(circles, GeoSeries):
         raise ArgumentTypeError("Invalid 'circles' is not of type GeoSeries.")
@@ -192,22 +196,24 @@ def _generate_results_plots(
     show: bool,
 ) -> None:
     points = found_places[["longitude", "latitude"]].values.tolist()
-    _ = polygon_plot_with_circles_and_points(
-        polygon, circles, points, plot_paths["places"], show
-    )
+    if show:
+        _ = polygon_plot_with_circles_and_points(
+            polygon, circles, points, plot_paths["places"], show
+        )
+        plt.show()
 
     random_circle = random.choice(circles.geometry.tolist())
     zoom_level = 5 * meters_to_degree(radius_in_meters, random_circle.centroid.y)
-    _ = polygon_plot_with_circles_and_points(
-        polygon,
-        circles,
-        points,
-        plot_paths["places_zoom"],
-        show,
-        random_circle,
-        zoom_level,
-    )
     if show:
+        _ = polygon_plot_with_circles_and_points(
+            polygon,
+            circles,
+            points,
+            plot_paths["places_zoom"],
+            show,
+            random_circle,
+            zoom_level,
+        )
         plt.show()
 
 

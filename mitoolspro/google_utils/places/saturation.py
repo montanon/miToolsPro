@@ -6,8 +6,10 @@ from pandas import DataFrame
 from shapely.geometry import MultiPolygon, Polygon
 
 from mitoolspro.exceptions import ArgumentValueError
-from mitoolspro.google_utils.places.places_old import plot_saturated_circles
-from mitoolspro.google_utils.places.plots import plot_saturated_area
+from mitoolspro.google_utils.places.plots import (
+    plot_saturated_area,
+    plot_saturated_circles,
+)
 
 
 def filter_saturated_circles(
