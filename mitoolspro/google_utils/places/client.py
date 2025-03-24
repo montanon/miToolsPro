@@ -102,7 +102,8 @@ class GooglePlacesClient:
         headers = self._build_headers()
 
         if not self.api_key:
-            return self._dummy_response(query, has_places)
+            dummy_response = self._dummy_response(query, has_places)
+            return self._parse_response(dummy_response.json())
 
         try:
             response = requests.post(
