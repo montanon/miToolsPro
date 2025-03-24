@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Optional, Union
 
 import requests
+from pandas import DataFrame
 from shapely.geometry import Point
 
+from mitoolspro.exceptions import ArgumentTypeError
 from mitoolspro.google_utils.places.models import (
     DummyResponse,
     NewNearbySearchRequest,
@@ -125,3 +127,39 @@ class GooglePlacesClient:
         self, query: Dict[str, Any], has_places: Optional[bool] = None
     ) -> DummyResponse:
         return create_dummy_response(query, has_places)
+
+    def get_response_places(
+        self,
+        response_id: str,
+        places: List[NewPlace],
+    ) -> DataFrame:
+        places_series = []
+        for place in places:
+            places_series = place.to_series()
+            places_series["circle"] = response_id
+            places_series.append(places_series)
+        return DataFrame(places_series)
+
+    def search_for_places(
+        self,
+        center_point: Point,
+        radius_in_meters: float,
+        response_id: str,
+        included_types: Optional[List[str]] = None,
+        has_places: bool = True,
+    ) -> DataFrame:
+        if not isinstance(center_point, Point):
+            raise ArgumentTypeError("Invalid 'center_point' is not of type Point.")
+
+        try:
+            places = self.search_nearby(
+                center_point=center_point,
+                radius_in_meters=radius_in_meters,
+                included_types=included_types,
+                has_places=has_places,
+            )
+            places_df = self.get_response_places(response_id, places)
+            return places_df
+        except Exception as e:
+            print(f"[search_for_places] Unrecoverable error: {e}")
+            return None
