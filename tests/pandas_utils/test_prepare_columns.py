@@ -1,6 +1,7 @@
 import unittest
 from unittest import TestCase
 
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
@@ -19,6 +20,85 @@ from mitoolspro.pandas_utils.prepare_columns import (
     prepare_str_columns,
     validate_columns,
 )
+
+
+class TestValidateColumns(TestCase):
+    def setUp(self):
+        self.df = DataFrame(
+            {
+                "col1": [1, 2, 3],
+                "col2": [4, 5, 6],
+                "col3": [7, 8, 9],
+            }
+        )
+
+    def test_single_string_column(self):
+        result = validate_columns(self.df, "col1")
+        self.assertEqual(list(result), ["col1"])
+
+    def test_multiple_string_columns(self):
+        result = validate_columns(self.df, ["col1", "col2"])
+        self.assertEqual(list(result), ["col1", "col2"])
+
+    def test_all_columns(self):
+        result = validate_columns(self.df, ["col1", "col2", "col3"])
+        self.assertEqual(list(result), ["col1", "col2", "col3"])
+
+    def test_empty_list(self):
+        result = validate_columns(self.df, [])
+        self.assertEqual(list(result), [])
+
+    def test_nonexistent_column(self):
+        with self.assertRaises(ArgumentValueError) as context:
+            validate_columns(self.df, "nonexistent")
+        self.assertIn(
+            "Columns ['nonexistent'] not found in DataFrame", str(context.exception)
+        )
+
+    def test_nonexistent_columns(self):
+        with self.assertRaises(ArgumentValueError) as context:
+            validate_columns(self.df, ["col1", "nonexistent"])
+        self.assertIn(
+            "Columns ['nonexistent'] not found in DataFrame", str(context.exception)
+        )
+
+    def test_invalid_column_type(self):
+        with self.assertRaises(ArgumentTypeError) as context:
+            validate_columns(self.df, 123)
+        self.assertIn(
+            "Argument 'cols' must be a string or an iterable of strings",
+            str(context.exception),
+        )
+
+    def test_invalid_column_elements(self):
+        with self.assertRaises(ArgumentTypeError) as context:
+            validate_columns(self.df, ["col1", 123])
+        self.assertIn(
+            "Argument 'cols' must be a string or an iterable of strings",
+            str(context.exception),
+        )
+
+    def test_empty_dataframe(self):
+        empty_df = DataFrame()
+        with self.assertRaises(ArgumentValueError) as context:
+            validate_columns(empty_df, "col1")
+        self.assertIn("Columns ['col1'] not found in DataFrame", str(context.exception))
+
+    def test_none_input(self):
+        with self.assertRaises(ArgumentTypeError) as context:
+            validate_columns(self.df, None)
+        self.assertIn(
+            "Argument 'cols' must be a string or an iterable of strings",
+            str(context.exception),
+        )
+
+    def test_tuple_input(self):
+        result = validate_columns(self.df, ("col1", "col2"))
+        self.assertEqual(list(result), ["col1", "col2"])
+
+    def test_set_input(self):
+        result = validate_columns(self.df, {"col1", "col2"})
+        self.assertEqual(set(result), {"col1", "col2"})
 
 
 class TestPrepareIntCols(TestCase):
