@@ -4,6 +4,7 @@ omit =
     */tests/*
     */__init__.py
     */.venv/*
+    */plots/*_plotter.py
 
 [report]
 exclude_lines =
