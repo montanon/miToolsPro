@@ -268,19 +268,23 @@ def save_dataframes_to_excel(
             dataframe.to_excel(writer, sheet_name=sheet_name)
 
 
-def dataframe_to_latex(dataframe: DataFrame):
+def dataframe_to_latex(dataframe: DataFrame, rounding: int = 1):
     def regex_symbol_replacement(match):
         return rf"\{match.group(0)}"
 
-    symbols_pattern = r"([\ \_\-\&\%\$\#])"
-    table = dataframe.rename(
-        columns=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
-        if isinstance(x, str)
-        else str(round(x, 1)),
-        index=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
-        if isinstance(x, str)
-        else str(round(x, 1)),
-    ).to_latex(multirow=True, multicolumn=True, multicolumn_format="c")
+    symbols_pattern = r"([_\-\&\%\$\#])"
+    table = (
+        dataframe.rename(
+            columns=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
+            if isinstance(x, str)
+            else str(round(x, rounding)),
+            index=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
+            if isinstance(x, str)
+            else str(round(x, rounding)),
+        )
+        .round(rounding)
+        .to_latex(multirow=True, multicolumn=True, multicolumn_format="c")
+    )
     table = (
         "\\begin{adjustbox}{width=\\textwidth,center}\n"
         + f"{table}"

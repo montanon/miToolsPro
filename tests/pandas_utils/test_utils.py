@@ -565,5 +565,101 @@ class TestRemoveDataframeDuplicates(TestCase):
         self.assertTrue(unique_dfs[0].equals(self.df1))
 
 
+class TestSaveDataframesToExcel(TestCase):
+    def setUp(self):
+        self.temp_dir = Path("./tests/.test_assets/.data")
+        self.temp_dir.mkdir(exist_ok=True)
+        self.df1 = DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+        self.df2 = DataFrame({"X": [7, 8, 9], "Y": [10, 11, 12]})
+        self.dataframes_dict = {"Sheet1": self.df1, "Sheet2": self.df2}
+        self.excel_file = self.temp_dir / "test_excel.xlsx"
+
+    def tearDown(self):
+        if self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir)
+
+    def test_save_and_load_dataframes(self):
+        save_dataframes_to_excel(self.dataframes_dict, self.excel_file)
+        loaded_df1 = pd.read_excel(self.excel_file, sheet_name="Sheet1", index_col=0)
+        loaded_df2 = pd.read_excel(self.excel_file, sheet_name="Sheet2", index_col=0)
+        assert_frame_equal(loaded_df1, self.df1)
+        assert_frame_equal(loaded_df2, self.df2)
+
+    def test_save_empty_dataframe(self):
+        empty_df = DataFrame()
+        save_dataframes_to_excel({"Empty": empty_df}, self.excel_file)
+        loaded_df = pd.read_excel(self.excel_file, sheet_name="Empty", index_col=0)
+        assert_frame_equal(loaded_df, empty_df)
+
+    def test_save_dataframe_with_special_chars(self):
+        special_df = DataFrame({"A&B": [1, 2], "C#D": [3, 4]})
+        save_dataframes_to_excel({"Special": special_df}, self.excel_file)
+        loaded_df = pd.read_excel(self.excel_file, sheet_name="Special", index_col=0)
+        assert_frame_equal(loaded_df, special_df)
+
+
+class TestDataframeToLatex(TestCase):
+    def setUp(self):
+        self.df = DataFrame(
+            {"A & B": [1.234, 2.345], "C#D": [3.456, 4.567], "E_F": [5.678, 6.789]},
+            index=["X-Y", "Z%W"],
+        )
+
+    def test_basic_conversion(self):
+        latex = dataframe_to_latex(self.df)
+        self.assertIn("\\begin{adjustbox}{width=\\textwidth,center}", latex)
+        self.assertIn("\\end{adjustbox}", latex)
+        self.assertIn("A \\& B", latex)
+        self.assertIn("C\\#D", latex)
+        self.assertIn("E\\_F", latex)
+        self.assertIn("X\\-Y", latex)
+        self.assertIn("Z\\%W", latex)
+
+    def test_numeric_rounding(self):
+        latex = dataframe_to_latex(self.df)
+        self.assertIn("1.2", latex)
+        self.assertIn("2.3", latex)
+        self.assertIn("3.5", latex)
+        self.assertIn("4.6", latex)
+        self.assertIn("5.7", latex)
+        self.assertIn("6.8", latex)
+
+    def test_custom_rounding(self):
+        latex = dataframe_to_latex(self.df, rounding=2)
+        self.assertIn("1.23", latex)
+        self.assertIn("2.35", latex)
+        self.assertIn("3.46", latex)
+        self.assertIn("4.57", latex)
+        self.assertIn("5.68", latex)
+        self.assertIn("6.79", latex)
+
+        latex = dataframe_to_latex(self.df, rounding=0)
+        self.assertIn("1", latex)
+        self.assertIn("2", latex)
+        self.assertIn("3", latex)
+        self.assertIn("5", latex)
+        self.assertIn("7", latex)
+
+    def test_empty_dataframe(self):
+        empty_df = DataFrame()
+        latex = dataframe_to_latex(empty_df)
+        self.assertIn("\\begin{adjustbox}{width=\\textwidth,center}", latex)
+        self.assertIn("\\end{adjustbox}", latex)
+
+    def test_dataframe_with_multiindex(self):
+        arrays = [["A", "A", "B"], ["X", "Y", "Z"]]
+        index = MultiIndex.from_arrays(arrays, names=["upper", "lower"])
+        multi_df = DataFrame(
+            [[1.234, 2.345], [3.456, 4.567], [5.678, 6.789]],
+            index=index,
+            columns=["C#D", "E_F"],
+        )
+        latex = dataframe_to_latex(multi_df)
+        self.assertIn("\\multirow", latex)
+        self.assertIn("\\cline", latex)
+        self.assertIn("C\\#D", latex)
+        self.assertIn("E\\_F", latex)
+
+
 if __name__ == "__main__":
     unittest.main()
