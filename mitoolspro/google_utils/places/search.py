@@ -3,6 +3,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+import matplotlib.pyplot as plt
 from geopandas import GeoDataFrame, GeoSeries
 from pandas import DataFrame
 from shapely.geometry import Polygon
@@ -14,7 +15,68 @@ from mitoolspro.google_utils.places.places_old import (
     _plot_polygon_with_circles_and_points,
 )
 from mitoolspro.google_utils.places.process import process_circles
+from mitoolspro.google_utils.places.saturation import (
+    compute_saturated_area,
+    compute_saturated_circles,
+)
 from mitoolspro.google_utils.places.utils import get_circles_search, meters_to_degree
+
+
+def places_search_step(
+    project_folder: Path,
+    plots_folder: Path,
+    tag: str,
+    polygon: Polygon,
+    radius_in_meters: float,
+    step_in_degrees: float,
+    client: GooglePlacesClient,
+    included_types: Optional[List[str]] = None,
+    threshold: int = 20,
+    has_places: bool = True,
+    show: bool = False,
+    recalculate: bool = False,
+) -> Tuple[DataFrame, GeoDataFrame, Polygon, GeoDataFrame]:
+    if not project_folder.exists() or not project_folder.is_dir():
+        raise ArgumentValueError(f"Invalid folder path: {project_folder}")
+    if not plots_folder.exists() or not plots_folder.is_dir():
+        raise ArgumentValueError(f"Invalid folder path: {plots_folder}")
+
+    circles, found_places = search_places_in_polygon(
+        root_folder=project_folder,
+        plot_folder=plots_folder,
+        tag=tag,
+        polygon=polygon,
+        radius_in_meters=radius_in_meters,
+        step_in_degrees=step_in_degrees,
+        condition_rule="center",
+        client=client,
+        included_types=included_types,
+        recalculate=recalculate,
+        show=show,
+        has_places=has_places,
+    )
+
+    saturated_circles_plot_path = plots_folder / f"{tag}_saturated_circles_plot.png"
+    saturated_area_plot_path = plots_folder / f"{tag}_saturated_area_plot.png"
+
+    saturated_circles = compute_saturated_circles(
+        polygon=polygon,
+        found_places=found_places,
+        circles=circles,
+        threshold=threshold,
+        show=show,
+        output_file_path=saturated_circles_plot_path,
+    )
+
+    saturated_area = compute_saturated_area(
+        polygon=polygon,
+        saturated_circles=saturated_circles,
+        show=show,
+        output_path=saturated_area_plot_path,
+    )
+
+    plt.close("all")
+    return found_places, circles, saturated_area, saturated_circles
 
 
 def search_places_in_polygon(
