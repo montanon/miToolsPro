@@ -1,7 +1,6 @@
 import os
 import random
 import time
-from datetime import datetime
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
@@ -33,6 +32,7 @@ from mitoolspro.google_utils.places.plots import (
 )
 from mitoolspro.google_utils.places.utils import (
     calculate_degree_steps,
+    generate_unique_place_id,
     get_circles_search,
     meters_to_degree,
 )
@@ -415,10 +415,6 @@ def get_saturated_area(
     saturated_area = saturated_circles.geometry.unary_union
     plot_saturated_area(polygon, saturated_area, show=show, output_path=output_path)
     return saturated_area
-
-
-def generate_unique_place_id():
-    return datetime.now().strftime("%Y%m%d%H%M%S%f")
 
 
 def search_places_in_polygon(
