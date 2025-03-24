@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from itertools import product
 from pathlib import Path
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, NewType, Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -10,8 +10,9 @@ from geopandas import GeoDataFrame
 from shapely.geometry import MultiPolygon, Point, Polygon
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
-from mitoolspro.google_utils.places.places import CircleType
 from mitoolspro.google_utils.places.places_objects import intersection_condition_factory
+
+CircleType = NewType("CircleType", Polygon)
 
 
 def meters_to_degree(distance_in_meters: float, reference_latitude: float) -> float:
