@@ -1,28 +1,21 @@
 import os
-from dataclasses import asdict, dataclass, field
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, NewType, Optional, Protocol, Tuple
+from typing import Any, Dict, List, NewType, Optional, Protocol
 
 import geopandas as gpd
 import seaborn as sns
 from geopandas import GeoDataFrame, GeoSeries
-from jsonschema import ValidationError, validate
 from matplotlib.pyplot import Axes
-from pandas import Series
 from pydantic import BaseModel, Field, field_validator
 from shapely import Point, Polygon
 from shapely.ops import unary_union
 
 from mitoolspro.exceptions import (
-    ArgumentTypeError,
     ArgumentValueError,
 )
-from mitoolspro.google_utils.places.json_schemas import NEWPLACE_SCHEMA
 
 CircleType = NewType("CircleType", Point)
-
-GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
 
 
 class Coordinate(BaseModel):
