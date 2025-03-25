@@ -7,7 +7,7 @@ import geopandas as gpd
 import seaborn as sns
 from geopandas import GeoDataFrame, GeoSeries
 from matplotlib.pyplot import Axes
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_validator
 from shapely import Point, Polygon
 from shapely.ops import unary_union
 
@@ -22,15 +22,46 @@ class Coordinate(BaseModel):
     latitude: float
     longitude: float
 
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, v: float) -> float:
+        if not -90 <= v <= 90:
+            raise ArgumentValueError("Latitude must be between -90° and 90°")
+        return v
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, v: float) -> float:
+        if not -180 <= v <= 180:
+            raise ArgumentValueError("Longitude must be between -180° and 180°")
+        return v
+
 
 class Viewport(BaseModel):
     low: Coordinate
     high: Coordinate
 
+    @field_validator("high")
+    @classmethod
+    def validate_coordinates(cls, v: Coordinate, info: ValidationInfo) -> Coordinate:
+        if info.data and "low" in info.data:
+            low = info.data["low"]
+            if v.latitude <= low.latitude or v.longitude <= low.longitude:
+                raise ArgumentValueError(
+                    "High coordinate must be greater than low coordinate"
+                )
+        return v
+
 
 class PlusCode(BaseModel):
-    globalCode: Optional[str]
-    compoundCode: Optional[str]
+    globalCode: Optional[str] = None
+    compoundCode: Optional[str] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.globalCode is None and self.compoundCode is None:
+            raise ValidationError(
+                "At least one of globalCode or compoundCode must be provided"
+            )
 
 
 class AddressComponent(BaseModel):
@@ -45,12 +76,40 @@ class DateStamp(BaseModel):
     month: int
     day: int
 
+    @field_validator("month")
+    @classmethod
+    def validate_month(cls, v: int) -> int:
+        if not 1 <= v <= 12:
+            raise ValueError("Month must be between 1 and 12")
+        return v
+
+    @field_validator("day")
+    @classmethod
+    def validate_day(cls, v: int) -> int:
+        if not 1 <= v <= 31:
+            raise ValueError("Day must be between 1 and 31")
+        return v
+
 
 class TimePeriod(BaseModel):
     day: int
     hour: int
     minute: int
     date: Optional[DateStamp] = None
+
+    @field_validator("hour")
+    @classmethod
+    def validate_hour(cls, v: int) -> int:
+        if not 0 <= v < 24:
+            raise ArgumentValueError("Hour must be between 0 and 23")
+        return v
+
+    @field_validator("minute")
+    @classmethod
+    def validate_minute(cls, v: int) -> int:
+        if not 0 <= v < 60:
+            raise ArgumentValueError("Minute must be between 0 and 59")
+        return v
 
 
 class Period(BaseModel):
@@ -73,8 +132,8 @@ class AccessibilityOptions(BaseModel):
 
 
 class LocalizedText(BaseModel):
-    text: Optional[str]
-    languageCode: Optional[str]
+    text: Optional[str] = None
+    languageCode: Optional[str] = None
 
 
 class NewPlace(BaseModel):

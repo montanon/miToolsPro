@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest import TestCase
 
 import geopandas as gpd
+from pydantic import ValidationError
 from shapely import Point, Polygon
 
 from mitoolspro.exceptions import ArgumentValueError
@@ -40,54 +41,82 @@ class TestCoordinate(TestCase):
         self.assertEqual(self.coordinate.longitude, 139.6917)
 
     def test_invalid_latitude(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             Coordinate(latitude=91.0, longitude=139.6917)
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Latitude must be between -90° and 90°", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             Coordinate(latitude=-91.0, longitude=139.6917)
+        self.assertIn("Latitude must be between -90° and 90°", str(cm.exception))
 
     def test_invalid_longitude(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             Coordinate(latitude=35.6895, longitude=181.0)
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Longitude must be between -180° and 180°", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             Coordinate(latitude=35.6895, longitude=-181.0)
+        self.assertIn("Longitude must be between -180° and 180°", str(cm.exception))
 
 
 class TestViewport(TestCase):
-    def setUp(self):
-        self.viewport = Viewport(
+    def test_initialization(self):
+        viewport = Viewport(
             low=Coordinate(latitude=35.6895, longitude=139.6917),
             high=Coordinate(latitude=35.6896, longitude=139.6918),
         )
-
-    def test_initialization(self):
-        self.assertEqual(self.viewport.low.latitude, 35.6895)
-        self.assertEqual(self.viewport.low.longitude, 139.6917)
-        self.assertEqual(self.viewport.high.latitude, 35.6896)
-        self.assertEqual(self.viewport.high.longitude, 139.6918)
+        self.assertEqual(viewport.low.latitude, 35.6895)
+        self.assertEqual(viewport.low.longitude, 139.6917)
+        self.assertEqual(viewport.high.latitude, 35.6896)
+        self.assertEqual(viewport.high.longitude, 139.6918)
 
     def test_invalid_coordinates(self):
-        with self.assertRaises(ArgumentValueError):
+        # Test invalid latitude (high <= low)
+        with self.assertRaises(ValidationError) as cm:
+            Viewport(
+                low=Coordinate(latitude=35.6896, longitude=139.6917),
+                high=Coordinate(latitude=35.6895, longitude=139.6918),
+            )
+        self.assertIn(
+            "High coordinate must be greater than low coordinate", str(cm.exception)
+        )
+
+        # Test invalid longitude (high <= low)
+        with self.assertRaises(ValidationError) as cm:
+            Viewport(
+                low=Coordinate(latitude=35.6895, longitude=139.6918),
+                high=Coordinate(latitude=35.6896, longitude=139.6917),
+            )
+        self.assertIn(
+            "High coordinate must be greater than low coordinate", str(cm.exception)
+        )
+
+        # Test both invalid (high <= low for both lat and long)
+        with self.assertRaises(ValidationError) as cm:
             Viewport(
                 low=Coordinate(latitude=35.6896, longitude=139.6918),
                 high=Coordinate(latitude=35.6895, longitude=139.6917),
             )
+        self.assertIn(
+            "High coordinate must be greater than low coordinate", str(cm.exception)
+        )
 
 
 class TestPlusCode(TestCase):
-    def setUp(self):
-        self.plus_code = PlusCode(
-            globalCode="87G8P27V+JG",
-            compoundCode="P27V+JG Tokyo, Japan",
-        )
-
     def test_initialization(self):
-        self.assertEqual(self.plus_code.globalCode, "87G8P27V+JG")
-        self.assertEqual(self.plus_code.compoundCode, "P27V+JG Tokyo, Japan")
-
-    def test_optional_fields(self):
-        plus_code = PlusCode()
-        self.assertIsNone(plus_code.globalCode)
+        plus_code = PlusCode(globalCode="87G8P27V+JG")
+        self.assertEqual(plus_code.globalCode, "87G8P27V+JG")
         self.assertIsNone(plus_code.compoundCode)
+
+        plus_code = PlusCode(compoundCode="P27V+JG Tokyo, Japan")
+        self.assertIsNone(plus_code.globalCode)
+        self.assertEqual(plus_code.compoundCode, "P27V+JG Tokyo, Japan")
+
+        plus_code = PlusCode(
+            globalCode="87G8P27V+JG", compoundCode="P27V+JG Tokyo, Japan"
+        )
+        self.assertEqual(plus_code.globalCode, "87G8P27V+JG")
+        self.assertEqual(plus_code.compoundCode, "P27V+JG Tokyo, Japan")
 
 
 class TestAddressComponent(TestCase):
@@ -116,16 +145,22 @@ class TestDateStamp(TestCase):
         self.assertEqual(self.date_stamp.day, 15)
 
     def test_invalid_month(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             DateStamp(year=2024, month=13, day=15)
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Month must be between 1 and 12", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             DateStamp(year=2024, month=0, day=15)
+        self.assertIn("Month must be between 1 and 12", str(cm.exception))
 
     def test_invalid_day(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             DateStamp(year=2024, month=3, day=32)
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Day must be between 1 and 31", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             DateStamp(year=2024, month=3, day=0)
+        self.assertIn("Day must be between 1 and 31", str(cm.exception))
 
 
 class TestTimePeriod(TestCase):
@@ -146,16 +181,21 @@ class TestTimePeriod(TestCase):
         self.assertEqual(self.time_period.date.day, 15)
 
     def test_invalid_hour(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             TimePeriod(day=1, hour=24, minute=0)
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Hour must be between 0 and 23", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             TimePeriod(day=1, hour=-1, minute=0)
 
     def test_invalid_minute(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             TimePeriod(day=1, hour=9, minute=60)
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Minute must be between 0 and 59", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             TimePeriod(day=1, hour=9, minute=-1)
+        self.assertIn("Minute must be between 0 and 59", str(cm.exception))
 
 
 class TestPeriod(TestCase):
@@ -531,13 +571,13 @@ class TestCityGeojson(TestCase):
         ax = self.city.plot_polygons()
         self.assertEqual(ax.get_xlabel(), "Longitude")
         self.assertEqual(ax.get_ylabel(), "Latitude")
-        self.assertEqual(ax.get_title(), "Test City Wards Polygons")
+        self.assertEqual(ax.get_title(), "Test_City Wards Polygons")
 
     def test_plot_unary_polygon(self):
         ax = self.city.plot_unary_polygon()
         self.assertEqual(ax.get_xlabel(), "Longitude")
         self.assertEqual(ax.get_ylabel(), "Latitude")
-        self.assertEqual(ax.get_title(), "Test City Polygon")
+        self.assertEqual(ax.get_title(), "Test_City Polygon")
 
 
 class TestIntersectionConditions(TestCase):
