@@ -125,7 +125,7 @@ class GooglePlacesClient:
 
         if not self.api_key:
             dummy_response = self._dummy_response(query, has_places)
-            return self._parse_response(dummy_response.json())
+            return NewPlacesResponse.model_validate(dummy_response.json())
 
         try:
             response = requests.post(
