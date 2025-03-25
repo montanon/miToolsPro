@@ -13,9 +13,18 @@ from mitoolspro.google_utils.places.client import (
     create_dummy_response,
 )
 from mitoolspro.google_utils.places.models import (
+    AccessibilityOptions,
+    AddressComponent,
+    Coordinate,
     DummyResponse,
+    LocalizedText,
     NewPlace,
     NewPlacesResponse,
+    OpeningHours,
+    Period,
+    PlusCode,
+    TimePeriod,
+    Viewport,
 )
 
 
@@ -110,7 +119,7 @@ class TestGooglePlacesClient(TestCase):
                 }
             }
         )
-        places = [NewPlace(**dummy_place)]
+        places = [dummy_place]
         df = client.get_response_places(self.test_response_id, places)
         self.assertIsInstance(df, pd.DataFrame)
         self.assertEqual(len(df), 1)
@@ -171,16 +180,58 @@ class TestGooglePlacesClient(TestCase):
             }
         }
         place = create_dummy_place(query)
-        self.assertIsInstance(place, dict)
-        self.assertIn("id", place)
-        self.assertIn("types", place)
-        self.assertIn("location", place)
-        self.assertIn("displayName", place)
-        self.assertIn("primaryType", place)
-        self.assertIn("formattedAddress", place)
-        self.assertIn("priceLevel", place)
-        self.assertIn("rating", place)
-        self.assertIn("userRatingCount", place)
+
+        # Verify it's a NewPlace instance
+        self.assertIsInstance(place, NewPlace)
+
+        # Verify all required fields are present and have correct types
+        self.assertIsInstance(place.id, str)
+        self.assertIsInstance(place.name, str)
+        self.assertIsInstance(place.types, list)
+        self.assertIsInstance(place.formattedAddress, str)
+        self.assertIsInstance(place.shortFormattedAddress, str)
+        self.assertIsInstance(place.adrFormatAddress, str)
+        self.assertIsInstance(place.addressComponents, list)
+        self.assertIsInstance(place.plusCode, PlusCode)
+        self.assertIsInstance(place.location, Coordinate)
+        self.assertIsInstance(place.viewport, Viewport)
+        self.assertIsInstance(place.googleMapsUri, str)
+        self.assertIsInstance(place.websiteUri, str)
+        self.assertIsInstance(place.businessStatus, str)
+        self.assertIsInstance(place.rating, float)
+        self.assertIsInstance(place.userRatingCount, int)
+        self.assertIsInstance(place.priceLevel, str)
+        self.assertIsInstance(place.nationalPhoneNumber, str)
+        self.assertIsInstance(place.internationalPhoneNumber, str)
+        self.assertIsInstance(place.utcOffsetMinutes, int)
+        self.assertIsInstance(place.iconMaskBaseUri, str)
+        self.assertIsInstance(place.iconBackgroundColor, str)
+        self.assertIsInstance(place.displayName, LocalizedText)
+        self.assertIsInstance(place.primaryType, str)
+        self.assertIsInstance(place.primaryTypeDisplayName, LocalizedText)
+        self.assertIsInstance(place.currentOpeningHours, OpeningHours)
+        self.assertIsInstance(place.regularOpeningHours, OpeningHours)
+        self.assertIsInstance(place.accessibilityOptions, AccessibilityOptions)
+
+        # Verify nested objects have correct structure
+        self.assertIsInstance(place.addressComponents[0], AddressComponent)
+        self.assertIsInstance(place.location.latitude, float)
+        self.assertIsInstance(place.location.longitude, float)
+        self.assertIsInstance(place.viewport.low, Coordinate)
+        self.assertIsInstance(place.viewport.high, Coordinate)
+        self.assertIsInstance(place.displayName.text, str)
+        self.assertIsInstance(place.displayName.languageCode, str)
+        self.assertIsInstance(place.currentOpeningHours.periods[0], Period)
+        self.assertIsInstance(place.currentOpeningHours.periods[0].open, TimePeriod)
+        self.assertIsInstance(place.currentOpeningHours.periods[0].close, TimePeriod)
+
+        # Verify data constraints
+        self.assertTrue(0 <= place.rating <= 5)
+        self.assertTrue(place.userRatingCount >= 0)
+        self.assertTrue(place.priceLevel in ["1", "2", "3", "4", "5"])
+        self.assertTrue(place.utcOffsetMinutes in range(-720, 721, 60))
+        self.assertTrue(all(t in RESTAURANT_TYPES for t in place.types))
+        self.assertTrue(place.primaryType in place.types)
 
 
 if __name__ == "__main__":
