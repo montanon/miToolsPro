@@ -416,6 +416,7 @@ class TestNewPlacesResponse(TestCase):
             name="Google Japan",
             types=["point_of_interest", "establishment"],
             location=Coordinate(latitude=35.6895, longitude=139.6917),
+            displayName=LocalizedText(text="Google Japan", languageCode="en"),
         )
         self.response = NewPlacesResponse(places=[self.place])
 
@@ -467,46 +468,55 @@ class TestNewNearbySearchRequest(TestCase):
         self.assertEqual(self.request.language_code, "en")
 
     def test_invalid_distance(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             NewNearbySearchRequest(
                 location=self.location,
                 distance_in_meters=0,
                 max_result_count=20,
             )
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Input should be greater than 0", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             NewNearbySearchRequest(
                 location=self.location,
                 distance_in_meters=-1000,
                 max_result_count=20,
             )
+        self.assertIn("Input should be greater than 0", str(cm.exception))
 
     def test_invalid_max_result_count(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             NewNearbySearchRequest(
                 location=self.location,
                 distance_in_meters=1000,
                 max_result_count=0,
             )
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("Input should be greater than 0", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             NewNearbySearchRequest(
                 location=self.location,
                 distance_in_meters=1000,
                 max_result_count=-20,
             )
+        self.assertIn("Input should be greater than 0", str(cm.exception))
 
     def test_invalid_language_code(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError) as cm:
             NewNearbySearchRequest(
                 location=self.location,
                 distance_in_meters=1000,
                 language_code="eng",
             )
-        with self.assertRaises(ArgumentValueError):
+        self.assertIn("String should have at most 2 characters", str(cm.exception))
+
+        with self.assertRaises(ValidationError) as cm:
             NewNearbySearchRequest(
                 location=self.location,
                 distance_in_meters=1000,
                 language_code="e",
             )
+        self.assertIn("String should have at least 2 characters", str(cm.exception))
 
     def test_location_restriction(self):
         restriction = self.request.location_restriction
