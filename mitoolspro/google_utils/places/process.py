@@ -87,7 +87,7 @@ def process_single_circle(
         has_places=has_places,
     )
 
-    if places_df is not None:
+    if places_df is not None and not places_df.empty:
         found_places = pd.concat([found_places, places_df], axis=0, ignore_index=True)
 
     circles.loc[response_id, "searched"] = True
