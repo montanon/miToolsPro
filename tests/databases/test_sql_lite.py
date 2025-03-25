@@ -79,7 +79,6 @@ class TestSQLiteFunctions(TestCase):
         pd.testing.assert_frame_equal(dfs[0], self.test_df)
 
     def test_transfer_sql_table(self):
-        new_db_path = Path(self.temp_dir) / "new_test.db"
         new_conn = connect_to_sql_db(self.temp_dir, "new_test.db")
 
         transfer_sql_table(self.conn, new_conn, "test_table", index_col=None)
