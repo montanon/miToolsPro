@@ -44,6 +44,7 @@ dependencies = [
     "seleniumbase>=4.35.7",
     "simpleaudio>=1.0.4",
     "spacy>=3.8.4",
+    "sqlalchemy>=2.0.39",
     "statsmodels>=0.14.4",
     "thefuzz>=0.22.1",
     "tokenizers>=0.21.1",
