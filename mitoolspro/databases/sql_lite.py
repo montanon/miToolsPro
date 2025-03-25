@@ -113,4 +113,4 @@ def transfer_sql_table(
     validate_table_name(table_name)
     query = f'SELECT * FROM "{table_name}";'
     table = pd.read_sql(query, src_conn, index_col=index_col)
-    table.to_sql(table_name, dst_conn, if_exists=if_exists)
+    table.to_sql(table_name, dst_conn, if_exists=if_exists, index=False)
