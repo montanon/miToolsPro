@@ -70,7 +70,7 @@ def places_search_step(
         circles=circles,
         threshold=threshold,
         show=show,
-        output_file_path=saturated_circles_plot_path,
+        output_path=saturated_circles_plot_path,
     )
 
     saturated_area = compute_saturated_area(
@@ -198,7 +198,10 @@ def _generate_results_plots(
     points = found_places[["longitude", "latitude"]].values.tolist()
     if show:
         _ = polygon_plot_with_circles_and_points(
-            polygon, circles, points, plot_paths["places"], show
+            polygon=polygon,
+            circles=circles.geometry.tolist(),
+            points=points,
+            output_file_path=plot_paths["places"],
         )
         plt.show()
 
@@ -206,13 +209,12 @@ def _generate_results_plots(
     zoom_level = 5 * meters_to_degree(radius_in_meters, random_circle.centroid.y)
     if show:
         _ = polygon_plot_with_circles_and_points(
-            polygon,
-            circles,
-            points,
-            plot_paths["places_zoom"],
-            show,
-            random_circle,
-            zoom_level,
+            polygon=polygon,
+            circles=circles.geometry.tolist(),
+            points=points,
+            point_of_interest=random_circle,
+            zoom_level=zoom_level,
+            output_file_path=plot_paths["places_zoom"],
         )
         plt.show()
 

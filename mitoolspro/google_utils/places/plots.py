@@ -80,7 +80,7 @@ def polygon_plot_with_sampling_circles(
 ) -> Axes:
     if not isinstance(polygon, (Polygon, MultiPolygon)):
         raise ArgumentTypeError(
-            f"'polygon' of type {type(polygon)} must of be type Polyong."
+            f"'polygon' of type {type(polygon)} must of be type Polyong or MultiPolygon."
         )
     if not isinstance(circles, (list, GeoSeries)):
         raise ArgumentTypeError(
