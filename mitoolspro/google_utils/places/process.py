@@ -111,7 +111,7 @@ def should_save_state(
     return (
         (response_id % n_amount == 0)
         or (response_id == total_circles - 1)
-        or (global_requests_counter.value >= global_requests_counter_limit.value - 1)
+        or (global_requests_counter.value == global_requests_counter_limit.value - 1)
     )
 
 
