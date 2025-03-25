@@ -165,10 +165,10 @@ class TestGooglePlacesClient(TestCase):
             }
         }
         response = create_dummy_response(query, has_places=True)
-        self.assertIsInstance(response, DummyResponse)
-        self.assertTrue(hasattr(response, "data"))
-        self.assertTrue("places" in response.data)
-        self.assertTrue(len(response.data["places"]) > 0)
+        self.assertIsInstance(response, NewPlacesResponse)
+        self.assertTrue(hasattr(response, "places"))
+        self.assertTrue(len(response.places) > 0)
+        self.assertTrue(all(isinstance(place, NewPlace) for place in response.places))
 
     def test_dummy_place_creation(self):
         query = {

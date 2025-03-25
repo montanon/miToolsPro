@@ -82,20 +82,6 @@ FIELD_MASK = (
 )
 
 
-def create_dummy_response(
-    query: Dict[str, Any],
-    has_places: bool = None,
-) -> DummyResponse:
-    has_places = (
-        random.choice([True, False, False]) if has_places is None else has_places
-    )
-    data = {}
-    if has_places:
-        places_n = random.randint(1, 21)
-        data["places"] = [create_dummy_place(query) for _ in range(places_n)]
-    return DummyResponse(data=data)
-
-
 class GooglePlacesClient:
     def __init__(
         self,
@@ -122,7 +108,7 @@ class GooglePlacesClient:
         radius_in_meters: float,
         included_types: Optional[List[str]] = None,
         has_places: Optional[bool] = None,
-    ) -> Union[List[NewPlace], DummyResponse]:
+    ) -> NewPlacesResponse:
         query_object = NewNearbySearchRequest(
             location=center_point,
             distance_in_meters=radius_in_meters,
@@ -133,8 +119,7 @@ class GooglePlacesClient:
         headers = self._build_headers()
 
         if not self.api_key:
-            dummy_response = self._dummy_response(query, has_places)
-            return NewPlacesResponse.model_validate(dummy_response.json())
+            return create_dummy_response(query, has_places)
 
         try:
             response = requests.post(
@@ -150,7 +135,7 @@ class GooglePlacesClient:
 
     def _dummy_response(
         self, query: Dict[str, Any], has_places: Optional[bool] = None
-    ) -> DummyResponse:
+    ) -> NewPlacesResponse:
         return create_dummy_response(query, has_places)
 
     def get_response_places(
@@ -187,6 +172,20 @@ class GooglePlacesClient:
                 f"[search_for_places] Unrecoverable error: {e}\n{traceback.format_exc()}"
             )
             return None
+
+
+def create_dummy_response(
+    query: Dict[str, Any],
+    has_places: bool = None,
+) -> NewPlacesResponse:
+    has_places = (
+        random.choice([True, False, False]) if has_places is None else has_places
+    )
+    places = []
+    if has_places:
+        places_n = random.randint(1, 21)
+        places = [create_dummy_place(query) for _ in range(places_n)]
+    return NewPlacesResponse(places=places)
 
 
 def create_dummy_place(query: Dict[str, Any]) -> NewPlace:
