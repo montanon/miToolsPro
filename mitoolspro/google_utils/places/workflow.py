@@ -1,5 +1,3 @@
-# mitoolspro/google_utils/places/workflow.py
-
 from __future__ import annotations
 
 from pathlib import Path
