@@ -40,6 +40,22 @@ class ProjectNotebook:
             section_seed="load_section",
         )
 
+        self._create_version_subfolder_source = [
+            "# pr.create_version_subfolder(subfolder_name: str)",
+            "",
+        ]
+        self._create_version_subfolder_cell = create_notebook_cell(
+            cell_type="code",
+            source=self._create_version_subfolder_source,
+            notebook_seed=self.notebook_seed,
+            cell_seed="create_version_subfolder",
+        )
+        self._create_version_subfolder_section = create_notebook_section(
+            title="## Create Version Subfolder",
+            cells=[self._create_version_subfolder_cell],
+            notebook_seed=self.notebook_seed,
+            section_seed="create_version_subfolder_section",
+        )
         self._add_path_source = [
             "# pr.add_path(key: str, path: PathLike, update=True)",
             "",
@@ -97,6 +113,7 @@ class ProjectNotebook:
             cells=[
                 self._imports_cell,
                 self._load_section,
+                self._create_version_subfolder_section,
                 self._add_section,
                 self._clean_cell,
                 self._closure,
