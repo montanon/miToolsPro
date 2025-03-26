@@ -24,6 +24,7 @@ class TestDBQueueWriter(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.db_path = os.path.join(self.temp_dir, "test.db")
         self.writer = DBQueueWriter(self.db_path, Base)
+        self.writer.start()
 
     def tearDown(self):
         self.writer.close()
@@ -35,7 +36,19 @@ class TestDBQueueWriter(unittest.TestCase):
         self.assertTrue(os.path.exists(self.db_path))
         self.assertIsNotNone(self.writer.engine)
         self.assertIsNotNone(self.writer.Session)
+        self.assertIsNotNone(self.writer._thread)
+
+    def test_start_method(self):
+        self.writer.start()
+        self.assertIsNotNone(self.writer._thread)
         self.assertTrue(self.writer._thread.is_alive())
+
+    def test_multiple_starts(self):
+        self.writer.start()
+        thread1 = self.writer._thread
+        self.writer.start()
+        thread2 = self.writer._thread
+        self.assertEqual(thread1, thread2)
 
     def test_register_handler(self):
         mock_handler = MagicMock()

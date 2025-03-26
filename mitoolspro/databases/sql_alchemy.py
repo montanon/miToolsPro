@@ -21,8 +21,12 @@ class DBQueueWriter:
         self.queue = Queue()
         self._handlers = handlers or {}
         self._stop_event = Event()
-        self._thread = Thread(target=self._process_queue, daemon=True)
-        self._thread.start()
+        self._thread = None
+
+    def start(self):
+        if self._thread is None or not self._thread.is_alive():
+            self._thread = Thread(target=self._process_queue, daemon=True)
+            self._thread.start()
 
     def register_handler(self, op_name: str, handler: Callable):
         self._handlers[op_name] = handler
@@ -58,7 +62,7 @@ class DBQueueWriter:
     def close(self):
         self._stop_event.set()
         self.queue.put(None)
-        if self._thread.is_alive():
+        if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1.0)
 
     def wait_until_done(self):
