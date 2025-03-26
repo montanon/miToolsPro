@@ -73,3 +73,5 @@ include = [
 include = [
     "mitoolspro/**/*.py",
 ]
+[project.scripts]
+mitoolspro = "mitoolspro.cli:main"
