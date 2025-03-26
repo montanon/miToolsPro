@@ -47,6 +47,7 @@ dependencies = [
     "sqlalchemy>=2.0.39",
     "statsmodels>=0.14.4",
     "thefuzz>=0.22.1",
+    "tls-client>=1.0.1",
     "tokenizers>=0.21.1",
     "torch>=2.6.0",
     "torchvision>=0.21.0",
