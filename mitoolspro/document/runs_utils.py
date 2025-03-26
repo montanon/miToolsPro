@@ -81,10 +81,12 @@ def create_run_in_bbox(
             text=char,
             fontname=fontname,
             size=size,
-            x0=xposition,
-            y0=bbox.y0,
-            x1=xposition + width,
-            y1=bbox.y1,
+            bbox=BBox(
+                x0=xposition,
+                y0=bbox.y0,
+                x1=xposition + width,
+                y1=bbox.y1,
+            ),
         )
         for char, xposition, width in zip(text, xpositions, widths)
     ]
