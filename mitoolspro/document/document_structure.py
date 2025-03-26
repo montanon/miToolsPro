@@ -1,6 +1,8 @@
 from math import isclose
 from typing import List
 
+from mitoolspro.exceptions import ArgumentStructureError
+
 CHAR_SIZE_TOLERANCE = 0.001
 
 
@@ -78,6 +80,8 @@ class BBox:
 
 class Char:
     def __init__(self, text: str, fontname: str, size: float, bbox: BBox):
+        if len(text) != 1:
+            raise ArgumentStructureError("Char text must be a single character")
         self.text = text
         self.fontname = fontname
         self.size = size

@@ -11,6 +11,7 @@ from mitoolspro.document.document_structure import (
     Page,
     Run,
 )
+from mitoolspro.exceptions import ArgumentStructureError
 
 
 class TestBBox(TestCase):
@@ -96,6 +97,20 @@ class TestBBox(TestCase):
 class TestChar(TestCase):
     def setUp(self):
         self.char = Char("A", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+
+    def test_single_character_validation(self):
+        with self.assertRaises(ArgumentStructureError) as cm:
+            Char("AB", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+        self.assertEqual(str(cm.exception), "Char text must be a single character")
+
+        with self.assertRaises(ArgumentStructureError) as cm:
+            Char("", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+        self.assertEqual(str(cm.exception), "Char text must be a single character")
+
+        # Valid cases
+        Char("A", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+        Char("1", "Arial-Bold", 12, BBox(10, 20, 20, 32))
+        Char(" ", "Arial-Bold", 12, BBox(10, 20, 20, 32))
 
     def test_bbox(self):
         bbox = self.char.bbox
