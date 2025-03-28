@@ -408,6 +408,12 @@ class Page:
     def add_box(self, box):
         self.boxes.append(box)
 
+    def get_all_runs(self, merge=True):
+        runs = []
+        for line in self.get_all_lines():
+            runs.extend(line.runs)
+        return merge_runs(runs) if merge else runs
+
     def get_all_lines(self):
         lines = []
         for box in self.boxes:

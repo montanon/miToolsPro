@@ -1,5 +1,6 @@
 import os
 import tempfile
+import unittest
 from pathlib import Path
 from unittest import TestCase
 
@@ -493,3 +494,326 @@ class TestFromPDF(TestCase):
             extract_images_from_pdf(invalid_path)
 
         os.unlink(invalid_path)
+
+
+class TestMultilingualPDFs(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.temp_dir = tempfile.mkdtemp()
+        cls.fitz_pdf_path = Path(cls.temp_dir) / "multilingual_fitz.pdf"
+        cls.reportlab_pdf_path = Path(cls.temp_dir) / "multilingual_reportlab.pdf"
+        cls.image_path = Path(cls.temp_dir) / "test_image.png"
+
+        # Create a test image
+        img = PILImage.new("RGB", (100, 100), color="red")
+        img.save(cls.image_path)
+
+        # Create multilingual text samples with proper font mapping
+        cls.text_samples = {
+            "Spanish": {
+                "text": "¡Hola! ¿Cómo estás? Él es un niño. Ángel y Óscar son amigos. La Ñ es una letra especial.",
+                "font": "Helvetica",
+            },
+            "French": {
+                "text": "Bonjour! Comment allez-vous? L'été est chaud. Le café est délicieux. L'école est fermée.",
+                "font": "Helvetica",
+            },
+            "German": {
+                "text": "Guten Tag! Wie geht es Ihnen? Der Frühling ist schön. Das Wetter ist kalt. Die Sonne scheint.",
+                "font": "Helvetica",
+            },
+            "Russian": {
+                "text": "Привет! Как дела? Это хорошая книга. Я люблю читать. Добро пожаловать!",
+                "font": "Times-Roman",  # Using Times-Roman for Cyrillic support
+            },
+            "Japanese": {
+                "text": "こんにちは！お元気ですか？本を読むのが好きです。今日はいい天気です。",
+                "font": "Times-Roman",  # Fallback to Times-Roman
+            },
+            "Chinese": {
+                "text": "你好！最近怎么样？我喜欢读书。今天天气很好。欢迎光临！",
+                "font": "Times-Roman",  # Fallback to Times-Roman
+            },
+            "Arabic": {
+                "text": "مرحبا! كيف حالك؟ أنا أحب القراءة. الطقس جميل اليوم. أهلاً بك!",
+                "font": "Times-Roman",  # Using Times-Roman for Arabic support
+            },
+            "Hebrew": {
+                "text": "שלום! מה שלומך? אני אוהב לקרוא. מזג האוויר יפה היום. ברוכים הבאים!",
+                "font": "Times-Roman",  # Using Times-Roman for Hebrew support
+            },
+        }
+
+        # Create PDF with PyMuPDF
+        doc = fitz.open()
+        page = doc.new_page()
+        y_pos = 72
+        page_width = page.rect.width
+        margin = 72  # 1 inch margin
+        max_width = page_width - (2 * margin)  # Available width for text
+
+        for language, sample in cls.text_samples.items():
+            try:
+                # Split text into lines and insert each line separately
+                lines = sample["text"].split("\n")
+                for line in lines:
+                    if line.strip():  # Only insert non-empty lines
+                        text = f"{language}: {line}"
+                        # Calculate text width and split if needed
+                        text_width = fitz.get_text_length(
+                            text, fontname=sample["font"], fontsize=12
+                        )
+                        if text_width > max_width:
+                            # Split text into multiple lines if it's too wide
+                            words = text.split()
+                            current_line = []
+                            current_width = 0
+                            for word in words:
+                                word_width = fitz.get_text_length(
+                                    word + " ", fontname=sample["font"], fontsize=12
+                                )
+                                if current_width + word_width > max_width:
+                                    # Insert current line and start new line
+                                    page.insert_text(
+                                        (margin, y_pos),
+                                        " ".join(current_line),
+                                        fontname=sample["font"],
+                                        fontsize=12,
+                                    )
+                                    y_pos += 20
+                                    current_line = [word]
+                                    current_width = word_width
+                                else:
+                                    current_line.append(word)
+                                    current_width += word_width
+                            # Insert the last line
+                            if current_line:
+                                page.insert_text(
+                                    (margin, y_pos),
+                                    " ".join(current_line),
+                                    fontname=sample["font"],
+                                    fontsize=12,
+                                )
+                                y_pos += 20
+                        else:
+                            # Insert text as is if it fits
+                            page.insert_text(
+                                (margin, y_pos),
+                                text,
+                                fontname=sample["font"],
+                                fontsize=12,
+                            )
+                            y_pos += 20
+                y_pos += 10  # Add extra space between language blocks
+            except Exception as e:
+                print(f"Warning: Could not insert {language} text: {e}")
+        doc.save(str(cls.fitz_pdf_path), garbage=4, deflate=True, clean=True)
+        doc.close()
+
+        # Create PDF with ReportLab
+        c = canvas.Canvas(str(cls.reportlab_pdf_path), pagesize=letter)
+        y_pos = 10 * inch
+        page_width = letter[0]
+        margin = 72  # 1 inch margin
+        max_width = page_width - (2 * margin)  # Available width for text
+
+        for language, sample in cls.text_samples.items():
+            try:
+                c.setFont(sample["font"], 12)
+                # Split text into lines and draw each line separately
+                lines = sample["text"].split("\n")
+                for line in lines:
+                    if line.strip():  # Only draw non-empty lines
+                        text = f"{language}: {line}"
+                        # Use drawText with text wrapping
+                        text_obj = c.beginText(margin, y_pos)
+                        text_obj.setFont(sample["font"], 12)
+
+                        # Split text into words and build lines
+                        words = text.split()
+                        current_line = []
+                        current_width = 0
+
+                        for word in words:
+                            word_width = c.stringWidth(word + " ", sample["font"], 12)
+                            if current_width + word_width > max_width:
+                                # Draw current line and start new line
+                                text_obj.textLine(" ".join(current_line))
+                                current_line = [word]
+                                current_width = word_width
+                            else:
+                                current_line.append(word)
+                                current_width += word_width
+
+                        # Draw the last line
+                        if current_line:
+                            text_obj.textLine(" ".join(current_line))
+
+                        c.drawText(text_obj)
+                        y_pos -= 0.3 * inch  # Reduced spacing between lines
+                y_pos -= 0.2 * inch  # Add extra space between language blocks
+            except Exception as e:
+                print(f"Warning: Could not insert {language} text: {e}")
+        c.save()
+
+    @classmethod
+    def tearDownClass(cls):
+        for file in [cls.fitz_pdf_path, cls.reportlab_pdf_path, cls.image_path]:
+            if file.exists():
+                os.unlink(file)
+        os.rmdir(cls.temp_dir)
+
+    def test_multilingual_fitz_pdf(self):
+        doc = pdf_to_document(self.fitz_pdf_path)
+        self.assertIsInstance(doc, Document)
+        self.assertEqual(len(doc.pages), 1)
+
+        page = doc.pages[0]
+        text = page.text.replace("\n", " ").replace("  ", " ")
+
+        # Test Latin-based languages (these should work reliably)
+        latin_languages = ["Spanish", "French", "German"]
+        for language in latin_languages:
+            sample = self.text_samples[language]
+            # Normalize whitespace for comparison
+            expected_text = f"{language}: {sample['text']}"
+            self.assertIn(expected_text, text)
+
+        # Test text properties
+        for box in page.boxes:
+            for line in box.get_all_lines():
+                for run in line.runs:
+                    self.assertIn(
+                        run.fontname,
+                        [sample["font"] for sample in self.text_samples.values()],
+                    )
+                    self.assertEqual(run.size, 12)
+
+    def test_multilingual_reportlab_pdf(self):
+        doc = pdf_to_document(self.reportlab_pdf_path)
+        self.assertIsInstance(doc, Document)
+        self.assertEqual(len(doc.pages), 1)
+
+        page = doc.pages[0]
+        text = page.text.replace("\n", " ").replace("  ", " ")
+
+        # Test Latin-based languages (these should work reliably)
+        latin_languages = ["Spanish", "French", "German"]
+        for language in latin_languages:
+            sample = self.text_samples[language]
+            # Normalize whitespace for comparison
+            expected_text = f"{language}: {sample['text']}"
+            self.assertIn(expected_text, text)
+
+        # Test text properties
+        for box in page.boxes:
+            for line in box.get_all_lines():
+                for run in line.runs:
+                    # Include all possible fonts that might be used
+                    expected_fonts = [
+                        "Helvetica",
+                        "Times-Roman",
+                        "ZapfDingbats",
+                        "Courier",
+                        "Symbol",
+                        "Times-Bold",
+                        "Times-Italic",
+                        "Helvetica-Bold",
+                        "Helvetica-Oblique",
+                        "Courier-Bold",
+                        "Courier-Oblique",
+                    ]
+                    self.assertIn(run.fontname, expected_fonts)
+                    self.assertAlmostEqual(run.size, 12)
+
+    def test_multilingual_text_operations(self):
+        # Test text operations with multilingual content
+        doc = pdf_to_document(self.fitz_pdf_path)
+        page = doc.pages[0]
+
+        # Test text concatenation
+        all_text = ""
+        for box in page.boxes:
+            for line in box.get_all_lines():
+                all_text += line.text + "\n"
+
+        # Normalize whitespace for comparison
+        all_text = all_text.replace("\n", " ").replace("  ", " ")
+
+        # Verify Latin-based languages are present
+        latin_languages = ["Spanish", "French", "German"]
+        for language in latin_languages:
+            sample = self.text_samples[language]
+            expected_text = f"{language}: {sample['text']}"
+            self.assertIn(expected_text, all_text)
+
+        # Test character operations
+        chars = page.get_all_chars()
+        self.assertGreater(len(chars), 0)
+
+        # Test run operations
+        runs = page.get_all_runs(merge=False)
+        self.assertGreater(len(runs), 0)
+
+        # Test merged runs
+        merged_runs = page.get_all_runs(merge=True)
+        self.assertGreater(len(merged_runs), 0)
+
+    def test_multilingual_layout(self):
+        # Test layout preservation for both PDF types
+        for pdf_path in [self.fitz_pdf_path, self.reportlab_pdf_path]:
+            doc = pdf_to_document(pdf_path)
+            page = doc.pages[0]
+            boxes = page.boxes
+
+            # Verify vertical ordering
+            y_positions = [(box.bbox.y0, box.bbox.y1) for box in boxes]
+            for i in range(len(y_positions) - 1):
+                self.assertGreaterEqual(
+                    y_positions[i][0],
+                    y_positions[i + 1][1] - 1,  # 1 point tolerance
+                    f"Boxes overlap vertically in {pdf_path.name}",
+                )
+
+            # Verify horizontal alignment
+            for box in boxes:
+                self.assertGreater(
+                    box.bbox.x0, 0, f"Box should have left margin in {pdf_path.name}"
+                )
+                self.assertLess(
+                    box.bbox.x1,
+                    letter[0],
+                    f"Box should be within page width in {pdf_path.name}",
+                )
+
+    def test_multilingual_json_serialization(self):
+        # Test JSON serialization with multilingual content
+        doc = pdf_to_document(self.fitz_pdf_path)
+        json_data = doc.to_json()
+        reconstructed = Document.from_json(json_data)
+        reconstructed_text = reconstructed.text.replace("\n", " ").replace("  ", " ")
+
+        # Verify text content for Latin-based languages
+        latin_languages = ["Spanish", "French", "German"]
+        for language in latin_languages:
+            sample = self.text_samples[language]
+            # Normalize whitespace for comparison
+            expected_text = f"{language}: {sample['text']}"
+            self.assertIn(expected_text, reconstructed_text)
+
+        # Verify structure
+        self.assertEqual(len(doc.pages), len(reconstructed.pages))
+        self.assertEqual(len(doc.get_all_boxes()), len(reconstructed.get_all_boxes()))
+        self.assertEqual(len(doc.get_all_lines()), len(reconstructed.get_all_lines()))
+        self.assertEqual(
+            len(doc.get_all_runs(merge=False)),
+            len(reconstructed.get_all_runs(merge=False)),
+        )
+        self.assertEqual(
+            len(doc.get_all_runs(merge=True)),
+            len(reconstructed.get_all_runs(merge=True)),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
