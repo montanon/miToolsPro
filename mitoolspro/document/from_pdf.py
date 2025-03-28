@@ -164,11 +164,18 @@ def extract_images_from_pdf(
 def extract_lines_from_pdf(line_obj: LTTextLineHorizontal) -> Line:
     line = Line(BBox(line_obj.x0, line_obj.y0, line_obj.x1, line_obj.y1))
     current_run = None
+    CID_MAPPING = {
+        "(cid:9)": ":",  # Convert to colon as it appears to be a form field separator
+    }
     for char_obj in line_obj:
         if isinstance(char_obj, LTChar):
             cfont = char_obj.fontname
             csize = char_obj.size
             cchar = char_obj.get_text()
+            if cchar.startswith("(cid:"):
+                cchar = CID_MAPPING.get(
+                    cchar, ""
+                )  # Convert CID to actual character or empty string if unknown
             if (
                 current_run is None
                 or current_run.fontname != cfont
