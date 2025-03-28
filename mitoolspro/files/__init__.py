@@ -1,3 +1,4 @@
+from mitoolspro.files.excel_handlers import auto_adjust_excel_columns_width
 from mitoolspro.files.file_functions import (
     build_dir_tree,
     file_in_folder,
