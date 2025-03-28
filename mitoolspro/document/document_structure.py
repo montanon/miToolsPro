@@ -1,3 +1,4 @@
+import base64
 from math import isclose
 from typing import List
 
@@ -81,7 +82,7 @@ class BBox:
 class Char:
     def __init__(self, text: str, fontname: str, size: float, bbox: BBox):
         if len(text) != 1:
-            raise ArgumentStructureError("Char text must be a single character")
+            raise ArgumentStructureError(f"Char text={text} must be a single character")
         self.text = text
         self.fontname = fontname
         self.size = size
@@ -275,16 +276,21 @@ class Image(BoxElement):
     def to_json(self):
         return {
             "bbox": self.bbox.to_json(),
-            "stream": self.stream,
+            "stream": base64.b64encode(self.stream).decode("utf-8")
+            if self.stream
+            else None,
             "name": self.name,
             "mimetype": self.mimetype,
         }
 
     @classmethod
     def from_json(cls, json_data):
+        stream = json_data.get("stream")
+        if stream:
+            stream = base64.b64decode(stream)
         return cls(
             bbox=BBox.from_json(json_data["bbox"]),
-            stream=json_data.get("stream"),
+            stream=stream,
             name=json_data.get("name", ""),
             mimetype=json_data.get("mimetype"),
         )
