@@ -1,3 +1,4 @@
+import base64
 import unittest
 from unittest import TestCase
 
@@ -101,11 +102,11 @@ class TestChar(TestCase):
     def test_single_character_validation(self):
         with self.assertRaises(ArgumentStructureError) as cm:
             Char("AB", "Arial-Bold", 12, BBox(10, 20, 20, 32))
-        self.assertEqual(str(cm.exception), "Char text must be a single character")
+        self.assertEqual(str(cm.exception), "Char text=AB must be a single character")
 
         with self.assertRaises(ArgumentStructureError) as cm:
             Char("", "Arial-Bold", 12, BBox(10, 20, 20, 32))
-        self.assertEqual(str(cm.exception), "Char text must be a single character")
+        self.assertEqual(str(cm.exception), "Char text= must be a single character")
 
         # Valid cases
         Char("A", "Arial-Bold", 12, BBox(10, 20, 20, 32))
@@ -963,14 +964,14 @@ class TestImage(TestCase):
     def test_to_json(self):
         json_data = self.image.to_json()
         self.assertEqual(json_data["bbox"], self.bbox.to_json())
-        self.assertEqual(json_data["stream"], b"test")
+        self.assertEqual(json_data["stream"], base64.b64encode(b"test").decode("utf-8"))
         self.assertEqual(json_data["name"], "test.jpg")
         self.assertEqual(json_data["mimetype"], "image/jpeg")
 
     def test_from_json(self):
         json_data = {
             "bbox": {"x0": 10, "y0": 20, "x1": 100, "y1": 150},
-            "stream": b"test",
+            "stream": base64.b64encode(b"test").decode("utf-8"),
             "name": "test.jpg",
             "mimetype": "image/jpeg",
         }
