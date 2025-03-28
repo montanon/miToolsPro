@@ -1009,5 +1009,201 @@ class TestImage(TestCase):
         self.assertNotEqual(image1, "not an image")
 
 
+class TestSpanishCharacters(TestCase):
+    def setUp(self):
+        self.spanish_text = "¡Hola! ¿Cómo estás? Él es un niño. Ángel y Óscar son amigos. La Ñ es una letra especial."
+        self.document = Document()
+
+        page = Page(595, 842)
+        box = Box(BBox(50, 50, 545, 150))
+        line = Line(BBox(50, 50, 545, 70))
+        line.add_run(Run.from_text(self.spanish_text, "Arial", 12))
+        box.add_line(line)
+        page.add_box(box)
+        self.document.add_page(page)
+
+    def test_char_spanish(self):
+        chars = [
+            Char("¡", "Arial", 12, BBox(0, 0, 10, 12)),
+            Char("H", "Arial", 12, BBox(10, 0, 20, 12)),
+            Char("o", "Arial", 12, BBox(20, 0, 30, 12)),
+            Char("l", "Arial", 12, BBox(30, 0, 40, 12)),
+            Char("a", "Arial", 12, BBox(40, 0, 50, 12)),
+            Char("!", "Arial", 12, BBox(50, 0, 60, 12)),
+            Char(" ", "Arial", 12, BBox(60, 0, 70, 12)),
+            Char("¿", "Arial", 12, BBox(70, 0, 80, 12)),
+            Char("C", "Arial", 12, BBox(80, 0, 90, 12)),
+            Char("ó", "Arial", 12, BBox(90, 0, 100, 12)),
+            Char("m", "Arial", 12, BBox(100, 0, 110, 12)),
+            Char("o", "Arial", 12, BBox(110, 0, 120, 12)),
+            Char(" ", "Arial", 12, BBox(120, 0, 130, 12)),
+            Char("e", "Arial", 12, BBox(130, 0, 140, 12)),
+            Char("s", "Arial", 12, BBox(140, 0, 150, 12)),
+            Char("t", "Arial", 12, BBox(150, 0, 160, 12)),
+            Char("á", "Arial", 12, BBox(160, 0, 170, 12)),
+            Char("s", "Arial", 12, BBox(170, 0, 180, 12)),
+            Char("?", "Arial", 12, BBox(180, 0, 190, 12)),
+            Char(" ", "Arial", 12, BBox(190, 0, 200, 12)),
+            Char("É", "Arial", 12, BBox(200, 0, 210, 12)),
+            Char("l", "Arial", 12, BBox(210, 0, 220, 12)),
+            Char(" ", "Arial", 12, BBox(220, 0, 230, 12)),
+            Char("e", "Arial", 12, BBox(230, 0, 240, 12)),
+            Char("s", "Arial", 12, BBox(240, 0, 250, 12)),
+            Char(" ", "Arial", 12, BBox(250, 0, 260, 12)),
+            Char("u", "Arial", 12, BBox(260, 0, 270, 12)),
+            Char("n", "Arial", 12, BBox(270, 0, 280, 12)),
+            Char(" ", "Arial", 12, BBox(280, 0, 290, 12)),
+            Char("n", "Arial", 12, BBox(290, 0, 300, 12)),
+            Char("i", "Arial", 12, BBox(300, 0, 310, 12)),
+            Char("ñ", "Arial", 12, BBox(300, 0, 310, 12)),
+            Char("o", "Arial", 12, BBox(310, 0, 320, 12)),
+            Char(".", "Arial", 12, BBox(320, 0, 330, 12)),
+            Char(" ", "Arial", 12, BBox(330, 0, 340, 12)),
+            Char("Á", "Arial", 12, BBox(340, 0, 350, 12)),
+            Char("n", "Arial", 12, BBox(350, 0, 360, 12)),
+            Char("g", "Arial", 12, BBox(360, 0, 370, 12)),
+            Char("e", "Arial", 12, BBox(370, 0, 380, 12)),
+            Char("l", "Arial", 12, BBox(380, 0, 390, 12)),
+            Char(" ", "Arial", 12, BBox(390, 0, 400, 12)),
+            Char("y", "Arial", 12, BBox(400, 0, 410, 12)),
+            Char(" ", "Arial", 12, BBox(410, 0, 420, 12)),
+            Char("Ó", "Arial", 12, BBox(420, 0, 430, 12)),
+            Char("s", "Arial", 12, BBox(430, 0, 440, 12)),
+            Char("c", "Arial", 12, BBox(440, 0, 450, 12)),
+            Char("a", "Arial", 12, BBox(450, 0, 460, 12)),
+            Char("r", "Arial", 12, BBox(460, 0, 470, 12)),
+            Char(" ", "Arial", 12, BBox(470, 0, 480, 12)),
+            Char("s", "Arial", 12, BBox(480, 0, 490, 12)),
+            Char("o", "Arial", 12, BBox(490, 0, 500, 12)),
+            Char("n", "Arial", 12, BBox(500, 0, 510, 12)),
+            Char(" ", "Arial", 12, BBox(510, 0, 520, 12)),
+            Char("a", "Arial", 12, BBox(520, 0, 530, 12)),
+            Char("m", "Arial", 12, BBox(530, 0, 540, 12)),
+            Char("i", "Arial", 12, BBox(540, 0, 550, 12)),
+            Char("g", "Arial", 12, BBox(550, 0, 560, 12)),
+            Char("o", "Arial", 12, BBox(560, 0, 570, 12)),
+            Char("s", "Arial", 12, BBox(570, 0, 580, 12)),
+            Char(".", "Arial", 12, BBox(580, 0, 590, 12)),
+            Char(" ", "Arial", 12, BBox(590, 0, 600, 12)),
+            Char("L", "Arial", 12, BBox(600, 0, 610, 12)),
+            Char("a", "Arial", 12, BBox(610, 0, 620, 12)),
+            Char(" ", "Arial", 12, BBox(620, 0, 630, 12)),
+            Char("Ñ", "Arial", 12, BBox(630, 0, 640, 12)),
+            Char(" ", "Arial", 12, BBox(640, 0, 650, 12)),
+            Char("e", "Arial", 12, BBox(650, 0, 660, 12)),
+            Char("s", "Arial", 12, BBox(660, 0, 670, 12)),
+            Char(" ", "Arial", 12, BBox(670, 0, 680, 12)),
+            Char("u", "Arial", 12, BBox(680, 0, 690, 12)),
+            Char("n", "Arial", 12, BBox(690, 0, 700, 12)),
+            Char("a", "Arial", 12, BBox(700, 0, 710, 12)),
+            Char(" ", "Arial", 12, BBox(710, 0, 720, 12)),
+            Char("l", "Arial", 12, BBox(720, 0, 730, 12)),
+            Char("e", "Arial", 12, BBox(730, 0, 740, 12)),
+            Char("t", "Arial", 12, BBox(740, 0, 750, 12)),
+            Char("r", "Arial", 12, BBox(750, 0, 760, 12)),
+            Char("a", "Arial", 12, BBox(760, 0, 770, 12)),
+            Char(" ", "Arial", 12, BBox(770, 0, 780, 12)),
+            Char("e", "Arial", 12, BBox(780, 0, 790, 12)),
+            Char("s", "Arial", 12, BBox(790, 0, 800, 12)),
+            Char("p", "Arial", 12, BBox(800, 0, 810, 12)),
+            Char("e", "Arial", 12, BBox(810, 0, 820, 12)),
+            Char("c", "Arial", 12, BBox(820, 0, 830, 12)),
+            Char("i", "Arial", 12, BBox(830, 0, 840, 12)),
+            Char("a", "Arial", 12, BBox(840, 0, 850, 12)),
+            Char("l", "Arial", 12, BBox(850, 0, 860, 12)),
+            Char(".", "Arial", 12, BBox(860, 0, 870, 12)),
+        ]
+
+        run = Run.from_chars(chars)
+        self.assertEqual(run.text, self.spanish_text)
+
+    def test_run_spanish(self):
+        run = Run.from_text(self.spanish_text, "Arial", 12)
+        self.assertEqual(run.text, self.spanish_text)
+        self.assertEqual(len(run.chars), len(self.spanish_text))
+
+    def test_line_spanish(self):
+        line = Line(BBox(0, 0, 1000, 20))
+        run = Run.from_text(self.spanish_text, "Arial", 12)
+        line.add_run(run)
+        self.assertEqual(line.text, self.spanish_text)
+        self.assertEqual(len(line.get_all_chars()), len(self.spanish_text))
+
+    def test_box_spanish(self):
+        box = Box(BBox(0, 0, 1000, 100))
+        line = Line(BBox(0, 0, 1000, 20))
+        run = Run.from_text(self.spanish_text, "Arial", 12)
+        line.add_run(run)
+        box.add_line(line)
+        self.assertEqual(box.text, self.spanish_text)
+        self.assertEqual(len(box.get_all_chars()), len(self.spanish_text))
+
+    def test_page_spanish(self):
+        page = Page(595, 842)
+        box = Box(BBox(0, 0, 1000, 100))
+        line = Line(BBox(0, 0, 1000, 20))
+        run = Run.from_text(self.spanish_text, "Arial", 12)
+        line.add_run(run)
+        box.add_line(line)
+        page.add_box(box)
+        self.assertEqual(page.text, self.spanish_text)
+        self.assertEqual(len(page.get_all_chars()), len(self.spanish_text))
+
+    def test_document_spanish(self):
+        self.assertEqual(self.document.text, self.spanish_text)
+        self.assertEqual(len(self.document.get_all_chars()), len(self.spanish_text))
+        self.assertEqual(len(self.document.get_all_runs(merge=False)), 1)
+        self.assertEqual(len(self.document.get_all_runs(merge=True)), 1)
+
+    def test_json_serialization_spanish(self):
+        json_data = self.document.to_json()
+        reconstructed = Document.from_json(json_data)
+        self.assertEqual(reconstructed.text, self.spanish_text)
+        self.assertEqual(len(reconstructed.get_all_chars()), len(self.spanish_text))
+
+    def test_spanish_special_chars(self):
+        special_chars = {
+            "á": "a with acute",
+            "é": "e with acute",
+            "í": "i with acute",
+            "ó": "o with acute",
+            "ú": "u with acute",
+            "ü": "u with umlaut",
+            "ñ": "n with tilde",
+            "Á": "A with acute",
+            "É": "E with acute",
+            "Í": "I with acute",
+            "Ó": "O with acute",
+            "Ú": "U with acute",
+            "Ü": "U with umlaut",
+            "Ñ": "N with tilde",
+            "¿": "inverted question mark",
+            "¡": "inverted exclamation mark",
+        }
+
+        for char, description in special_chars.items():
+            run = Run.from_text(char, "Arial", 12)
+            self.assertEqual(run.text, char, f"Failed for {description}")
+            self.assertEqual(len(run.chars), 1, f"Failed for {description}")
+            self.assertEqual(run.chars[0].text, char, f"Failed for {description}")
+
+    def test_spanish_text_operations(self):
+        text1 = "¡Hola!"
+        text2 = " ¿Cómo estás?"
+        run1 = Run.from_text(text1, "Arial", 12)
+        run2 = Run.from_text(text2, "Arial", 12)
+        combined = run1 + run2
+        self.assertEqual(combined.text, text1 + text2)
+
+        line = Line(BBox(0, 0, 1000, 20))
+        line.add_run(run1)
+        line.add_run(run2)
+        self.assertEqual(line.text, text1 + text2)
+
+        box = Box(BBox(0, 0, 1000, 100))
+        box.add_line(line)
+        self.assertEqual(box.text, text1 + text2)
+
+
 if __name__ == "__main__":
     unittest.main()
