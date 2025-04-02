@@ -156,7 +156,7 @@ class Run:
 
     @property
     def bbox(self):
-        chars_bboxs = [char.bbox for char in self.chars if char.text != "\n"]
+        chars_bboxs = [char.bbox for char in self.chars]
         x0 = min(bbox.x0 for bbox in chars_bboxs)
         y0 = min(bbox.y0 for bbox in chars_bboxs)
         x1 = max(bbox.x1 for bbox in chars_bboxs)
