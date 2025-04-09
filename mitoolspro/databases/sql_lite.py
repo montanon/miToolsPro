@@ -128,6 +128,7 @@ def read_sql_table_with_types(
     validate_table_name(table_name)
     df_info = pd.read_sql(f'SELECT * FROM "{table_name}" LIMIT 0', conn)
     table_columns = df_info.columns.tolist()
+
     if columns is not None:
         if isinstance(columns, str):
             columns = [columns]
@@ -139,17 +140,32 @@ def read_sql_table_with_types(
         query = f'SELECT {", ".join(columns)} FROM "{table_name}";'
     else:
         query = f'SELECT * FROM "{table_name}";'
+
     if column_types:
         invalid_columns = [col for col in column_types if col not in table_columns]
         if invalid_columns:
             raise ArgumentValueError(
                 f"Columns {invalid_columns} not found in table {table_name}"
             )
+        column_types = {
+            col: dtype if dtype != "date" else "datetime64[ns]"
+            for col, dtype in column_types.items()
+        }
 
     try:
-        return pd.read_sql(
-            query, conn, index_col=index_col if index_col else None, dtype=column_types
+        df = pd.read_sql(
+            query, conn, index_col=index_col if index_col else None, coerce_float=True
         )
+
+        if column_types:
+            for col, dtype in column_types.items():
+                if col in df.columns:
+                    try:
+                        df[col] = df[col].astype(dtype, errors="ignore")
+                    except (TypeError, ValueError):
+                        pass
+
+        return df
     except TypeError as e:
         raise ArgumentValueError(f"Invalid dtype specification: {str(e)}")
 
