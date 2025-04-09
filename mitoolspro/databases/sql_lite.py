@@ -10,19 +10,6 @@ from pandas import DataFrame
 from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.utils.decorators import suppress_user_warning
 
-PandasDType = Literal[
-    "int64",
-    "float64",
-    "bool",
-    "datetime64[ns]",
-    "category",
-    "object",
-    "string",
-    "Int64",
-    "Float64",
-    "boolean",
-]
-
 
 def validate_table_name(name: str) -> str:
     if not name.replace("_", "").isalnum():
@@ -134,7 +121,7 @@ def transfer_sql_table(
 def read_sql_table_with_types(
     conn: Connection,
     table_name: str,
-    column_types: Optional[Dict[str, PandasDType]] = None,
+    column_types: Optional[Dict[str, str]] = None,
     columns: Optional[Union[str, Iterable[str]]] = None,
     index_col: Optional[str] = None,
 ) -> DataFrame:
@@ -158,18 +145,13 @@ def read_sql_table_with_types(
             raise ArgumentValueError(
                 f"Columns {invalid_columns} not found in table {table_name}"
             )
-        valid_dtypes = set(PandasDType.__args__)
-        invalid_dtypes = {
-            col: dtype
-            for col, dtype in column_types.items()
-            if dtype not in valid_dtypes
-        }
-        if invalid_dtypes:
-            raise ArgumentValueError(f"Invalid dtypes specified: {invalid_dtypes}")
 
-    return pd.read_sql(
-        query, conn, index_col=index_col if index_col else None, dtype=column_types
-    )
+    try:
+        return pd.read_sql(
+            query, conn, index_col=index_col if index_col else None, dtype=column_types
+        )
+    except TypeError as e:
+        raise ArgumentValueError(f"Invalid dtype specification: {str(e)}")
 
 
 def read_sql_tables_with_types(
