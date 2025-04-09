@@ -759,6 +759,8 @@ class TestPrepareDateCols(TestCase):
                 "valid_dates": ["2021-01-01", "2021-02-01", None],
                 "invalid_dates": ["invalid_date", "2021-01-01", None],
                 "mixed_dates": ["2021-01-01", "invalid_date", "2021-02-01"],
+                "custom_format": ["01-01-2021", "02-01-2021", None],
+                "mixed_formats": ["2021-01-01", "01-02-2021", None],
             }
         )
 
@@ -854,6 +856,53 @@ class TestPrepareDateCols(TestCase):
             large_df, columns="dates", nan_placeholder="2000-01-01"
         )
         self.assertEqual(result["dates"].iloc[-1], pd.Timestamp("2000-01-01"))
+
+    def test_single_format_none(self):
+        result = prepare_date_columns(
+            self.df.copy(), columns="valid_dates", nan_placeholder="2000-01-01"
+        )
+        self.assertTrue(isinstance(result["valid_dates"].iloc[0], pd.Timestamp))
+        self.assertEqual(result["valid_dates"].iloc[0], pd.Timestamp("2021-01-01"))
+
+    def test_single_format_string(self):
+        result = prepare_date_columns(
+            self.df.copy(),
+            columns="custom_format",
+            nan_placeholder="2000-01-01",
+            date_format="%d-%m-%Y",
+        )
+        self.assertTrue(isinstance(result["custom_format"].iloc[0], pd.Timestamp))
+        self.assertEqual(result["custom_format"].iloc[0], pd.Timestamp("2021-01-01"))
+
+    def test_multiple_formats(self):
+        result = prepare_date_columns(
+            self.df.copy(),
+            columns=["valid_dates", "custom_format", "mixed_formats"],
+            nan_placeholder="2000-01-01",
+            date_format=[None, "%d-%m-%Y", "%Y-%m-%d"],
+        )
+        self.assertEqual(result["valid_dates"].iloc[0], pd.Timestamp("2021-01-01"))
+        self.assertEqual(result["custom_format"].iloc[0], pd.Timestamp("2021-01-01"))
+        self.assertEqual(result["mixed_formats"].iloc[0], pd.Timestamp("2021-01-01"))
+
+    def test_invalid_format_length(self):
+        with self.assertRaises(ArgumentValueError):
+            prepare_date_columns(
+                self.df.copy(),
+                columns=["valid_dates", "custom_format"],
+                nan_placeholder="2000-01-01",
+                date_format=["%Y-%m-%d"],
+            )
+
+    def test_mixed_formats_with_none(self):
+        result = prepare_date_columns(
+            self.df.copy(),
+            columns=["valid_dates", "custom_format"],
+            nan_placeholder="2000-01-01",
+            date_format=[None, "%d-%m-%Y"],
+        )
+        self.assertEqual(result["valid_dates"].iloc[0], pd.Timestamp("2021-01-01"))
+        self.assertEqual(result["custom_format"].iloc[0], pd.Timestamp("2021-01-01"))
 
 
 class TestPrepareBoolCols(TestCase):

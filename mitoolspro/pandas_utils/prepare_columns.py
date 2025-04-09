@@ -163,18 +163,29 @@ def prepare_date_columns(
     columns: Union[Iterable[str], str],
     nan_placeholder: Union[str, pd.Timestamp],
     errors: Literal["raise", "coerce", "ignore"] = "coerce",
-    date_format: str = None,
+    date_format: Union[str, List[Union[str, None]], None] = None,
 ) -> DataFrame:
     if errors not in ["raise", "coerce", "ignore"]:
         raise ArgumentValueError(
             "Argument 'errors' must be one of ['raise', 'coerce', 'ignore']."
         )
     columns = validate_columns(dataframe, columns)
+
+    if date_format is not None:
+        if isinstance(date_format, str):
+            date_formats = [date_format] * len(columns)
+        else:
+            if len(date_format) != len(columns):
+                raise ArgumentValueError(
+                    f"Length of 'date_format'={len(date_format)} must match length of 'columns'={len(columns)}."
+                )
+            date_formats = date_format
+    else:
+        date_formats = [None] * len(columns)
+
     try:
-        for col in columns:
-            dataframe[col] = pd.to_datetime(
-                dataframe[col], errors=errors, format=date_format
-            )
+        for col, fmt in zip(columns, date_formats):
+            dataframe[col] = pd.to_datetime(dataframe[col], errors=errors, format=fmt)
             if errors != "ignore" and nan_placeholder is not None:
                 dataframe[col] = dataframe[col].fillna(pd.to_datetime(nan_placeholder))
     except (ValueError, DateParseError) as e:
