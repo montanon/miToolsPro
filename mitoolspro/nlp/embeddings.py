@@ -10,23 +10,25 @@ from mitoolspro.utils.functions import iterable_chunks
 
 
 @lru_cache(maxsize=1)
-def get_specter_model():
+def get_model(model_name: str):
     device = "mps" if torch.backends.mps.is_available() else "cpu"
-    return AutoModel.from_pretrained("allenai/specter").to(device)
+    return AutoModel.from_pretrained(model_name).to(device)
 
 
 @lru_cache(maxsize=1)
-def get_specter_tokenizer():
-    return AutoTokenizer.from_pretrained("allenai/specter")
+def get_tokenizer(model_name: str):
+    return AutoTokenizer.from_pretrained(model_name)
 
 
-def huggingface_specter_embed_texts(
-    texts: Union[List[str], str], batch_size: Optional[int] = 32
+def huggingface_embed_texts(
+    texts: Union[List[str], str],
+    batch_size: Optional[int] = 32,
+    model_name: str = "allenai/specter",
 ) -> List[ndarray]:
     if isinstance(texts, str):
         texts = [texts]
-    model = get_specter_model()
-    tokenizer = get_specter_tokenizer()
+    model = get_model(model_name)
+    tokenizer = get_tokenizer(model_name)
     embeddings = []
     for chunk in iterable_chunks(texts, batch_size):
         embeddings.extend(huggingface_specter_embed_chunk(chunk, tokenizer, model))
