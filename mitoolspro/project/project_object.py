@@ -401,10 +401,10 @@ class Project:
         print(f"Updated '{key}' of project variables and stored the project.")
 
     def add_path(
-        self, key: str, path: Path, update: bool = False, exist_ok: bool = False
+        self, key: str, path: PathLike, update: bool = False, exist_ok: bool = False
     ) -> None:
         current_version_folder = (self.folder / self.version).resolve()
-        path_resolved = path.resolve()
+        path_resolved = Path(path).resolve()
         is_version_child = file_in_folder(current_version_folder, path_resolved)
         if is_version_child:
             if self.version not in self.version_paths:
@@ -431,7 +431,7 @@ class Project:
         self.store_project()
         print(f"Added '{key}' to project paths and stored the project.")
 
-    def update_path(self, key: str, new_path: Path) -> None:
+    def update_path(self, key: str, new_path: PathLike) -> None:
         if (
             self.version in self.version_paths
             and key in self.version_paths[self.version]
