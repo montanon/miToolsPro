@@ -148,7 +148,7 @@ class TestSQLiteFunctions(TestCase):
             read_sql_table_with_types(
                 self.conn, "test_table", {"col1": "invalid_dtype"}
             )
-        self.assertIn("Invalid dtypes specified", str(context.exception))
+        self.assertIn("Invalid dtype specification", str(context.exception))
 
     def test_read_sql_table_with_types_all_valid_dtypes(self):
         # Test all valid dtypes
