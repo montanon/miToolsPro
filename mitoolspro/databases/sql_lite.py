@@ -1,13 +1,27 @@
 from os import PathLike
 from pathlib import Path
 from sqlite3 import Connection, OperationalError
-from typing import Iterable, List, Union
+from typing import Dict, Iterable, List, Literal, Optional, Union
 
 import pandas as pd
 from numpy import ndarray
 from pandas import DataFrame
 
+from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.utils.decorators import suppress_user_warning
+
+PandasDType = Literal[
+    "int64",
+    "float64",
+    "bool",
+    "datetime64[ns]",
+    "category",
+    "object",
+    "string",
+    "Int64",
+    "Float64",
+    "boolean",
+]
 
 
 def validate_table_name(name: str) -> str:
@@ -114,3 +128,64 @@ def transfer_sql_table(
     query = f'SELECT * FROM "{table_name}";'
     table = pd.read_sql(query, src_conn, index_col=index_col)
     table.to_sql(table_name, dst_conn, if_exists=if_exists, index=False)
+
+
+@suppress_user_warning
+def read_sql_table_with_types(
+    conn: Connection,
+    table_name: str,
+    column_types: Optional[Dict[str, PandasDType]] = None,
+    columns: Optional[Union[str, Iterable[str]]] = None,
+    index_col: Optional[str] = None,
+) -> DataFrame:
+    validate_table_name(table_name)
+    df_info = pd.read_sql(f'SELECT * FROM "{table_name}" LIMIT 0', conn)
+    table_columns = df_info.columns.tolist()
+    if columns is not None:
+        if isinstance(columns, str):
+            columns = [columns]
+        missing_columns = [col for col in columns if col not in table_columns]
+        if missing_columns:
+            raise ArgumentValueError(
+                f"Columns {missing_columns} not found in table {table_name}"
+            )
+        query = f'SELECT {", ".join(columns)} FROM "{table_name}";'
+    else:
+        query = f'SELECT * FROM "{table_name}";'
+    if column_types:
+        invalid_columns = [col for col in column_types if col not in table_columns]
+        if invalid_columns:
+            raise ArgumentValueError(
+                f"Columns {invalid_columns} not found in table {table_name}"
+            )
+        valid_dtypes = set(PandasDType.__args__)
+        invalid_dtypes = {
+            col: dtype
+            for col, dtype in column_types.items()
+            if dtype not in valid_dtypes
+        }
+        if invalid_dtypes:
+            raise ArgumentValueError(f"Invalid dtypes specified: {invalid_dtypes}")
+
+    return pd.read_sql(
+        query, conn, index_col=index_col if index_col else None, dtype=column_types
+    )
+
+
+def read_sql_tables_with_types(
+    conn: Connection,
+    table_names: Iterable[str],
+    column_types: Dict[str, Dict[str, str]] = None,
+    columns: Union[str, List[str], ndarray] = None,
+    index_col: str = "index",
+) -> List[DataFrame]:
+    return [
+        read_sql_table_with_types(
+            conn,
+            name,
+            column_types.get(name, {}) if column_types else None,
+            columns,
+            index_col,
+        )
+        for name in table_names
+    ]
