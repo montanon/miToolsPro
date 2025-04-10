@@ -60,7 +60,7 @@ class ProjectNotebook:
             "# pr.add_path(key: str, path: PathLike, update=True)",
             "",
         ]
-        self._add_var_source = ["# pr.add_var(key: str, values: Any, update=True)", ""]
+        self._add_var_source = ["# pr.add_var(key: str, value: Any, update=True)", ""]
         self._add_section = create_notebook_section(
             title="## Add Paths and Vars to your Project",
             cells=[
