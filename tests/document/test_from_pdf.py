@@ -534,7 +534,7 @@ class TestFromPDF(TestCase):
 
         # Verify whitespace is handled correctly
         self.assertIn("Text with:whitespace", text)  # Tab is converted to colon
-        self.assertIn("Text with\nline breaks", text)
+        self.assertIn("Text with\n\nline breaks", text)
         self.assertIn("Text with non-breaking space", text)
         self.assertIn("Text with multiple   spaces", text)
 
