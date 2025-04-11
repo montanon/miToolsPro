@@ -193,10 +193,13 @@ def extract_lines_from_pdf(line_obj: LTTextLineHorizontal) -> Line:
                 )
             )
         elif isinstance(char_obj, LTAnno) and current_run:
-            space = char_obj.get_text()
-            current_run.append_char(
-                Char(space, current_run.fontname, current_run.size, BBox(0, 0, 0, 0))
-            )
+            space = char_obj.get_text().strip()
+            if space:  # Only add non-empty whitespace
+                current_run.append_char(
+                    Char(
+                        space, current_run.fontname, current_run.size, BBox(0, 0, 0, 0)
+                    )
+                )
     if current_run:
         line.add_run(current_run)
     return line
