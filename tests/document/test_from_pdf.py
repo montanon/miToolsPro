@@ -22,6 +22,7 @@ class TestFromPDF(TestCase):
         cls.temp_dir = tempfile.mkdtemp()
         cls.pdf_path = Path(cls.temp_dir) / "test.pdf"
         cls.image_path = Path(cls.temp_dir) / "test_image.png"
+        cls.whitespace_pdf_path = Path(cls.temp_dir) / "whitespace_test.pdf"
 
         # Create a test image
         img = PILImage.new("RGB", (100, 100), color="red")
@@ -82,11 +83,36 @@ class TestFromPDF(TestCase):
         doc.save(str(cls.pdf_path), garbage=4, deflate=True, clean=True)
         doc.close()
 
+        # Create a PDF with various whitespace characters
+        doc = fitz.open()
+        page = doc.new_page()
+
+        # Add text with various whitespace characters
+        page.insert_text(
+            (72, 72), "Text with\twhitespace", fontname="Helvetica", fontsize=12
+        )
+        page.insert_text(
+            (72, 100), "Text with\r\nline breaks", fontname="Helvetica", fontsize=12
+        )
+        page.insert_text(
+            (72, 128),
+            "Text with\xa0non-breaking space",
+            fontname="Helvetica",
+            fontsize=12,
+        )
+        page.insert_text(
+            (72, 156), "Text with multiple   spaces", fontname="Helvetica", fontsize=12
+        )
+
+        doc.save(str(cls.whitespace_pdf_path), garbage=4, deflate=True, clean=True)
+        doc.close()
+
     @classmethod
     def tearDownClass(cls):
         # Clean up temporary files
         os.unlink(cls.pdf_path)
         os.unlink(cls.image_path)
+        os.unlink(cls.whitespace_pdf_path)
         os.rmdir(cls.temp_dir)
 
     def test_extract_images_from_pdf(self):
@@ -494,6 +520,39 @@ class TestFromPDF(TestCase):
             extract_images_from_pdf(invalid_path)
 
         os.unlink(invalid_path)
+
+    def test_whitespace_handling(self):
+        # Test PDF with various whitespace characters
+        doc = pdf_to_document(self.whitespace_pdf_path)
+
+        # Verify document structure
+        self.assertIsInstance(doc, Document)
+        self.assertEqual(len(doc.pages), 1)
+
+        # Get all text content
+        text = doc.text
+
+        # Verify whitespace is handled correctly
+        self.assertIn("Text with:whitespace", text)  # Tab is converted to colon
+        self.assertIn("Text with\nline breaks", text)
+        self.assertIn("Text with non-breaking space", text)
+        self.assertIn("Text with multiple   spaces", text)
+
+        # Verify no errors occurred during processing
+        for page in doc.pages:
+            for box in page.boxes:
+                for line in box.get_all_lines():
+                    for run in line.runs:
+                        for char in run.chars:
+                            # Verify each character is valid
+                            self.assertIsInstance(char.text, str)
+                            self.assertTrue(
+                                len(char.text) <= 1
+                            )  # Each char should be a single character
+                            if char.text.isspace():
+                                self.assertEqual(
+                                    len(char.text), 1
+                                )  # Whitespace should be single character
 
 
 class TestMultilingualPDFs(TestCase):
