@@ -35,3 +35,13 @@ class CategoryMatches:
                 self.single_matches.add(matches[0])
             else:
                 self.multi_matches.append(matches)
+
+
+def normalize_text(
+    text: str, strip_accents: bool = True, lowercase: bool = True
+) -> str:
+    if strip_accents:
+        text = _strip_accents(text)
+    if lowercase:
+        text = text.lower()
+    return text
