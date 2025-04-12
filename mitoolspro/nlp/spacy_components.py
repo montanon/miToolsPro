@@ -155,11 +155,15 @@ def create_sentence_word_tagger(
 
 
 def build_regex_pattern_table(
-    categories: Dict[str, List[str]], *, ignore_case: bool = True
+    categories: Dict[str, List[str]],
+    strip_accents: bool = True,
+    ignore_case: bool = True,
 ) -> Dict[str, re.Pattern]:
     flags = re.IGNORECASE if ignore_case else 0
     pattern_table = {}
     for cat, patterns in categories.items():
+        if strip_accents:
+            patterns = [_strip_accents(pattern) for pattern in patterns]
         regex_str = "|".join(patterns)
         pattern_table[cat] = re.compile(regex_str, flags)
     return pattern_table
@@ -170,14 +174,13 @@ class SentenceRegexTagger:
         self,
         nlp: Language,
         categories: Dict[str, List[str]],
-        *,
         ignore_case: bool = True,
+        strip_accents: bool = True,
     ):
         self.pattern_table = build_regex_pattern_table(
-            categories, ignore_case=ignore_case
+            categories, ignore_case=ignore_case, strip_accents=strip_accents
         )
-        self.categories = categories
-        self.ignore_case = ignore_case
+        self.strip_accents = strip_accents
 
         for cat in categories:
             if not Span.has_extension(cat):
@@ -185,8 +188,9 @@ class SentenceRegexTagger:
 
     def __call__(self, doc: Doc) -> Doc:
         for sent in doc.sents:
+            text = _strip_accents(sent.text) if self.strip_accents else sent.text
             for cat, pattern in self.pattern_table.items():
-                if pattern.search(sent.text):
+                if pattern.search(text):
                     setattr(sent._, cat, True)
         return doc
 
@@ -196,6 +200,7 @@ class SentenceRegexTagger:
     default_config={
         "categories": {},
         "ignore_case": True,
+        "strip_accents": True,
     },
 )
 def create_sentence_regex_tagger(
@@ -203,5 +208,8 @@ def create_sentence_regex_tagger(
     name: str,
     categories: Dict[str, List[str]],
     ignore_case: bool,
+    strip_accents: bool,
 ):
-    return SentenceRegexTagger(nlp, categories, ignore_case=ignore_case)
+    return SentenceRegexTagger(
+        nlp, categories, ignore_case=ignore_case, strip_accents=strip_accents
+    )
