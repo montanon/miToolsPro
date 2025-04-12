@@ -21,6 +21,7 @@ def surface_to_lemma_phrases(
     nlp: Language,
     categories: Dict[str, List[str]],
     strip_accents: bool = True,
+    case_sensitive: bool = False,
 ) -> Dict[str, List[Doc]]:
     lemmatizer = nlp.get_pipe("lemmatizer")
     lemma_docs: Dict[str, List[Doc]] = {}
@@ -30,6 +31,8 @@ def surface_to_lemma_phrases(
         for surface in surface_list:
             text = _strip_accents(surface) if strip_accents else surface
             lemmas = [tok.lemma_ for tok in lemmatizer(nlp.make_doc(text))]
+            if not case_sensitive:
+                lemmas = [lemma.lower() for lemma in lemmas]
             pattern_text = " ".join(lemmas)
             patterns.append(nlp.make_doc(pattern_text))
         lemma_docs[cat] = patterns
@@ -39,7 +42,7 @@ def surface_to_lemma_phrases(
 
 @Language.factory(
     "mark_lemma_context",
-    default_config={"categories": {}, "strip_accents": True, "case_sensitive": True},
+    default_config={"categories": {}, "strip_accents": True, "case_sensitive": False},
 )
 def create_mark_lemma_context(
     nlp: Language,
@@ -60,7 +63,7 @@ class LemmaContextComponent:
         case_sensitive: bool,
     ):
         lemma_patterns = surface_to_lemma_phrases(
-            nlp, categories, strip_accents=strip_accents
+            nlp, categories, strip_accents=strip_accents, case_sensitive=case_sensitive
         )
 
         self.matcher = PhraseMatcher(nlp.vocab, attr="LEMMA")
