@@ -1,7 +1,8 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from spacy.language import Language
-from spacy.tokens import Doc
+from spacy.matcher import PhraseMatcher
+from spacy.tokens import Doc, Span
 
 from mitoolspro.nlp.spacy_utils import CategoryMatches, _strip_accents
 
@@ -16,51 +17,63 @@ def create_strip_accents(nlp: Language, name: str):
     return strip_accents_component
 
 
-def build_lemma_match_tables(
+def surface_to_lemma_phrases(
     nlp: Language,
     categories: Dict[str, List[str]],
-    *,
     strip_accents: bool = True,
-) -> List[CategoryMatches]:
-    return [
-        CategoryMatches(name=name, matches=matches, strip_accents=strip_accents)
-        for name, matches in categories.items()
-    ]
+) -> Dict[str, List[Doc]]:
+    lemmatizer = nlp.get_pipe("lemmatizer")
+    lemma_docs: Dict[str, List[Doc]] = {}
+
+    for cat, surface_list in categories.items():
+        patterns = []
+        for surface in surface_list:
+            text = _strip_accents(surface) if strip_accents else surface
+            lemmas = [tok.lemma_ for tok in lemmatizer(nlp.make_doc(text))]
+            pattern_text = " ".join(lemmas)
+            patterns.append(nlp.make_doc(pattern_text))
+        lemma_docs[cat] = patterns
+
+    return lemma_docs
 
 
-@Language.factory("mark_lemma_context", default_config={"categories": {}})
+@Language.factory(
+    "mark_lemma_context",
+    default_config={"categories": {}, "strip_accents": True, "case_sensitive": True},
+)
 def create_mark_lemma_context(
-    nlp: Language, name: str, categories: Dict[str, List[str]]
+    nlp: Language,
+    name: str,
+    categories: Dict[str, List[str]],
+    strip_accents: bool,
+    case_sensitive: bool,
 ):
-    category_objects = build_lemma_match_tables(nlp, categories)
+    return LemmaContextComponent(nlp, categories, strip_accents, case_sensitive)
 
-    def mark_lemma_context(doc: Doc) -> Doc:
-        for sentence in doc.sents:
-            open_categories = {cat.name for cat in category_objects}
-            tokens = [token.lemma_ for token in sentence]
 
-            tokens_set = set(tokens)
-            for category in tuple(open_categories):
-                cat_obj = next(c for c in category_objects if c.name == category)
-                if cat_obj.single_matches & tokens_set:
-                    setattr(sentence._, category, True)
-                    open_categories.remove(category)
+class LemmaContextComponent:
+    def __init__(
+        self,
+        nlp: Language,
+        categories: Dict[str, List[str]],
+        strip_accents: bool,
+        case_sensitive: bool,
+    ):
+        lemma_patterns = surface_to_lemma_phrases(
+            nlp, categories, strip_accents=strip_accents
+        )
 
-            if open_categories:
-                for i in range(len(tokens)):
-                    if not open_categories:
-                        break
-                    for category in tuple(open_categories):
-                        cat_obj = next(
-                            c for c in category_objects if c.name == category
-                        )
-                        for sequence in cat_obj.multi_matches:
-                            end = i + len(sequence)
-                            if tokens[i:end] == list(sequence):
-                                setattr(sentence._, category, True)
-                                open_categories.remove(category)
-                                break
+        self.matcher = PhraseMatcher(nlp.vocab, attr="LEMMA")
+        for cat, docs in lemma_patterns.items():
+            self.matcher.add(cat, docs)
 
+        for cat in categories:
+            if not Span.has_extension(cat):
+                Span.set_extension(cat, default=False)
+
+    def __call__(self, doc: Doc) -> Doc:
+        for match_id, start, _ in self.matcher(doc):
+            cat = doc.vocab.strings[match_id]
+            sent = doc[start].sent
+            setattr(sent._, cat, True)
         return doc
-
-    return mark_lemma_context
