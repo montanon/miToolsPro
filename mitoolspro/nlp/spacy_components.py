@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple
+import re
+from typing import Dict, List
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
@@ -151,3 +152,56 @@ def create_sentence_word_tagger(
     strip_accents: bool,
 ):
     return SentenceWordTagger(nlp, categories, ignore_case, strip_accents)
+
+
+def build_regex_pattern_table(
+    categories: Dict[str, List[str]], *, ignore_case: bool = True
+) -> Dict[str, re.Pattern]:
+    flags = re.IGNORECASE if ignore_case else 0
+    pattern_table = {}
+    for cat, patterns in categories.items():
+        regex_str = "|".join(patterns)
+        pattern_table[cat] = re.compile(regex_str, flags)
+    return pattern_table
+
+
+class SentenceRegexTagger:
+    def __init__(
+        self,
+        nlp: Language,
+        categories: Dict[str, List[str]],
+        *,
+        ignore_case: bool = True,
+    ):
+        self.pattern_table = build_regex_pattern_table(
+            categories, ignore_case=ignore_case
+        )
+        self.categories = categories
+        self.ignore_case = ignore_case
+
+        for cat in categories:
+            if not Span.has_extension(cat):
+                Span.set_extension(cat, default=False)
+
+    def __call__(self, doc: Doc) -> Doc:
+        for sent in doc.sents:
+            for cat, pattern in self.pattern_table.items():
+                if pattern.search(sent.text):
+                    setattr(sent._, cat, True)
+        return doc
+
+
+@Language.factory(
+    "sentence_regex_tagger",
+    default_config={
+        "categories": {},
+        "ignore_case": True,
+    },
+)
+def create_sentence_regex_tagger(
+    nlp: Language,
+    name: str,
+    categories: Dict[str, List[str]],
+    ignore_case: bool,
+):
+    return SentenceRegexTagger(nlp, categories, ignore_case=ignore_case)
