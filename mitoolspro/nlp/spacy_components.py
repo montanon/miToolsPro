@@ -17,7 +17,7 @@ def create_strip_accents(nlp: Language, name: str):
     return strip_accents_component
 
 
-def surface_to_lemma_phrases(
+def build_lemma_phrase_patterns(
     nlp: Language,
     categories: Dict[str, List[str]],
     strip_accents: bool = True,
@@ -41,20 +41,24 @@ def surface_to_lemma_phrases(
 
 
 @Language.factory(
-    "mark_lemma_context",
-    default_config={"categories": {}, "strip_accents": True, "case_sensitive": False},
+    "sentence_lemma_tagger",
+    default_config={
+        "categories": {},
+        "strip_accents": True,
+        "case_sensitive": False,
+    },
 )
-def create_mark_lemma_context(
+def create_sentence_lemma_tagger(
     nlp: Language,
     name: str,
     categories: Dict[str, List[str]],
     strip_accents: bool,
     case_sensitive: bool,
 ):
-    return LemmaContextComponent(nlp, categories, strip_accents, case_sensitive)
+    return SentenceLemmaTagger(nlp, categories, strip_accents, case_sensitive)
 
 
-class LemmaContextComponent:
+class SentenceLemmaTagger:
     def __init__(
         self,
         nlp: Language,
@@ -62,10 +66,12 @@ class LemmaContextComponent:
         strip_accents: bool,
         case_sensitive: bool,
     ):
-        lemma_patterns = surface_to_lemma_phrases(
-            nlp, categories, strip_accents=strip_accents, case_sensitive=case_sensitive
+        lemma_patterns = build_lemma_phrase_patterns(
+            nlp,
+            categories,
+            strip_accents=strip_accents,
+            case_sensitive=case_sensitive,
         )
-
         self.matcher = PhraseMatcher(nlp.vocab, attr="LEMMA")
         for cat, docs in lemma_patterns.items():
             self.matcher.add(cat, docs)
@@ -75,8 +81,7 @@ class LemmaContextComponent:
                 Span.set_extension(cat, default=False)
 
     def __call__(self, doc: Doc) -> Doc:
-        for match_id, start, _ in self.matcher(doc):
+        for match_id, start, end in self.matcher(doc):
             cat = doc.vocab.strings[match_id]
-            sent = doc[start].sent
-            setattr(sent._, cat, True)
+            doc[start].sent._.set(cat, True)
         return doc
