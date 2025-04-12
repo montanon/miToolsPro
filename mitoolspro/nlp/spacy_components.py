@@ -21,7 +21,7 @@ def build_lemma_patterns(
     nlp: Language,
     categories: Dict[str, List[str]],
     strip_accents: bool = True,
-    lowercase: bool = False,
+    ignore_case: bool = False,
 ) -> Dict[str, List[Doc]]:
     lemmatizer = nlp.get_pipe("lemmatizer")
     lemma_docs: Dict[str, List[Doc]] = {}
@@ -31,7 +31,7 @@ def build_lemma_patterns(
         for surface in surface_list:
             text = _strip_accents(surface) if strip_accents else surface
             lemmas = [tok.lemma_ for tok in lemmatizer(nlp.make_doc(text))]
-            if lowercase:
+            if ignore_case:
                 lemmas = [lemma.lower() for lemma in lemmas]
             pattern_text = " ".join(lemmas)
             patterns.append(nlp.make_doc(pattern_text))
@@ -52,7 +52,7 @@ class SentenceLemmaTagger:
             nlp,
             categories,
             strip_accents=strip_accents,
-            lowercase=ignore_case,
+            ignore_case=ignore_case,
         )
         self.matcher = PhraseMatcher(nlp.vocab, attr="LEMMA")
         for cat, docs in lemma_patterns.items():
@@ -64,8 +64,8 @@ class SentenceLemmaTagger:
 
     def __call__(self, doc: Doc) -> Doc:
         for match_id, start, end in self.matcher(doc):
-            cat = doc.vocab.strings[match_id]
-            doc[start].sent._.set(cat, True)
+            category = doc.vocab.strings[match_id]
+            doc[start].sent._.set(category, True)
         return doc
 
 
@@ -91,14 +91,14 @@ def build_word_patterns(
     nlp: Language,
     categories: Dict[str, List[str]],
     strip_accents: bool = True,
-    lowercase: bool = False,
-) -> Tuple[Dict[str, set], Dict[str, List[Tuple[str, ...]]]]:
+    ignore_case: bool = False,
+) -> Dict[str, List[Doc]]:
     word_docs = {}
     for cat, words in categories.items():
         patterns = []
         for word in words:
             text = _strip_accents(word) if strip_accents else word
-            if lowercase:
+            if ignore_case:
                 text = text.lower()
             patterns.append(nlp.make_doc(text))
         word_docs[cat] = patterns
@@ -131,8 +131,7 @@ class SentenceWordTagger:
     def __call__(self, doc: Doc) -> Doc:
         for match_id, start, end in self.matcher(doc):
             category = doc.vocab.strings[match_id]
-            sentence = doc[start].sent
-            setattr(sentence._, category, True)
+            doc[start].sent._.set(category, True)
         return doc
 
 
