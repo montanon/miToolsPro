@@ -1290,6 +1290,26 @@ class TestPipelineFunctionality(unittest.TestCase):
         self.assertIn("the", docs[0]._.freq_dist)
         self.assertEqual(docs[0]._.freq_dist["the"], 2)
 
+    def test_doc_freq_dist_extractor_pipeline_multi_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": [1, 2],
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertIn("the", docs[0]._.freq_dist[1])
+        self.assertEqual(docs[0]._.freq_dist[1]["the"], 2)
+        self.assertIn(("the", "quick"), docs[0]._.freq_dist[2])
+        self.assertEqual(docs[0]._.freq_dist[2][("the", "quick")], 1)
+
     def test_doc_token_extractor_pipeline(self):
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe(
@@ -1306,6 +1326,25 @@ class TestPipelineFunctionality(unittest.TestCase):
         self.assertEqual(len(docs), 3)
         self.assertIn("the", docs[0]._.tokens)
         self.assertEqual(docs[0]._.tokens.count("the"), 2)
+
+    def test_doc_token_extractor_pipeline_multi_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2],
+                "keep_stop_words": True,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertIn("the", docs[0]._.tokens[1])
+        self.assertEqual(docs[0]._.tokens[1].count("the"), 2)
+        self.assertIn(("the", "quick"), docs[0]._.tokens[2])
+        self.assertEqual(docs[0]._.tokens[2].count(("the", "quick")), 1)
 
 
 if __name__ == "__main__":
