@@ -47,6 +47,7 @@ class SentenceLemmaTagger:
         categories: Dict[str, List[str]],
         strip_accents: bool,
         ignore_case: bool,
+        keep_tags: bool = False,
     ):
         lemma_patterns = build_lemma_patterns(
             nlp,
@@ -61,6 +62,8 @@ class SentenceLemmaTagger:
         for cat in categories:
             if not Span.has_extension(cat):
                 Span.set_extension(cat, default=False)
+            if keep_tags and not Span.has_extension(f"{cat}_tags"):
+                Span.set_extension(f"{cat}_tags", default=[])
         self.ignore_case = ignore_case
 
     def __call__(self, doc: Doc) -> Doc:
@@ -69,7 +72,10 @@ class SentenceLemmaTagger:
                 token.lemma_ = token.lemma_.lower()
         for match_id, start, end in self.matcher(doc):
             category = doc.vocab.strings[match_id]
-            doc[start].sent._.set(category, True)
+            sent = doc[start].sent
+            sent._.set(category, True)
+            if self.keep_tags:
+                sent._.get(f"{category}_tags").append(doc[start:end].text)
         return doc
 
 
