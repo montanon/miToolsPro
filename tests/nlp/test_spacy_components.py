@@ -377,5 +377,60 @@ class TestDocWordTagger(unittest.TestCase):
         self.assertEqual(doc._.drink_tags, ["coffee"])
 
 
+class TestDocRegexTagger(unittest.TestCase):
+    def setUp(self):
+        self.nlp = spacy.load("en_core_web_sm")
+        self.categories = {
+            "email": [r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"],
+            "phone": [r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b"],
+        }
+        self.nlp.add_pipe(
+            "doc_regex_tagger",
+            config={
+                "categories": self.categories,
+                "ignore_case": True,
+                "strip_accents": True,
+            },
+        )
+
+    def test_doc_regex_tagger_basic(self):
+        doc = self.nlp("Contact me at test@example.com or 123-456-7890.")
+        self.assertTrue(doc._.email)
+        self.assertTrue(doc._.phone)
+
+    def test_doc_regex_tagger_multiple_sentences(self):
+        doc = self.nlp("Email: test@example.com. Phone: 123-456-7890.")
+        self.assertTrue(doc._.email)
+        self.assertTrue(doc._.phone)
+
+    def test_doc_regex_tagger_no_match(self):
+        doc = self.nlp("No contact information here.")
+        self.assertFalse(doc._.email)
+        self.assertFalse(doc._.phone)
+
+    def test_doc_regex_tagger_ignore_case(self):
+        doc = self.nlp("Email: TEST@EXAMPLE.COM")
+        self.assertTrue(doc._.email)
+
+    def test_doc_regex_tagger_keep_tags(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_regex_tagger",
+            config={
+                "categories": self.categories,
+                "ignore_case": True,
+                "strip_accents": True,
+                "keep_tags": True,
+            },
+        )
+        doc = nlp(
+            "Contact me at test@example.com or 123-456-7890 and test2@example.com."
+        )
+        self.assertTrue(doc._.email)
+        self.assertTrue(doc._.phone)
+        self.assertEqual(doc._.email_tags, ["test@example.com", "test2@example.com"])
+        self.assertEqual(doc._.phone_tags, ["123-456-7890"])
+
+
 if __name__ == "__main__":
     unittest.main()
