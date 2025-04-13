@@ -625,7 +625,7 @@ class DocTokenExtractor:
                     zip(*(islice(base_tokens, i, None) for i in range(n)))
                 )
                 result[n] = ngram_tokens
-        doc._.tokens = result
+        doc._.tokens = result if len(result) > 1 else result[self.n_grams[0]]
         return doc
 
 

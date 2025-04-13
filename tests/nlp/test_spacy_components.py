@@ -826,6 +826,169 @@ class TestDocTokenExtractor(unittest.TestCase):
         doc = self.nlp("Hello")
         self.assertEqual(doc._.tokens, ["hello"])
 
+    def test_doc_token_extractor_multiple_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2, 3],
+                "drop_stopwords": False,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            1: ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"],
+            2: [
+                ("the", "quick"),
+                ("quick", "brown"),
+                ("brown", "fox"),
+                ("fox", "jumps"),
+                ("jumps", "over"),
+                ("over", "the"),
+                ("the", "lazy"),
+                ("lazy", "dog"),
+            ],
+            3: [
+                ("the", "quick", "brown"),
+                ("quick", "brown", "fox"),
+                ("brown", "fox", "jumps"),
+                ("fox", "jumps", "over"),
+                ("jumps", "over", "the"),
+                ("over", "the", "lazy"),
+                ("the", "lazy", "dog"),
+            ],
+        }
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_multiple_n_grams_with_stopwords(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2],
+                "drop_stopwords": True,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            1: ["quick", "brown", "fox", "jumps", "lazy", "dog"],
+            2: [
+                ("quick", "brown"),
+                ("brown", "fox"),
+                ("fox", "jumps"),
+                ("jumps", "lazy"),
+                ("lazy", "dog"),
+            ],
+        }
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_multiple_n_grams_with_punctuation(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2],
+                "drop_stopwords": False,
+                "drop_punctuation": False,
+                "lowercase": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            1: [
+                "the",
+                "quick",
+                "brown",
+                "fox",
+                "jumps",
+                "over",
+                "the",
+                "lazy",
+                "dog",
+                ".",
+            ],
+            2: [
+                ("the", "quick"),
+                ("quick", "brown"),
+                ("brown", "fox"),
+                ("fox", "jumps"),
+                ("jumps", "over"),
+                ("over", "the"),
+                ("the", "lazy"),
+                ("lazy", "dog"),
+                ("dog", "."),
+            ],
+        }
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_multiple_n_grams_custom_attribute(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lemma_",
+                "n_grams": [1, 2],
+                "drop_stopwords": False,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        doc = nlp("The foxes jumped over the dogs.")
+        expected = {
+            1: ["the", "fox", "jump", "over", "the", "dog"],
+            2: [
+                ("the", "fox"),
+                ("fox", "jump"),
+                ("jump", "over"),
+                ("over", "the"),
+                ("the", "dog"),
+            ],
+        }
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_multiple_n_grams_empty_doc(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2, 3],
+                "drop_stopwords": False,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        doc = nlp("")
+        expected = {1: [], 2: [], 3: []}
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_multiple_n_grams_short_doc(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2, 3],
+                "drop_stopwords": False,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        doc = nlp("Hello world")
+        expected = {
+            1: ["hello", "world"],
+            2: [("hello", "world")],
+            3: [],
+        }
+        self.assertEqual(doc._.tokens, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
