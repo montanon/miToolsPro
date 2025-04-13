@@ -602,6 +602,82 @@ class TestDocFreqDistExtractor(unittest.TestCase):
         }
         self.assertEqual(doc._.freq_dist, expected)
 
+    def test_doc_freq_dist_extractor_as_frequencies(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": 1,
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+                "as_frequencies": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            "quick": 1 / 6,
+            "brown": 1 / 6,
+            "fox": 1 / 6,
+            "jumps": 1 / 6,
+            "lazy": 1 / 6,
+            "dog": 1 / 6,
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_as_frequencies_with_stop_words(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": 1,
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": True,
+                "as_frequencies": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            "the": 2 / 9,
+            "quick": 1 / 9,
+            "brown": 1 / 9,
+            "fox": 1 / 9,
+            "jumps": 1 / 9,
+            "over": 1 / 9,
+            "lazy": 1 / 9,
+            "dog": 1 / 9,
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_as_frequencies_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": 2,
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+                "as_frequencies": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            ("quick", "brown"): 1 / 5,
+            ("brown", "fox"): 1 / 5,
+            ("fox", "jumps"): 1 / 5,
+            ("jumps", "lazy"): 1 / 5,
+            ("lazy", "dog"): 1 / 5,
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

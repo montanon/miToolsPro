@@ -503,6 +503,7 @@ class DocFreqDistExtractor:
         stop_words: Optional[Union[List[str], set]] = None,
         drop_punctuation: bool = True,
         keep_stop_words: bool = False,
+        as_frequencies: bool = False,
     ):
         if not Doc.has_extension("freq_dist"):
             Doc.set_extension("freq_dist", default=None)
@@ -514,6 +515,7 @@ class DocFreqDistExtractor:
         self.stop_set = (
             {w.lower() for w in stop_words} if stop_words is not None else None
         )
+        self.as_frequencies = as_frequencies
 
     def __call__(self, doc: Doc) -> Doc:
         tokens = (
@@ -534,7 +536,11 @@ class DocFreqDistExtractor:
                 zip(*(islice(token_list, i, None) for i in range(self.n_grams)))
             )
         freq_dist = Counter(token_items)
-        doc._.freq_dist = dict(freq_dist.most_common())
+        if self.as_frequencies:
+            total = sum(freq_dist.values())
+            doc._.freq_dist = {k: v / total for k, v in freq_dist.items()}
+        else:
+            doc._.freq_dist = dict(freq_dist.most_common())
         return doc
 
     def _get_term(self, token) -> str:
@@ -553,6 +559,7 @@ class DocFreqDistExtractor:
         "stop_words": None,
         "drop_punctuation": True,
         "keep_stop_words": False,
+        "as_frequencies": False,
     },
 )
 def create_doc_freq_dist_extractor(
@@ -564,6 +571,7 @@ def create_doc_freq_dist_extractor(
     stop_words: Optional[Union[List[str], set]],
     drop_punctuation: bool,
     keep_stop_words: bool,
+    as_frequencies: bool,
 ):
     return DocFreqDistExtractor(
         nlp,
@@ -573,4 +581,5 @@ def create_doc_freq_dist_extractor(
         stop_words=stop_words,
         drop_punctuation=drop_punctuation,
         keep_stop_words=keep_stop_words,
+        as_frequencies=as_frequencies,
     )
