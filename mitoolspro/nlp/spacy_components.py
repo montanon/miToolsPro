@@ -1,9 +1,10 @@
 import re
-from typing import Dict, List
+from collections import Counter
+from typing import Dict, List, Optional, Union
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
-from spacy.tokens import Doc, Span, Token
+from spacy.tokens import Doc, Span
 
 from mitoolspro.nlp.spacy_utils import _strip_accents
 
@@ -423,3 +424,63 @@ def create_doc_regex_tagger(
         strip_accents=strip_accents,
         keep_tags=keep_tags,
     )
+
+
+class DocBOWExtractor:
+    def __init__(
+        self,
+        nlp: Language,
+        lemmatize: bool = False,
+        lowercase: bool = True,
+        stop_words: Optional[Union[List[str], set]] = None,
+        drop_punctuation: bool = True,
+    ):
+        if not Doc.has_extension("bow"):
+            Doc.set_extension("bow", default=None)
+
+        self.lemmatize = lemmatize
+        self.lowercase = lowercase
+        self.drop_punctuation = drop_punctuation
+        self.stop_set = (
+            {w.lower() for w in stop_words} if stop_words is not None else None
+        )
+
+    def __call__(self, doc: Doc) -> Doc:
+        counts = Counter()
+        for token in doc:
+            if token.is_space:
+                continue
+            if self.drop_punctuation and token.is_punct:
+                continue
+            if self.stop_set is None:
+                if token.is_stop:
+                    continue
+            else:
+                if token.lower_ in self.stop_set:
+                    continue
+            term = token.lemma_ if self.lemmatize else token.text
+            if self.lowercase:
+                term = term.lower()
+            counts[term] += 1
+        doc._.bow = dict(counts.most_common())
+        return doc
+
+
+@Language.factory(
+    "doc_bow_extractor",
+    default_config={
+        "lemmatize": False,
+        "lowercase": True,
+        "stop_words": None,
+        "drop_punctuation": True,
+    },
+)
+def create_doc_bow_extractor(
+    nlp: Language,
+    name: str,
+    lemmatize: bool,
+    lowercase: bool,
+    stop_words: Optional[Union[List[str], set]],
+    drop_punctuation: bool,
+):
+    return DocBOWExtractor(nlp, lemmatize, lowercase, stop_words, drop_punctuation)
