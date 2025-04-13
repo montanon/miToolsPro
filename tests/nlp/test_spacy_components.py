@@ -840,7 +840,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": 1,
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -868,7 +868,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": 1,
-                "drop_stopwords": True,
+                "keep_stop_words": False,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -884,7 +884,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": 1,
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": False,
                 "lowercase": True,
             },
@@ -911,7 +911,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "text",
                 "n_grams": 1,
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": False,
             },
@@ -937,7 +937,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": 2,
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -962,7 +962,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lemma_",
                 "n_grams": 1,
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -986,7 +986,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": [1, 2, 3],
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -1023,7 +1023,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": [1, 2],
-                "drop_stopwords": True,
+                "keep_stop_words": False,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -1048,7 +1048,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": [1, 2],
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": False,
                 "lowercase": True,
             },
@@ -1088,7 +1088,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lemma_",
                 "n_grams": [1, 2],
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -1113,7 +1113,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": [1, 2, 3],
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },
@@ -1129,7 +1129,7 @@ class TestDocTokenExtractor(unittest.TestCase):
             config={
                 "attribute": "lower_",
                 "n_grams": [1, 2, 3],
-                "drop_stopwords": False,
+                "keep_stop_words": True,
                 "drop_punctuation": True,
                 "lowercase": True,
             },

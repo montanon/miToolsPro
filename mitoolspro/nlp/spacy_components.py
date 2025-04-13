@@ -595,7 +595,7 @@ class DocTokenExtractor:
         nlp: Language,
         attribute: str = "lower_",
         n_grams: Union[int, List[int]] = 1,
-        drop_stopwords: bool = False,
+        keep_stop_words: bool = True,
         drop_punctuation: bool = True,
         lowercase: bool = True,
     ):
@@ -606,7 +606,7 @@ class DocTokenExtractor:
         else:
             self.n_grams = n_grams
         self.attribute = attribute
-        self.drop_stopwords = drop_stopwords
+        self.keep_stop_words = keep_stop_words
         self.drop_punctuation = drop_punctuation
         self.lowercase = lowercase
 
@@ -617,7 +617,7 @@ class DocTokenExtractor:
             else getattr(token, self.attribute)
             for token in doc
             if not token.is_space
-            and not (self.drop_stopwords and token.is_stop)
+            and (self.keep_stop_words or not token.is_stop)
             and not (self.drop_punctuation and token.is_punct)
         ]
         result: Dict[int, List[str]] = {}
@@ -638,7 +638,7 @@ class DocTokenExtractor:
     default_config={
         "attribute": "lower_",
         "n_grams": 1,
-        "drop_stopwords": False,
+        "keep_stop_words": True,
         "drop_punctuation": True,
         "lowercase": True,
     },
@@ -648,10 +648,10 @@ def create_doc_token_extractor(
     name: str,
     attribute: str,
     n_grams: Union[int, List[int]],
-    drop_stopwords: bool,
+    keep_stop_words: bool,
     drop_punctuation: bool,
     lowercase: bool,
 ):
     return DocTokenExtractor(
-        nlp, attribute, n_grams, drop_stopwords, drop_punctuation, lowercase
+        nlp, attribute, n_grams, keep_stop_words, drop_punctuation, lowercase
     )
