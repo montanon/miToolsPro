@@ -327,5 +327,55 @@ class TestDocLemmaTagger(unittest.TestCase):
         self.assertEqual(doc._.drink_tags, ["coffee"])
 
 
+class TestDocWordTagger(unittest.TestCase):
+    def setUp(self):
+        self.nlp = spacy.load("en_core_web_sm")
+        self.categories = {"food": ["apple", "banana"], "drink": ["coffee", "tea"]}
+        self.nlp.add_pipe(
+            "doc_word_tagger",
+            config={
+                "categories": self.categories,
+                "strip_accents": True,
+                "ignore_case": True,
+            },
+        )
+
+    def test_doc_word_tagger_basic(self):
+        doc = self.nlp("I like apple and coffee.")
+        self.assertTrue(doc._.food)
+        self.assertTrue(doc._.drink)
+
+    def test_doc_word_tagger_multiple_sentences(self):
+        doc = self.nlp("I like apple. I drink coffee.")
+        self.assertTrue(doc._.food)
+        self.assertTrue(doc._.drink)
+
+    def test_doc_word_tagger_no_match(self):
+        doc = self.nlp("I like cars.")
+        self.assertFalse(doc._.food)
+        self.assertFalse(doc._.drink)
+
+    def test_doc_word_tagger_ignore_case(self):
+        doc = self.nlp("I like APPLE.")
+        self.assertTrue(doc._.food)
+
+    def test_doc_word_tagger_keep_tags(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_word_tagger",
+            config={
+                "categories": self.categories,
+                "strip_accents": True,
+                "ignore_case": True,
+                "keep_tags": True,
+            },
+        )
+        doc = nlp("I like apple and banana with coffee.")
+        self.assertTrue(doc._.food)
+        self.assertTrue(doc._.drink)
+        self.assertEqual(doc._.food_tags, ["apple", "banana"])
+        self.assertEqual(doc._.drink_tags, ["coffee"])
+
+
 if __name__ == "__main__":
     unittest.main()
