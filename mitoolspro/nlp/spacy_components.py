@@ -583,3 +583,66 @@ def create_doc_freq_dist_extractor(
         keep_stop_words=keep_stop_words,
         as_frequencies=as_frequencies,
     )
+
+
+class DocTokenExtractor:
+    def __init__(
+        self,
+        nlp: Language,
+        attribute: str = "lower_",
+        n_grams: int = 1,
+        drop_stopwords: bool = False,
+        drop_punctuation: bool = True,
+        lowercase: bool = True,
+    ):
+        if not Doc.has_extension("tokens"):
+            Doc.set_extension("tokens", default=None)
+        self.attribute = attribute
+        self.n_grams = n_grams
+        self.drop_stopwords = drop_stopwords
+        self.drop_punctuation = drop_punctuation
+        self.lowercase = lowercase
+
+    def __call__(self, doc: Doc) -> Doc:
+        tokens = (
+            getattr(token, self.attribute).lower()
+            if self.lowercase and self.attribute != "lower_"
+            else getattr(token, self.attribute)
+            for token in doc
+            if not token.is_space
+            and not (self.drop_stopwords and token.is_stop)
+            and not (self.drop_punctuation and token.is_punct)
+        )
+        if self.n_grams == 1:
+            token_list = list(tokens)
+        else:
+            token_list = list(tokens)
+            token_list = list(
+                zip(*(islice(token_list, i, None) for i in range(self.n_grams)))
+            )
+        doc._.tokens = token_list
+        return doc
+
+
+@Language.factory(
+    "doc_token_extractor",
+    default_config={
+        "attribute": "lower_",
+        "n_grams": 1,
+        "drop_stopwords": False,
+        "drop_punctuation": True,
+        "lowercase": True,
+    },
+)
+def create_doc_token_extractor(
+    nlp: Language,
+    name: str,
+    attribute: str,
+    n_grams: int,
+    drop_stopwords: bool,
+    drop_punctuation: bool,
+    lowercase: bool,
+):
+    return DocTokenExtractor(
+        nlp, attribute, n_grams, drop_stopwords, drop_punctuation, lowercase
+    )
