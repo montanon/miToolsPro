@@ -520,11 +520,11 @@ class DocFreqDistExtractor:
             self._get_term(token)
             for token in doc
             if not token.is_space
+            and not (self.drop_punctuation and token.is_punct)
             and not (
                 self.stop_set is None and not self.keep_stop_words and token.is_stop
             )
             and not (self.stop_set is not None and token.lower_ in self.stop_set)
-            and not (self.drop_punctuation and token.is_punct)
         )
         if self.n_grams == 1:
             token_items = list(tokens)

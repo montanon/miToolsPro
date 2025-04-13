@@ -432,12 +432,13 @@ class TestDocRegexTagger(unittest.TestCase):
         self.assertEqual(doc._.phone_tags, ["123-456-7890"])
 
 
-class TestDocBOWExtractor(unittest.TestCase):
+class TestDocFreqDistExtractor(unittest.TestCase):
     def setUp(self):
         self.nlp = spacy.load("en_core_web_sm")
         self.nlp.add_pipe(
-            "doc_bow_extractor",
+            "doc_freq_dist_extractor",
             config={
+                "n_grams": 1,
                 "lemmatize": False,
                 "lowercase": True,
                 "stop_words": None,
@@ -446,7 +447,7 @@ class TestDocBOWExtractor(unittest.TestCase):
             },
         )
 
-    def test_doc_bow_extractor_basic(self):
+    def test_doc_freq_dist_extractor_basic(self):
         doc = self.nlp("The quick brown fox jumps over the lazy dog.")
         expected = {
             "the": 2,
@@ -458,13 +459,14 @@ class TestDocBOWExtractor(unittest.TestCase):
             "lazy": 1,
             "dog": 1,
         }
-        self.assertEqual(doc._.bow, expected)
+        self.assertEqual(doc._.freq_dist, expected)
 
-    def test_doc_bow_extractor_filter_stop_words(self):
+    def test_doc_freq_dist_extractor_filter_stop_words(self):
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe(
-            "doc_bow_extractor",
+            "doc_freq_dist_extractor",
             config={
+                "n_grams": 1,
                 "lemmatize": False,
                 "lowercase": True,
                 "stop_words": None,
@@ -481,17 +483,19 @@ class TestDocBOWExtractor(unittest.TestCase):
             "lazy": 1,
             "dog": 1,
         }
-        self.assertEqual(doc._.bow, expected)
+        self.assertEqual(doc._.freq_dist, expected)
 
-    def test_doc_bow_extractor_lemmatize(self):
+    def test_doc_freq_dist_extractor_lemmatize(self):
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe(
-            "doc_bow_extractor",
+            "doc_freq_dist_extractor",
             config={
+                "n_grams": 1,
                 "lemmatize": True,
                 "lowercase": True,
                 "stop_words": None,
                 "drop_punctuation": True,
+                "keep_stop_words": False,
             },
         )
         doc = nlp("The foxes jumped over the dogs.")
@@ -500,17 +504,19 @@ class TestDocBOWExtractor(unittest.TestCase):
             "jump": 1,
             "dog": 1,
         }
-        self.assertEqual(doc._.bow, expected)
+        self.assertEqual(doc._.freq_dist, expected)
 
-    def test_doc_bow_extractor_custom_stop_words(self):
+    def test_doc_freq_dist_extractor_custom_stop_words(self):
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe(
-            "doc_bow_extractor",
+            "doc_freq_dist_extractor",
             config={
+                "n_grams": 1,
                 "lemmatize": False,
                 "lowercase": True,
                 "stop_words": ["the", "over"],
                 "drop_punctuation": True,
+                "keep_stop_words": False,
             },
         )
         doc = nlp("The quick brown fox jumps over the lazy dog.")
@@ -522,13 +528,14 @@ class TestDocBOWExtractor(unittest.TestCase):
             "lazy": 1,
             "dog": 1,
         }
-        self.assertEqual(doc._.bow, expected)
+        self.assertEqual(doc._.freq_dist, expected)
 
-    def test_doc_bow_extractor_keep_punctuation(self):
+    def test_doc_freq_dist_extractor_keep_punctuation(self):
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe(
-            "doc_bow_extractor",
+            "doc_freq_dist_extractor",
             config={
+                "n_grams": 1,
                 "lemmatize": False,
                 "lowercase": True,
                 "stop_words": None,
@@ -546,13 +553,14 @@ class TestDocBOWExtractor(unittest.TestCase):
             "dog": 1,
             ".": 1,
         }
-        self.assertEqual(doc._.bow, expected)
+        self.assertEqual(doc._.freq_dist, expected)
 
-    def test_doc_bow_extractor_case_sensitive(self):
+    def test_doc_freq_dist_extractor_case_sensitive(self):
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe(
-            "doc_bow_extractor",
+            "doc_freq_dist_extractor",
             config={
+                "n_grams": 1,
                 "lemmatize": False,
                 "lowercase": False,
                 "stop_words": None,
@@ -569,7 +577,30 @@ class TestDocBOWExtractor(unittest.TestCase):
             "Lazy": 1,
             "Dog": 1,
         }
-        self.assertEqual(doc._.bow, expected)
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": 2,
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            ("quick", "brown"): 1,
+            ("brown", "fox"): 1,
+            ("fox", "jumps"): 1,
+            ("jumps", "lazy"): 1,
+            ("lazy", "dog"): 1,
+        }
+        self.assertEqual(doc._.freq_dist, expected)
 
 
 if __name__ == "__main__":
