@@ -432,7 +432,7 @@ class DocBOWExtractor:
         nlp: Language,
         lemmatize: bool = False,
         lowercase: bool = True,
-        stop_words: Optional[Union[List[str], set]] = None,
+        stop_words: Optional[Union[List[str], set[str]]] = None,
         drop_punctuation: bool = True,
         keep_stop_words: bool = False,
     ):
@@ -483,10 +483,78 @@ def create_doc_bow_extractor(
     name: str,
     lemmatize: bool,
     lowercase: bool,
-    stop_words: Optional[Union[List[str], set]],
+    stop_words: Optional[Union[List[str], set[str]]],
     drop_punctuation: bool,
     keep_stop_words: bool,
 ):
     return DocBOWExtractor(
         nlp, lemmatize, lowercase, stop_words, drop_punctuation, keep_stop_words
+    )
+
+
+class DocFreqDistExtractor:
+    def __init__(
+        self,
+        nlp: Language,
+        lemmatize: bool = False,
+        lowercase: bool = True,
+        stop_words: Optional[Union[List[str], set]] = None,
+        drop_punctuation: bool = True,
+        keep_stop_words: bool = False,
+    ):
+        self.lemmatize = lemmatize
+        self.lowercase = lowercase
+        self.drop_punctuation = drop_punctuation
+        self.keep_stop_words = keep_stop_words
+        self.stop_set = (
+            {w.lower() for w in stop_words} if stop_words is not None else None
+        )
+
+    def __call__(self, doc: Doc) -> Doc:
+        counts = Counter()
+        for token in doc:
+            if token.is_space:
+                continue
+            if self.drop_punctuation and token.is_punct:
+                continue
+            if self.stop_set is None:
+                if not self.keep_stop_words and token.is_stop:
+                    continue
+            else:
+                if token.lower_ in self.stop_set:
+                    continue
+            term = token.lemma_ if self.lemmatize else token.text
+            if self.lowercase:
+                term = term.lower()
+            counts[term] += 1
+        doc._.freq_dist = dict(counts.most_common())
+        return doc
+
+
+@Language.factory(
+    "doc_freq_dist_extractor",
+    default_config={
+        "lemmatize": False,
+        "lowercase": True,
+        "stop_words": None,
+        "drop_punctuation": True,
+        "keep_stop_words": False,
+    },
+)
+def create_doc_freq_dist_extractor(
+    nlp: Language,
+    name: str,
+    lemmatize: bool,
+    lowercase: bool,
+    stop_words: Optional[Union[List[str], set]],
+    drop_punctuation: bool,
+    keep_stop_words: bool,
+):
+    return DocFreqDistExtractor(
+        nlp,
+        lemmatize=lemmatize,
+        lowercase=lowercase,
+        stop_words=stop_words,
+        drop_punctuation=drop_punctuation,
+        keep_stop_words=keep_stop_words,
     )
