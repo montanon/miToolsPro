@@ -238,6 +238,59 @@ def create_sentence_word_tagger(
     return SentenceWordTagger(nlp, categories, ignore_case, strip_accents, keep_tags)
 
 
+class DocWordTagger:
+    def __init__(
+        self,
+        nlp: Language,
+        categories: Dict[str, List[str]],
+        ignore_case: bool = True,
+        strip_accents: bool = True,
+        keep_tags: bool = False,
+    ):
+        attr = "LOWER" if ignore_case else "TEXT"
+        self.matcher = PhraseMatcher(nlp.vocab, attr=attr)
+        patterns = build_word_patterns(
+            nlp, categories, ignore_case=ignore_case, strip_accents=strip_accents
+        )
+        for cat, docs in patterns.items():
+            self.matcher.add(cat, docs)
+        for cat in categories:
+            if not Doc.has_extension(cat):
+                Doc.set_extension(cat, default=False)
+            if keep_tags and not Doc.has_extension(f"{cat}_tags"):
+                Doc.set_extension(f"{cat}_tags", default=[])
+        self.ignore_case = ignore_case
+        self.keep_tags = keep_tags
+
+    def __call__(self, doc: Doc) -> Doc:
+        for match_id, start, end in self.matcher(doc):
+            category = doc.vocab.strings[match_id]
+            setattr(doc._, category, True)
+            if self.keep_tags:
+                doc._.get(f"{category}_tags").append(doc[start:end].text)
+        return doc
+
+
+@Language.factory(
+    "doc_word_tagger",
+    default_config={
+        "categories": {},
+        "strip_accents": True,
+        "ignore_case": True,
+        "keep_tags": False,
+    },
+)
+def create_doc_word_tagger(
+    nlp: Language,
+    name: str,
+    categories: Dict[str, List[str]],
+    ignore_case: bool,
+    strip_accents: bool,
+    keep_tags: bool,
+):
+    return DocWordTagger(nlp, categories, ignore_case, strip_accents, keep_tags)
+
+
 def build_regex_pattern_table(
     categories: Dict[str, List[str]],
     strip_accents: bool = True,
