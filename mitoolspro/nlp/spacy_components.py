@@ -569,7 +569,7 @@ class DocFreqDistExtractor:
 def create_doc_freq_dist_extractor(
     nlp: Language,
     name: str,
-    n_grams: int,
+    n_grams: Union[int, List[int]],
     lemmatize: bool,
     lowercase: bool,
     stop_words: Optional[Union[List[str], set]],

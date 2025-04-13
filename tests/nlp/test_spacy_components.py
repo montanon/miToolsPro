@@ -678,6 +678,159 @@ class TestDocFreqDistExtractor(unittest.TestCase):
         }
         self.assertEqual(doc._.freq_dist, expected)
 
+    def test_doc_freq_dist_extractor_multiple_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": [1, 2, 3],
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+                "as_frequencies": False,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            1: {
+                "quick": 1,
+                "brown": 1,
+                "fox": 1,
+                "jumps": 1,
+                "lazy": 1,
+                "dog": 1,
+            },
+            2: {
+                ("quick", "brown"): 1,
+                ("brown", "fox"): 1,
+                ("fox", "jumps"): 1,
+                ("jumps", "lazy"): 1,
+                ("lazy", "dog"): 1,
+            },
+            3: {
+                ("quick", "brown", "fox"): 1,
+                ("brown", "fox", "jumps"): 1,
+                ("fox", "jumps", "lazy"): 1,
+                ("jumps", "lazy", "dog"): 1,
+            },
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_multiple_n_grams_with_stopwords(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": [1, 2],
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": True,
+                "as_frequencies": False,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            1: {
+                "the": 2,
+                "quick": 1,
+                "brown": 1,
+                "fox": 1,
+                "jumps": 1,
+                "over": 1,
+                "lazy": 1,
+                "dog": 1,
+            },
+            2: {
+                ("the", "quick"): 1,
+                ("quick", "brown"): 1,
+                ("brown", "fox"): 1,
+                ("fox", "jumps"): 1,
+                ("jumps", "over"): 1,
+                ("over", "the"): 1,
+                ("the", "lazy"): 1,
+                ("lazy", "dog"): 1,
+            },
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_multiple_n_grams_as_frequencies(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": [1, 2],
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+                "as_frequencies": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            1: {
+                "quick": 1 / 6,
+                "brown": 1 / 6,
+                "fox": 1 / 6,
+                "jumps": 1 / 6,
+                "lazy": 1 / 6,
+                "dog": 1 / 6,
+            },
+            2: {
+                ("quick", "brown"): 1 / 5,
+                ("brown", "fox"): 1 / 5,
+                ("fox", "jumps"): 1 / 5,
+                ("jumps", "lazy"): 1 / 5,
+                ("lazy", "dog"): 1 / 5,
+            },
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_multiple_n_grams_empty_doc(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": [1, 2, 3],
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+                "as_frequencies": False,
+            },
+        )
+        doc = nlp("")
+        expected = {1: {}, 2: {}, 3: {}}
+        self.assertEqual(doc._.freq_dist, expected)
+
+    def test_doc_freq_dist_extractor_multiple_n_grams_short_doc(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": [1, 2, 3],
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+                "as_frequencies": False,
+            },
+        )
+        doc = nlp("Hello world")
+        expected = {
+            1: {"hello": 1, "world": 1},
+            2: {("hello", "world"): 1},
+            3: {},
+        }
+        self.assertEqual(doc._.freq_dist, expected)
+
 
 class TestDocTokenExtractor(unittest.TestCase):
     def setUp(self):
