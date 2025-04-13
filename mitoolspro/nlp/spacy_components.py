@@ -549,6 +549,10 @@ class DocFreqDistExtractor:
                 freq_dist = {k: v / total for k, v in freq_dist.items()}
             else:
                 freq_dist = dict(freq_dist.most_common())
+            freq_dist = {
+                " ".join(k) if isinstance(k, tuple) else k: v
+                for k, v in freq_dist.items()
+            }
             result[n] = freq_dist
         doc._.freq_dist = result if len(result) > 1 else result[self.n_grams[0]]
         return doc
