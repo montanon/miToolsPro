@@ -197,22 +197,30 @@ class SentenceRegexTagger:
         categories: Dict[str, List[str]],
         ignore_case: bool = True,
         strip_accents: bool = True,
+        keep_tags: bool = False,
     ):
         self.pattern_table = build_regex_pattern_table(
             categories, ignore_case=ignore_case, strip_accents=strip_accents
         )
         self.strip_accents = strip_accents
+        self.keep_tags = keep_tags
 
         for cat in categories:
             if not Span.has_extension(cat):
                 Span.set_extension(cat, default=False)
+            if keep_tags and not Span.has_extension(f"{cat}_tags"):
+                Span.set_extension(f"{cat}_tags", default=[])
 
     def __call__(self, doc: Doc) -> Doc:
         for sent in doc.sents:
             text = _strip_accents(sent.text) if self.strip_accents else sent.text
             for cat, pattern in self.pattern_table.items():
-                if pattern.search(text):
+                matches = pattern.finditer(text)
+                if matches:
                     setattr(sent._, cat, True)
+                    if self.keep_tags:
+                        for match in matches:
+                            sent._.get(f"{cat}_tags").append(match.group())
         return doc
 
 
@@ -222,6 +230,7 @@ class SentenceRegexTagger:
         "categories": {},
         "ignore_case": True,
         "strip_accents": True,
+        "keep_tags": False,
     },
 )
 def create_sentence_regex_tagger(
@@ -230,7 +239,12 @@ def create_sentence_regex_tagger(
     categories: Dict[str, List[str]],
     ignore_case: bool,
     strip_accents: bool,
+    keep_tags: bool,
 ):
     return SentenceRegexTagger(
-        nlp, categories, ignore_case=ignore_case, strip_accents=strip_accents
+        nlp,
+        categories,
+        ignore_case=ignore_case,
+        strip_accents=strip_accents,
+        keep_tags=keep_tags,
     )

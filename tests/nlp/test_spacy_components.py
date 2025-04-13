@@ -253,6 +253,27 @@ class TestSentenceRegexTagger(unittest.TestCase):
         doc = self.nlp("Email: TEST@EXAMPLE.COM")
         self.assertTrue(doc[1].sent._.email)
 
+    def test_sentence_regex_tagger_keep_tags(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "sentence_regex_tagger",
+            config={
+                "categories": self.categories,
+                "ignore_case": True,
+                "strip_accents": True,
+                "keep_tags": True,
+            },
+        )
+        doc = nlp(
+            "Contact me at test@example.com or 123-456-7890 and test2@example.com."
+        )
+        self.assertTrue(doc[4].sent._.email)
+        self.assertTrue(doc[4].sent._.phone)
+        self.assertEqual(
+            doc[4].sent._.email_tags, ["test@example.com", "test2@example.com"]
+        )
+        self.assertEqual(doc[4].sent._.phone_tags, ["123-456-7890"])
+
 
 if __name__ == "__main__":
     unittest.main()
