@@ -45,8 +45,8 @@ class SentenceLemmaTagger:
         self,
         nlp: Language,
         categories: Dict[str, List[str]],
-        strip_accents: bool,
-        ignore_case: bool,
+        strip_accents: bool = True,
+        ignore_case: bool = True,
         keep_tags: bool = False,
     ):
         lemma_patterns = build_lemma_patterns(
@@ -125,6 +125,7 @@ class SentenceWordTagger:
         categories: Dict[str, List[str]],
         ignore_case: bool = True,
         strip_accents: bool = True,
+        keep_tags: bool = False,
     ):
         attr = "LOWER" if ignore_case else "TEXT"
         self.matcher = PhraseMatcher(nlp.vocab, attr=attr)
@@ -139,12 +140,18 @@ class SentenceWordTagger:
         for cat in categories:
             if not Span.has_extension(cat):
                 Span.set_extension(cat, default=False)
+            if keep_tags and not Span.has_extension(f"{cat}_tags"):
+                Span.set_extension(f"{cat}_tags", default=[])
         self.ignore_case = ignore_case
+        self.keep_tags = keep_tags
 
     def __call__(self, doc: Doc) -> Doc:
         for match_id, start, end in self.matcher(doc):
             category = doc.vocab.strings[match_id]
-            doc[start].sent._.set(category, True)
+            sent = doc[start].sent
+            sent._.set(category, True)
+            if self.keep_tags:
+                sent._.get(f"{category}_tags").append(doc[start:end].text)
         return doc
 
 
@@ -154,6 +161,7 @@ class SentenceWordTagger:
         "categories": {},
         "strip_accents": True,
         "ignore_case": True,
+        "keep_tags": False,
     },
 )
 def create_sentence_word_tagger(
@@ -162,8 +170,9 @@ def create_sentence_word_tagger(
     categories: Dict[str, List[str]],
     ignore_case: bool,
     strip_accents: bool,
+    keep_tags: bool,
 ):
-    return SentenceWordTagger(nlp, categories, ignore_case, strip_accents)
+    return SentenceWordTagger(nlp, categories, ignore_case, strip_accents, keep_tags)
 
 
 def build_regex_pattern_table(
