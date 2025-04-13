@@ -1,1 +1,9 @@
-from mitoolspro import databases, pandas_utils, scraping, utils
+from mitoolspro import (
+    clustering,
+    databases,
+    nlp,
+    pandas_utils,
+    plotting,
+    scraping,
+    utils,
+)
