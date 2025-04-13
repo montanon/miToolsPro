@@ -508,9 +508,9 @@ class DocFreqDistExtractor:
         if not Doc.has_extension("freq_dist"):
             Doc.set_extension("freq_dist", default=None)
         if isinstance(n_grams, int):
-            self.n_grams = [n_grams]
+            self.n_grams = set([n_grams])
         else:
-            self.n_grams = n_grams
+            self.n_grams = set(n_grams)
         self.lemmatize = lemmatize
         self.lowercase = lowercase
         self.drop_punctuation = drop_punctuation
@@ -550,7 +550,7 @@ class DocFreqDistExtractor:
             else:
                 freq_dist = dict(freq_dist.most_common())
             result[n] = freq_dist
-        doc._.freq_dist = result if len(result) > 1 else result[self.n_grams[0]]
+        doc._.freq_dist = result if len(result) > 1 else result[list(self.n_grams)[0]]
         return doc
 
 
@@ -602,9 +602,9 @@ class DocTokenExtractor:
         if not Doc.has_extension("tokens"):
             Doc.set_extension("tokens", default=None)
         if isinstance(n_grams, int):
-            self.n_grams = [n_grams]
+            self.n_grams = set([n_grams])
         else:
-            self.n_grams = n_grams
+            self.n_grams = set(n_grams)
         self.attribute = attribute
         self.keep_stop_words = keep_stop_words
         self.drop_punctuation = drop_punctuation
@@ -629,7 +629,7 @@ class DocTokenExtractor:
                     zip(*(islice(base_tokens, i, None) for i in range(n)))
                 )
                 result[n] = ngram_tokens
-        doc._.tokens = result if len(result) > 1 else result[self.n_grams[0]]
+        doc._.tokens = result if len(result) > 1 else result[list(self.n_grams)[0]]
         return doc
 
 
