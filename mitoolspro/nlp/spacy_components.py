@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc, Span, Token
 
 from mitoolspro.nlp.spacy_utils import _strip_accents
 
@@ -24,18 +24,17 @@ def build_lemma_patterns(
     strip_accents: bool = True,
     ignore_case: bool = False,
 ) -> Dict[str, List[Doc]]:
-    lemmatizer = nlp.get_pipe("lemmatizer")
     lemma_docs: Dict[str, List[Doc]] = {}
 
     for cat, surface_list in categories.items():
         patterns = []
         for surface in surface_list:
             text = _strip_accents(surface) if strip_accents else surface
-            lemmas = [tok.lemma_ for tok in lemmatizer(nlp.make_doc(text))]
+            lemmas = [tok.lemma_ for tok in nlp(text)]
             if ignore_case:
                 lemmas = [lemma.lower() for lemma in lemmas]
             pattern_text = " ".join(lemmas)
-            patterns.append(nlp.make_doc(pattern_text))
+            patterns.append(nlp(pattern_text))
         lemma_docs[cat] = patterns
 
     return lemma_docs
@@ -62,8 +61,12 @@ class SentenceLemmaTagger:
         for cat in categories:
             if not Span.has_extension(cat):
                 Span.set_extension(cat, default=False)
+        self.ignore_case = ignore_case
 
     def __call__(self, doc: Doc) -> Doc:
+        if self.ignore_case:
+            for token in doc:
+                token.lemma_ = token.lemma_.lower()
         for match_id, start, end in self.matcher(doc):
             category = doc.vocab.strings[match_id]
             doc[start].sent._.set(category, True)
