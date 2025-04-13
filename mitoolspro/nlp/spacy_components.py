@@ -1,5 +1,6 @@
 import re
 from collections import Counter
+from itertools import islice
 from typing import Dict, List, Optional, Union
 
 from spacy.language import Language
@@ -496,12 +497,16 @@ class DocFreqDistExtractor:
     def __init__(
         self,
         nlp: Language,
+        n_grams: int = 1,
         lemmatize: bool = False,
         lowercase: bool = True,
         stop_words: Optional[Union[List[str], set]] = None,
         drop_punctuation: bool = True,
         keep_stop_words: bool = False,
     ):
+        if not Doc.has_extension("freq_dist"):
+            Doc.set_extension("freq_dist", default=None)
+        self.n_grams = n_grams
         self.lemmatize = lemmatize
         self.lowercase = lowercase
         self.drop_punctuation = drop_punctuation
@@ -511,29 +516,38 @@ class DocFreqDistExtractor:
         )
 
     def __call__(self, doc: Doc) -> Doc:
-        counts = Counter()
-        for token in doc:
-            if token.is_space:
-                continue
-            if self.drop_punctuation and token.is_punct:
-                continue
-            if self.stop_set is None:
-                if not self.keep_stop_words and token.is_stop:
-                    continue
-            else:
-                if token.lower_ in self.stop_set:
-                    continue
-            term = token.lemma_ if self.lemmatize else token.text
-            if self.lowercase:
-                term = term.lower()
-            counts[term] += 1
-        doc._.freq_dist = dict(counts.most_common())
+        tokens = (
+            self._get_term(token)
+            for token in doc
+            if not token.is_space
+            and not (
+                self.stop_set is None and not self.keep_stop_words and token.is_stop
+            )
+            and not (self.stop_set is not None and token.lower_ in self.stop_set)
+            and not (self.drop_punctuation and token.is_punct)
+        )
+        if self.n_grams == 1:
+            token_items = list(tokens)
+        else:
+            token_list = list(tokens)
+            token_items = list(
+                zip(*(islice(token_list, i, None) for i in range(self.n_grams)))
+            )
+        freq_dist = Counter(token_items)
+        doc._.freq_dist = dict(freq_dist.most_common())
         return doc
+
+    def _get_term(self, token) -> str:
+        term = token.lemma_ if self.lemmatize else token.text
+        if self.lowercase:
+            term = term.lower()
+        return term
 
 
 @Language.factory(
     "doc_freq_dist_extractor",
     default_config={
+        "n_grams": 1,
         "lemmatize": False,
         "lowercase": True,
         "stop_words": None,
@@ -544,6 +558,7 @@ class DocFreqDistExtractor:
 def create_doc_freq_dist_extractor(
     nlp: Language,
     name: str,
+    n_grams: int,
     lemmatize: bool,
     lowercase: bool,
     stop_words: Optional[Union[List[str], set]],
@@ -552,6 +567,7 @@ def create_doc_freq_dist_extractor(
 ):
     return DocFreqDistExtractor(
         nlp,
+        n_grams=n_grams,
         lemmatize=lemmatize,
         lowercase=lowercase,
         stop_words=stop_words,
