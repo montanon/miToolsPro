@@ -1143,5 +1143,170 @@ class TestDocTokenExtractor(unittest.TestCase):
         self.assertEqual(doc._.tokens, expected)
 
 
+class TestPipelineFunctionality(unittest.TestCase):
+    def setUp(self):
+        self.nlp = spacy.load("en_core_web_sm")
+        self.texts = [
+            "The quick brown fox jumps over the lazy dog.",
+            "I like apples and coffee.",
+            "Contact me at test@example.com or 123-456-7890.",
+        ]
+
+    def test_strip_accents_pipeline(self):
+        nlp = spacy.blank("en")
+        nlp.add_pipe("strip_accents")
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertEqual(docs[0].text, "The quick brown fox jumps over the lazy dog.")
+
+    def test_sentence_lemma_tagger_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "sentence_lemma_tagger",
+            config={
+                "categories": {"food": ["apple"], "drink": ["coffee"]},
+                "strip_accents": True,
+                "ignore_case": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertTrue(docs[1][2].sent._.food)
+        self.assertTrue(docs[1][4].sent._.drink)
+
+    def test_doc_lemma_tagger_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_lemma_tagger",
+            config={
+                "categories": {"food": ["apple"], "drink": ["coffee"]},
+                "strip_accents": True,
+                "ignore_case": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertTrue(docs[1]._.food)
+        self.assertTrue(docs[1]._.drink)
+
+    def test_sentence_word_tagger_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "sentence_word_tagger",
+            config={
+                "categories": {"food": ["apples"], "drink": ["coffee"]},
+                "strip_accents": True,
+                "ignore_case": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertTrue(docs[1][2].sent._.food)
+        self.assertTrue(docs[1][4].sent._.drink)
+
+    def test_doc_word_tagger_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_word_tagger",
+            config={
+                "categories": {"food": ["apples"], "drink": ["coffee"]},
+                "strip_accents": True,
+                "ignore_case": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertTrue(docs[1]._.food)
+        self.assertTrue(docs[1]._.drink)
+
+    def test_sentence_regex_tagger_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "sentence_regex_tagger",
+            config={
+                "categories": {
+                    "email": [r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"],
+                    "phone": [r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b"],
+                },
+                "ignore_case": True,
+                "strip_accents": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertTrue(docs[2][4].sent._.email)
+        self.assertTrue(docs[2][6].sent._.phone)
+
+    def test_doc_regex_tagger_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_regex_tagger",
+            config={
+                "categories": {
+                    "email": [r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"],
+                    "phone": [r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b"],
+                },
+                "ignore_case": True,
+                "strip_accents": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertTrue(docs[2]._.email)
+        self.assertTrue(docs[2]._.phone)
+
+    def test_doc_bow_extractor_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertIn("the", docs[0]._.bow)
+        self.assertEqual(docs[0]._.bow["the"], 2)
+
+    def test_doc_freq_dist_extractor_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_freq_dist_extractor",
+            config={
+                "n_grams": 1,
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertIn("the", docs[0]._.freq_dist)
+        self.assertEqual(docs[0]._.freq_dist["the"], 2)
+
+    def test_doc_token_extractor_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": 1,
+                "keep_stop_words": True,
+                "drop_punctuation": True,
+                "lowercase": True,
+            },
+        )
+        docs = list(nlp.pipe(self.texts))
+        self.assertEqual(len(docs), 3)
+        self.assertIn("the", docs[0]._.tokens)
+        self.assertEqual(docs[0]._.tokens.count("the"), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
