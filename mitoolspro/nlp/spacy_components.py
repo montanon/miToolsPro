@@ -69,6 +69,7 @@ class SentenceLemmaTagger:
 
     def __call__(self, doc: Doc) -> Doc:
         if self.ignore_case:
+            original_lemmas = [token.lemma_ for token in doc]
             for token in doc:
                 token.lemma_ = token.lemma_.lower()
         for match_id, start, end in self.matcher(doc):
@@ -77,6 +78,9 @@ class SentenceLemmaTagger:
             sent._.set(category, True)
             if self.keep_tags:
                 sent._.get(f"{category}_tags").append(doc[start:end].text)
+        if self.ignore_case:
+            for token, original_lemma in zip(doc, original_lemmas):
+                token.lemma_ = original_lemma
         return doc
 
 
