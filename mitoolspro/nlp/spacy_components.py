@@ -331,7 +331,7 @@ class SentenceRegexTagger:
         for sent in doc.sents:
             text = _strip_accents(sent.text) if self.strip_accents else sent.text
             for cat, pattern in self.pattern_table.items():
-                matches = pattern.finditer(text)
+                matches = list(pattern.finditer(text))
                 if matches:
                     setattr(sent._, cat, True)
                     if self.keep_tags:
@@ -358,6 +358,65 @@ def create_sentence_regex_tagger(
     keep_tags: bool,
 ):
     return SentenceRegexTagger(
+        nlp,
+        categories,
+        ignore_case=ignore_case,
+        strip_accents=strip_accents,
+        keep_tags=keep_tags,
+    )
+
+
+class DocRegexTagger:
+    def __init__(
+        self,
+        nlp: Language,
+        categories: Dict[str, List[str]],
+        ignore_case: bool = True,
+        strip_accents: bool = True,
+        keep_tags: bool = False,
+    ):
+        self.pattern_table = build_regex_pattern_table(
+            categories, strip_accents=strip_accents, ignore_case=ignore_case
+        )
+        self.strip_accents = strip_accents
+        self.keep_tags = keep_tags
+
+        for cat in categories:
+            if not Doc.has_extension(cat):
+                Doc.set_extension(cat, default=False)
+            if keep_tags and not Doc.has_extension(f"{cat}_tags"):
+                Doc.set_extension(f"{cat}_tags", default=[])
+
+    def __call__(self, doc: Doc) -> Doc:
+        text = _strip_accents(doc.text) if self.strip_accents else doc.text
+        for cat, pattern in self.pattern_table.items():
+            matches = list(pattern.finditer(text))
+            if matches:
+                setattr(doc._, cat, True)
+                if self.keep_tags:
+                    for match in matches:
+                        doc._.get(f"{cat}_tags").append(match.group())
+        return doc
+
+
+@Language.factory(
+    "doc_regex_tagger",
+    default_config={
+        "categories": {},
+        "ignore_case": True,
+        "strip_accents": True,
+        "keep_tags": False,
+    },
+)
+def create_doc_regex_tagger(
+    nlp: Language,
+    name: str,
+    categories: Dict[str, List[str]],
+    ignore_case: bool,
+    strip_accents: bool,
+    keep_tags: bool,
+):
+    return DocRegexTagger(
         nlp,
         categories,
         ignore_case=ignore_case,
