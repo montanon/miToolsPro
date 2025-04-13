@@ -104,6 +104,65 @@ def create_sentence_lemma_tagger(
     return SentenceLemmaTagger(nlp, categories, strip_accents, ignore_case, keep_tags)
 
 
+class DocLemmaTagger:
+    def __init__(
+        self,
+        nlp: Language,
+        categories: Dict[str, List[str]],
+        strip_accents: bool = True,
+        ignore_case: bool = True,
+        keep_tags: bool = False,
+    ):
+        lemma_patterns = build_lemma_patterns(
+            nlp, categories, strip_accents, ignore_case
+        )
+        self.matcher = PhraseMatcher(nlp.vocab, attr="LEMMA")
+        for cat, docs in lemma_patterns.items():
+            self.matcher.add(cat, docs)
+        for cat in categories:
+            if not Doc.has_extension(cat):
+                Doc.set_extension(cat, default=False)
+            if keep_tags and not Doc.has_extension(f"{cat}_tags"):
+                Doc.set_extension(f"{cat}_tags", default=[])
+        self.ignore_case = ignore_case
+        self.keep_tags = keep_tags
+
+    def __call__(self, doc: Doc) -> Doc:
+        if self.ignore_case:
+            original_lemmas = [token.lemma_ for token in doc]
+            for token in doc:
+                token.lemma_ = token.lemma_.lower()
+        for match_id, start, end in self.matcher(doc):
+            category = doc.vocab.strings[match_id]
+            setattr(doc._, category, True)
+            if self.keep_tags:
+                doc._.get(f"{category}_tags").append(doc[start:end].text)
+        if self.ignore_case:
+            for token, orig in zip(doc, original_lemmas):
+                token.lemma_ = orig
+        return doc
+
+
+@Language.factory(
+    "doc_lemma_tagger",
+    default_config={
+        "categories": {},
+        "strip_accents": True,
+        "ignore_case": True,
+        "keep_tags": False,
+    },
+)
+def create_doc_lemma_tagger(
+    nlp: Language,
+    name: str,
+    categories: Dict[str, List[str]],
+    strip_accents: bool,
+    ignore_case: bool,
+    keep_tags: bool,
+):
+    return DocLemmaTagger(nlp, categories, strip_accents, ignore_case, keep_tags)
+
+
 def build_word_patterns(
     nlp: Language,
     categories: Dict[str, List[str]],
