@@ -102,6 +102,25 @@ class TestSentenceLemmaTagger(unittest.TestCase):
         doc = self.nlp("I like APPLE.")
         self.assertTrue(doc[2].sent._.food)
 
+    def test_sentence_lemma_tagger_keep_tags(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "sentence_lemma_tagger",
+            after="lemmatizer",
+            config={
+                "categories": self.categories,
+                "strip_accents": True,
+                "ignore_case": True,
+                "keep_tags": True,
+            },
+        )
+        doc = nlp("I like apples and bananas with coffee.")
+        self.assertTrue(doc[3].sent._.food)
+        self.assertTrue(doc[5].sent._.food)
+        self.assertTrue(doc[7].sent._.drink)
+        self.assertEqual(doc[3].sent._.food_tags, ["apples", "bananas"])
+        self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
+
 
 class TestBuildWordPatterns(unittest.TestCase):
     def setUp(self):

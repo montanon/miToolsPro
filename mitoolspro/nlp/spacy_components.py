@@ -65,6 +65,7 @@ class SentenceLemmaTagger:
             if keep_tags and not Span.has_extension(f"{cat}_tags"):
                 Span.set_extension(f"{cat}_tags", default=[])
         self.ignore_case = ignore_case
+        self.keep_tags = keep_tags
 
     def __call__(self, doc: Doc) -> Doc:
         if self.ignore_case:
@@ -85,6 +86,7 @@ class SentenceLemmaTagger:
         "categories": {},
         "strip_accents": True,
         "ignore_case": True,
+        "keep_tags": False,
     },
 )
 def create_sentence_lemma_tagger(
@@ -93,8 +95,9 @@ def create_sentence_lemma_tagger(
     categories: Dict[str, List[str]],
     strip_accents: bool,
     ignore_case: bool,
+    keep_tags: bool,
 ):
-    return SentenceLemmaTagger(nlp, categories, strip_accents, ignore_case)
+    return SentenceLemmaTagger(nlp, categories, strip_accents, ignore_case, keep_tags)
 
 
 def build_word_patterns(
