@@ -434,6 +434,7 @@ class DocBOWExtractor:
         lowercase: bool = True,
         stop_words: Optional[Union[List[str], set]] = None,
         drop_punctuation: bool = True,
+        keep_stop_words: bool = False,
     ):
         if not Doc.has_extension("bow"):
             Doc.set_extension("bow", default=None)
@@ -444,6 +445,7 @@ class DocBOWExtractor:
         self.stop_set = (
             {w.lower() for w in stop_words} if stop_words is not None else None
         )
+        self.keep_stop_words = keep_stop_words
 
     def __call__(self, doc: Doc) -> Doc:
         counts = Counter()
@@ -453,7 +455,7 @@ class DocBOWExtractor:
             if self.drop_punctuation and token.is_punct:
                 continue
             if self.stop_set is None:
-                if token.is_stop:
+                if not self.keep_stop_words and token.is_stop:
                     continue
             else:
                 if token.lower_ in self.stop_set:
@@ -473,6 +475,7 @@ class DocBOWExtractor:
         "lowercase": True,
         "stop_words": None,
         "drop_punctuation": True,
+        "keep_stop_words": False,
     },
 )
 def create_doc_bow_extractor(
@@ -482,5 +485,8 @@ def create_doc_bow_extractor(
     lowercase: bool,
     stop_words: Optional[Union[List[str], set]],
     drop_punctuation: bool,
+    keep_stop_words: bool,
 ):
-    return DocBOWExtractor(nlp, lemmatize, lowercase, stop_words, drop_punctuation)
+    return DocBOWExtractor(
+        nlp, lemmatize, lowercase, stop_words, drop_punctuation, keep_stop_words
+    )

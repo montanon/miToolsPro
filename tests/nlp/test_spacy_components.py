@@ -432,5 +432,145 @@ class TestDocRegexTagger(unittest.TestCase):
         self.assertEqual(doc._.phone_tags, ["123-456-7890"])
 
 
+class TestDocBOWExtractor(unittest.TestCase):
+    def setUp(self):
+        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": True,
+            },
+        )
+
+    def test_doc_bow_extractor_basic(self):
+        doc = self.nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            "the": 2,
+            "quick": 1,
+            "brown": 1,
+            "fox": 1,
+            "jumps": 1,
+            "over": 1,
+            "lazy": 1,
+            "dog": 1,
+        }
+        self.assertEqual(doc._.bow, expected)
+
+    def test_doc_bow_extractor_filter_stop_words(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            "quick": 1,
+            "brown": 1,
+            "fox": 1,
+            "jumps": 1,
+            "lazy": 1,
+            "dog": 1,
+        }
+        self.assertEqual(doc._.bow, expected)
+
+    def test_doc_bow_extractor_lemmatize(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": True,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": True,
+            },
+        )
+        doc = nlp("The foxes jumped over the dogs.")
+        expected = {
+            "fox": 1,
+            "jump": 1,
+            "dog": 1,
+        }
+        self.assertEqual(doc._.bow, expected)
+
+    def test_doc_bow_extractor_custom_stop_words(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": ["the", "over"],
+                "drop_punctuation": True,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            "quick": 1,
+            "brown": 1,
+            "fox": 1,
+            "jumps": 1,
+            "lazy": 1,
+            "dog": 1,
+        }
+        self.assertEqual(doc._.bow, expected)
+
+    def test_doc_bow_extractor_keep_punctuation(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": False,
+                "lowercase": True,
+                "stop_words": None,
+                "drop_punctuation": False,
+                "keep_stop_words": False,
+            },
+        )
+        doc = nlp("The quick brown fox jumps over the lazy dog.")
+        expected = {
+            "quick": 1,
+            "brown": 1,
+            "fox": 1,
+            "jumps": 1,
+            "lazy": 1,
+            "dog": 1,
+            ".": 1,
+        }
+        self.assertEqual(doc._.bow, expected)
+
+    def test_doc_bow_extractor_case_sensitive(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_bow_extractor",
+            config={
+                "lemmatize": False,
+                "lowercase": False,
+                "stop_words": None,
+                "drop_punctuation": True,
+                "keep_stop_words": False,
+            },
+        )
+        doc = nlp("The Quick Brown Fox jumps over the Lazy Dog.")
+        expected = {
+            "Quick": 1,
+            "Brown": 1,
+            "Fox": 1,
+            "jumps": 1,
+            "Lazy": 1,
+            "Dog": 1,
+        }
+        self.assertEqual(doc._.bow, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
