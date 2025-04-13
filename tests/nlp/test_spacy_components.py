@@ -594,11 +594,11 @@ class TestDocFreqDistExtractor(unittest.TestCase):
         )
         doc = nlp("The quick brown fox jumps over the lazy dog.")
         expected = {
-            ("quick", "brown"): 1,
-            ("brown", "fox"): 1,
-            ("fox", "jumps"): 1,
-            ("jumps", "lazy"): 1,
-            ("lazy", "dog"): 1,
+            "quick brown": 1,
+            "brown fox": 1,
+            "fox jumps": 1,
+            "jumps lazy": 1,
+            "lazy dog": 1,
         }
         self.assertEqual(doc._.freq_dist, expected)
 
@@ -670,11 +670,11 @@ class TestDocFreqDistExtractor(unittest.TestCase):
         )
         doc = nlp("The quick brown fox jumps over the lazy dog.")
         expected = {
-            ("quick", "brown"): 1 / 5,
-            ("brown", "fox"): 1 / 5,
-            ("fox", "jumps"): 1 / 5,
-            ("jumps", "lazy"): 1 / 5,
-            ("lazy", "dog"): 1 / 5,
+            "quick brown": 1 / 5,
+            "brown fox": 1 / 5,
+            "fox jumps": 1 / 5,
+            "jumps lazy": 1 / 5,
+            "lazy dog": 1 / 5,
         }
         self.assertEqual(doc._.freq_dist, expected)
 
@@ -703,17 +703,17 @@ class TestDocFreqDistExtractor(unittest.TestCase):
                 "dog": 1,
             },
             2: {
-                ("quick", "brown"): 1,
-                ("brown", "fox"): 1,
-                ("fox", "jumps"): 1,
-                ("jumps", "lazy"): 1,
-                ("lazy", "dog"): 1,
+                "quick brown": 1,
+                "brown fox": 1,
+                "fox jumps": 1,
+                "jumps lazy": 1,
+                "lazy dog": 1,
             },
             3: {
-                ("quick", "brown", "fox"): 1,
-                ("brown", "fox", "jumps"): 1,
-                ("fox", "jumps", "lazy"): 1,
-                ("jumps", "lazy", "dog"): 1,
+                "quick brown fox": 1,
+                "brown fox jumps": 1,
+                "fox jumps lazy": 1,
+                "jumps lazy dog": 1,
             },
         }
         self.assertEqual(doc._.freq_dist, expected)
@@ -745,14 +745,14 @@ class TestDocFreqDistExtractor(unittest.TestCase):
                 "dog": 1,
             },
             2: {
-                ("the", "quick"): 1,
-                ("quick", "brown"): 1,
-                ("brown", "fox"): 1,
-                ("fox", "jumps"): 1,
-                ("jumps", "over"): 1,
-                ("over", "the"): 1,
-                ("the", "lazy"): 1,
-                ("lazy", "dog"): 1,
+                "the quick": 1,
+                "quick brown": 1,
+                "brown fox": 1,
+                "fox jumps": 1,
+                "jumps over": 1,
+                "over the": 1,
+                "the lazy": 1,
+                "lazy dog": 1,
             },
         }
         self.assertEqual(doc._.freq_dist, expected)
@@ -782,11 +782,11 @@ class TestDocFreqDistExtractor(unittest.TestCase):
                 "dog": 1 / 6,
             },
             2: {
-                ("quick", "brown"): 1 / 5,
-                ("brown", "fox"): 1 / 5,
-                ("fox", "jumps"): 1 / 5,
-                ("jumps", "lazy"): 1 / 5,
-                ("lazy", "dog"): 1 / 5,
+                "quick brown": 1 / 5,
+                "brown fox": 1 / 5,
+                "fox jumps": 1 / 5,
+                "jumps lazy": 1 / 5,
+                "lazy dog": 1 / 5,
             },
         }
         self.assertEqual(doc._.freq_dist, expected)
@@ -826,7 +826,7 @@ class TestDocFreqDistExtractor(unittest.TestCase):
         doc = nlp("Hello world")
         expected = {
             1: {"hello": 1, "world": 1},
-            2: {("hello", "world"): 1},
+            2: {"hello world": 1},
             3: {},
         }
         self.assertEqual(doc._.freq_dist, expected)
@@ -1307,8 +1307,8 @@ class TestPipelineFunctionality(unittest.TestCase):
         self.assertEqual(len(docs), 3)
         self.assertIn("the", docs[0]._.freq_dist[1])
         self.assertEqual(docs[0]._.freq_dist[1]["the"], 2)
-        self.assertIn(("the", "quick"), docs[0]._.freq_dist[2])
-        self.assertEqual(docs[0]._.freq_dist[2][("the", "quick")], 1)
+        self.assertIn("the quick", docs[0]._.freq_dist[2])
+        self.assertEqual(docs[0]._.freq_dist[2]["the quick"], 1)
 
     def test_doc_token_extractor_pipeline(self):
         nlp = spacy.load("en_core_web_sm")
@@ -1343,8 +1343,8 @@ class TestPipelineFunctionality(unittest.TestCase):
         self.assertEqual(len(docs), 3)
         self.assertIn("the", docs[0]._.tokens[1])
         self.assertEqual(docs[0]._.tokens[1].count("the"), 2)
-        self.assertIn(("the", "quick"), docs[0]._.tokens[2])
-        self.assertEqual(docs[0]._.tokens[2].count(("the", "quick")), 1)
+        self.assertIn("the quick", docs[0]._.tokens[2])
+        self.assertEqual(docs[0]._.tokens[2].count("the quick"), 1)
 
 
 if __name__ == "__main__":
