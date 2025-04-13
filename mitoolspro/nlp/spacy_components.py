@@ -632,7 +632,9 @@ class DocTokenExtractor:
                 ngram_tokens = list(
                     zip(*(islice(base_tokens, i, None) for i in range(n)))
                 )
-                result[n] = ngram_tokens
+                result[n] = [
+                    " ".join(k) if isinstance(k, tuple) else k for k in ngram_tokens
+                ]
         doc._.tokens = result if len(result) > 1 else result[self.n_grams[0]]
         return doc
 
