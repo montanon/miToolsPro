@@ -497,7 +497,7 @@ class DocFreqDistExtractor:
     def __init__(
         self,
         nlp: Language,
-        n_grams: int = 1,
+        n_grams: Union[int, List[int]] = 1,
         lemmatize: bool = False,
         lowercase: bool = True,
         stop_words: Optional[Union[List[str], set]] = None,
@@ -507,7 +507,10 @@ class DocFreqDistExtractor:
     ):
         if not Doc.has_extension("freq_dist"):
             Doc.set_extension("freq_dist", default=None)
-        self.n_grams = n_grams
+        if isinstance(n_grams, int):
+            self.n_grams = [n_grams]
+        else:
+            self.n_grams = n_grams
         self.lemmatize = lemmatize
         self.lowercase = lowercase
         self.drop_punctuation = drop_punctuation
@@ -518,36 +521,37 @@ class DocFreqDistExtractor:
         self.as_frequencies = as_frequencies
 
     def __call__(self, doc: Doc) -> Doc:
-        tokens = (
-            self._get_term(token)
-            for token in doc
-            if not token.is_space
-            and not (self.drop_punctuation and token.is_punct)
-            and not (
-                self.stop_set is None and not self.keep_stop_words and token.is_stop
-            )
-            and not (self.stop_set is not None and token.lower_ in self.stop_set)
-        )
-        if self.n_grams == 1:
-            token_items = list(tokens)
-        else:
-            token_list = list(tokens)
-            token_items = list(
-                zip(*(islice(token_list, i, None) for i in range(self.n_grams)))
-            )
-        freq_dist = Counter(token_items)
-        if self.as_frequencies:
-            total = sum(freq_dist.values())
-            doc._.freq_dist = {k: v / total for k, v in freq_dist.items()}
-        else:
-            doc._.freq_dist = dict(freq_dist.most_common())
+        base_tokens = []
+        for token in doc:
+            if token.is_space:
+                continue
+            if self.drop_punctuation and token.is_punct:
+                continue
+            if self.stop_set is None:
+                if not self.keep_stop_words and token.is_stop:
+                    continue
+            else:
+                if token.lower_ in self.stop_set:
+                    continue
+            term = token.lemma_ if self.lemmatize else token.text
+            if self.lowercase:
+                term = term.lower()
+            base_tokens.append(term)
+        result: Dict[int, Dict[str, float]] = {}
+        for n in self.n_grams:
+            if n == 1:
+                items = base_tokens
+            else:
+                items = list(zip(*(islice(base_tokens, i, None) for i in range(n))))
+            freq_dist = Counter(items)
+            if self.as_frequencies:
+                total = sum(freq_dist.values())
+                freq_dist = {k: v / total for k, v in freq_dist.items()}
+            else:
+                freq_dist = dict(freq_dist.most_common())
+            result[n] = freq_dist
+        doc._.freq_dist = result if len(result) > 1 else result[self.n_grams[0]]
         return doc
-
-    def _get_term(self, token) -> str:
-        term = token.lemma_ if self.lemmatize else token.text
-        if self.lowercase:
-            term = term.lower()
-        return term
 
 
 @Language.factory(
@@ -616,7 +620,7 @@ class DocTokenExtractor:
             and not (self.drop_stopwords and token.is_stop)
             and not (self.drop_punctuation and token.is_punct)
         ]
-        result = {}
+        result: Dict[int, List[str]] = {}
         for n in self.n_grams:
             if n == 1:
                 result[n] = base_tokens
