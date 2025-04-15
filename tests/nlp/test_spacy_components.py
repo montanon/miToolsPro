@@ -944,14 +944,14 @@ class TestDocTokenExtractor(unittest.TestCase):
         )
         doc = nlp("The quick brown fox jumps over the lazy dog.")
         expected = [
-            ("the", "quick"),
-            ("quick", "brown"),
-            ("brown", "fox"),
-            ("fox", "jumps"),
-            ("jumps", "over"),
-            ("over", "the"),
-            ("the", "lazy"),
-            ("lazy", "dog"),
+            "the quick",
+            "quick brown",
+            "brown fox",
+            "fox jumps",
+            "jumps over",
+            "over the",
+            "the lazy",
+            "lazy dog",
         ]
         self.assertEqual(doc._.tokens, expected)
 
@@ -995,23 +995,23 @@ class TestDocTokenExtractor(unittest.TestCase):
         expected = {
             1: ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"],
             2: [
-                ("the", "quick"),
-                ("quick", "brown"),
-                ("brown", "fox"),
-                ("fox", "jumps"),
-                ("jumps", "over"),
-                ("over", "the"),
-                ("the", "lazy"),
-                ("lazy", "dog"),
+                "the quick",
+                "quick brown",
+                "brown fox",
+                "fox jumps",
+                "jumps over",
+                "over the",
+                "the lazy",
+                "lazy dog",
             ],
             3: [
-                ("the", "quick", "brown"),
-                ("quick", "brown", "fox"),
-                ("brown", "fox", "jumps"),
-                ("fox", "jumps", "over"),
-                ("jumps", "over", "the"),
-                ("over", "the", "lazy"),
-                ("the", "lazy", "dog"),
+                "the quick brown",
+                "quick brown fox",
+                "brown fox jumps",
+                "fox jumps over",
+                "jumps over the",
+                "over the lazy",
+                "the lazy dog",
             ],
         }
         self.assertEqual(doc._.tokens, expected)
@@ -1032,11 +1032,11 @@ class TestDocTokenExtractor(unittest.TestCase):
         expected = {
             1: ["quick", "brown", "fox", "jumps", "lazy", "dog"],
             2: [
-                ("quick", "brown"),
-                ("brown", "fox"),
-                ("fox", "jumps"),
-                ("jumps", "lazy"),
-                ("lazy", "dog"),
+                "quick brown",
+                "brown fox",
+                "fox jumps",
+                "jumps lazy",
+                "lazy dog",
             ],
         }
         self.assertEqual(doc._.tokens, expected)
@@ -1068,15 +1068,15 @@ class TestDocTokenExtractor(unittest.TestCase):
                 ".",
             ],
             2: [
-                ("the", "quick"),
-                ("quick", "brown"),
-                ("brown", "fox"),
-                ("fox", "jumps"),
-                ("jumps", "over"),
-                ("over", "the"),
-                ("the", "lazy"),
-                ("lazy", "dog"),
-                ("dog", "."),
+                "the quick",
+                "quick brown",
+                "brown fox",
+                "fox jumps",
+                "jumps over",
+                "over the",
+                "the lazy",
+                "lazy dog",
+                "dog .",
             ],
         }
         self.assertEqual(doc._.tokens, expected)
@@ -1097,11 +1097,11 @@ class TestDocTokenExtractor(unittest.TestCase):
         expected = {
             1: ["the", "fox", "jump", "over", "the", "dog"],
             2: [
-                ("the", "fox"),
-                ("fox", "jump"),
-                ("jump", "over"),
-                ("over", "the"),
-                ("the", "dog"),
+                "the fox",
+                "fox jump",
+                "jump over",
+                "over the",
+                "the dog",
             ],
         }
         self.assertEqual(doc._.tokens, expected)
@@ -1137,8 +1137,51 @@ class TestDocTokenExtractor(unittest.TestCase):
         doc = nlp("Hello world")
         expected = {
             1: ["hello", "world"],
-            2: [("hello", "world")],
+            2: ["hello world"],
             3: [],
+        }
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_lemmatize(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": 1,
+                "keep_stop_words": True,
+                "drop_punctuation": True,
+                "lowercase": True,
+                "lemmatize": True,
+            },
+        )
+        doc = nlp("The foxes jumped over the dogs.")
+        expected = ["the", "fox", "jump", "over", "the", "dog"]
+        self.assertEqual(doc._.tokens, expected)
+
+    def test_doc_token_extractor_lemmatize_with_n_grams(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "doc_token_extractor",
+            config={
+                "attribute": "lower_",
+                "n_grams": [1, 2],
+                "keep_stop_words": True,
+                "drop_punctuation": True,
+                "lowercase": True,
+                "lemmatize": True,
+            },
+        )
+        doc = nlp("The foxes jumped over the dogs.")
+        expected = {
+            1: ["the", "fox", "jump", "over", "the", "dog"],
+            2: [
+                "the fox",
+                "fox jump",
+                "jump over",
+                "over the",
+                "the dog",
+            ],
         }
         self.assertEqual(doc._.tokens, expected)
 
