@@ -602,6 +602,7 @@ class DocTokenExtractor:
         keep_stop_words: bool = True,
         drop_punctuation: bool = True,
         lowercase: bool = True,
+        lemmatize: bool = False,
     ):
         if not Doc.has_extension("tokens"):
             Doc.set_extension("tokens", default=None)
@@ -613,6 +614,7 @@ class DocTokenExtractor:
         self.keep_stop_words = keep_stop_words
         self.drop_punctuation = drop_punctuation
         self.lowercase = lowercase
+        self.lemmatize = lemmatize
 
     def __call__(self, doc: Doc) -> Doc:
         base_tokens = [
@@ -624,6 +626,8 @@ class DocTokenExtractor:
             and (self.keep_stop_words or not token.is_stop)
             and not (self.drop_punctuation and token.is_punct)
         ]
+        if self.lemmatize:
+            base_tokens = [token.lemma_ for token in base_tokens]
         result: Dict[int, List[str]] = {}
         for n in self.n_grams:
             if n == 1:
@@ -647,6 +651,7 @@ class DocTokenExtractor:
         "keep_stop_words": False,
         "drop_punctuation": True,
         "lowercase": True,
+        "lemmatize": False,
     },
 )
 def create_doc_token_extractor(
@@ -657,7 +662,8 @@ def create_doc_token_extractor(
     keep_stop_words: bool,
     drop_punctuation: bool,
     lowercase: bool,
+    lemmatize: bool,
 ):
     return DocTokenExtractor(
-        nlp, attribute, n_grams, keep_stop_words, drop_punctuation, lowercase
+        nlp, attribute, n_grams, keep_stop_words, drop_punctuation, lowercase, lemmatize
     )
