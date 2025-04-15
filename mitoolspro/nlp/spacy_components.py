@@ -616,18 +616,20 @@ class DocTokenExtractor:
         self.lowercase = lowercase
         self.lemmatize = lemmatize
 
+    def _get_term(self, token) -> str:
+        term = token.lemma_ if self.lemmatize else getattr(token, self.attribute)
+        if self.lowercase:
+            term = term.lower()
+        return term
+
     def __call__(self, doc: Doc) -> Doc:
         base_tokens = [
-            getattr(token, self.attribute).lower()
-            if self.lowercase and self.attribute != "lower_"
-            else getattr(token, self.attribute)
+            self._get_term(token)
             for token in doc
             if not token.is_space
             and (self.keep_stop_words or not token.is_stop)
             and not (self.drop_punctuation and token.is_punct)
         ]
-        if self.lemmatize:
-            base_tokens = [token.lemma_ for token in base_tokens]
         result: Dict[int, List[str]] = {}
         for n in self.n_grams:
             if n == 1:
