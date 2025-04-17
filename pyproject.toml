@@ -22,6 +22,7 @@ dependencies = [
     "nltk>=3.9.1",
     "numba>=0.61.2",
     "numpy>=2.2.4",
+    "ollama>=0.4.8",
     "openai>=1.66.3",
     "opencv-python>=4.11.0.86",
     "openpyxl>=3.1.5",
