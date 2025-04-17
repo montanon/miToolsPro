@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
+from ollama import Client as OllamaRawClient
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
@@ -12,6 +13,47 @@ from mitoolspro.llms.objects import (
     Prompt,
     TokenUsageStats,
 )
+
+
+class OllamaClient(LLMModel):
+    def __init__(
+        self,
+        model: str = "gemma3:12b",
+        counter=None,
+        base_url: str = "http://localhost:11434",
+    ):
+        self.model = model
+        self.counter = counter
+        self.client = OllamaRawClient(host=base_url)
+        self.raw_responses = []
+
+    def parse_request(self, prompt: Prompt | str) -> Dict:
+        return {
+            "model": self.model,
+            "prompt": prompt.text if not isinstance(prompt, str) else prompt,
+        }
+
+    def request(self, request: Prompt | str, **kwargs) -> Dict:
+        request_dict = self.parse_request(request)
+        response = self._get_response(request_dict, **kwargs)
+        self.raw_responses.append(response)
+        return self.parse_response(response)
+
+    def _get_response(self, request: Dict, **kwargs) -> Dict:
+        return self.client.chat(
+            messages=[{"role": "user", "content": request["prompt"]}],
+            model=request["model"],
+            **kwargs,
+        )
+
+    def parse_response(self, response: Dict) -> str:
+        return response["message"]["content"]
+
+    def get_model_info(self) -> Dict:
+        return {"name": "Ollama", "model": self.model}
+
+    def model_name(self) -> str:
+        return self.model
 
 
 class OpenAIClient(LLMModel):
@@ -32,13 +74,18 @@ class OpenAIClient(LLMModel):
         self.counter = counter
         self.beta = beta
 
-    def parse_request(self, prompt: Prompt) -> Dict:
+    def parse_request(self, prompt: Prompt | str) -> Dict:
         return {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt.text}],
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt.text if not isinstance(prompt, str) else prompt,
+                }
+            ],
         }
 
-    def request(self, request: Prompt, **kwargs) -> Dict:
+    def request(self, request: Prompt | str, **kwargs) -> Dict:
         request = self.parse_request(request)
         response = self._get_response(request, **kwargs)
         self.raw_responses.append(response)
