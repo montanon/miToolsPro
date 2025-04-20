@@ -16,6 +16,8 @@ def auto_adjust_sheet_columns_width(sheet: Worksheet) -> None:
     for column in sheet.columns:
         max_length = 0
         column = [cell for cell in column if cell.value]  # Filter out None values
+        if not column:  # Skip if column is empty
+            continue
         for cell in column:
             try:
                 if len(str(cell.value)) > max_length:
