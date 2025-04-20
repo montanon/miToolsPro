@@ -11,6 +11,7 @@ from mitoolspro.document.document_structure import (
     Line,
     Page,
     Run,
+    merge_runs,
 )
 from mitoolspro.exceptions import ArgumentStructureError
 
@@ -278,6 +279,21 @@ class TestRun(TestCase):
         self.assertEqual(run1, run2)
         self.assertNotEqual(run1, run3)
         self.assertNotEqual(run1, "not a run")
+
+    def test_run_equality_with_different_chars(self):
+        run1 = Run("Arial", 12, chars=[Char("A", "Arial", 12, BBox(0, 0, 10, 12))])
+        run2 = Run("Arial", 12, chars=[Char("B", "Arial", 12, BBox(0, 0, 10, 12))])
+        self.assertNotEqual(run1, run2)
+
+    def test_run_add_with_invalid_type(self):
+        run = Run("Arial", 12, "Test")
+        with self.assertRaises(TypeError):
+            run + "invalid"
+
+    def test_run_from_chars_with_none_fontname(self):
+        chars = [Char("A", "Arial", 12, BBox(0, 0, 10, 12))]
+        run = Run.from_chars(chars, fontname=None, size=12)
+        self.assertEqual(run.fontname, "Arial")
 
 
 class TestLine(TestCase):
@@ -939,6 +955,15 @@ class TestDocument(TestCase):
         self.assertNotEqual(doc1, doc3)
         self.assertNotEqual(doc1, "not a document")
 
+    def test_chars_property(self):
+        chars = self.document.chars
+        self.assertEqual(len(chars), 12)
+        self.assertEqual(chars[0].text, "P")
+
+    def test_get_text(self):
+        text = self.document.get_text()
+        self.assertEqual(text, "Page 1\nPage 2")
+
 
 class TestImage(TestCase):
     def setUp(self):
@@ -1203,6 +1228,14 @@ class TestSpanishCharacters(TestCase):
         box = Box(BBox(0, 0, 1000, 100))
         box.add_line(line)
         self.assertEqual(box.text, text1 + text2)
+
+
+class TestMergeRuns(TestCase):
+    def test_merge_runs(self):
+        run1 = Run("Arial", 12, "Hello")
+        run2 = Run("Arial", 12, " World")
+        merged = merge_runs([run1, run2])
+        self.assertEqual(merged[0].text, "Hello World")
 
 
 if __name__ == "__main__":
