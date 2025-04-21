@@ -22,6 +22,8 @@ class SankeyNode:
         self.id: Optional[int] = None
         self.x_pos: Optional[float] = None
         self.y_pos: Optional[float] = None
+        self.is_sink: bool = False
+        self.color: Optional[str] = None
 
     def __str__(self):
         return f"SankeyNode: {self.name} ({self.count})"
@@ -34,6 +36,7 @@ class SankeyColumn:
         self.name = name
         self.period = period
         self.nodes: List[SankeyNode] = nodes if nodes else []
+        self._sink_node: Optional[SankeyNode] = None
 
     def __str__(self):
         return f"SankeyColumn: {self.name} ({self.period})"
@@ -49,18 +52,28 @@ class SankeyColumn:
             node.x_pos = x_pos
             node.y_pos = node.rank / max_rank if max_rank > 0 else 0.001
 
+    def get_or_create_sink_node(self) -> SankeyNode:
+        if self._sink_node is None:
+            max_rank = max((n.rank for n in self.nodes), default=0)
+            node = SankeyNode(
+                name="", count=1e-5, period=self.period, rank=max_rank + 3
+            )
+            node.is_sink = True
+            self.nodes.append(node)
+            self._sink_node = node
+        return self._sink_node
+
 
 class SankeyLink:
     def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
-        self.source = source
-        self.target = target
-        self.value = value
-
-    def __post_init__(self):
         if self.source.period == self.target.period:
             raise ArgumentValueError("Source and target cannot be in the same period")
         if self.value <= 0:
             raise ArgumentValueError("Value must be greater than 0")
+        self.source = source
+        self.target = target
+        self.value = value
+        self.color: Optional[str] = None
 
 
 class SankeyDiagram:
@@ -69,7 +82,7 @@ class SankeyDiagram:
         columns: Optional[List[SankeyColumn]] = None,
         links: Optional[List[SankeyLink]] = None,
     ):
-        self.columns = self.add_columns(columns) if columns else []
+        self.columns = self.add_columns(columns) if columns else {}
         self.links = self.add_links(links) if links else []
 
     def add_column(self, column: SankeyColumn):
@@ -102,11 +115,18 @@ class SankeyDiagram:
             )
 
     def _connect_column_pair(self, col1: SankeyColumn, col2: SankeyColumn):
+        target_names = {node.name for node in col2.nodes}
         for node in col1.nodes:
-            match = col2.get_node(node.name)
-            if match:
+            if node.name in target_names:
+                match = col2.get_node(node.name)
+                if match:
+                    self.links.append(
+                        SankeyLink(source=node, target=match, value=node.count)
+                    )
+            else:
+                outflow = col2.get_or_create_sink_node()
                 self.links.append(
-                    SankeyLink(source=node, target=match, value=node.count)
+                    SankeyLink(source=node, target=outflow, value=node.count)
                 )
 
     def assign_node_ids(self):
