@@ -12,6 +12,8 @@ from mitoolspro.pandas_utils import idxslice
 from mitoolspro.utils.decorators import validate_dataframe_structure
 from mitoolspro.utils.validation_templates.sankey import sankey_plot_validation
 
+PLAIN_GRAY_COLOR = [193 / 255.0, 193 / 255.0, 193 / 255.0, 1.0]
+
 
 class SankeyNode:
     def __init__(self, name: str, count: float, period: int, rank: int):
@@ -22,11 +24,24 @@ class SankeyNode:
         self.id: Optional[int] = None
         self.x_pos: Optional[float] = None
         self.y_pos: Optional[float] = None
-        self.is_sink: bool = False
         self.color: Optional[str] = None
 
     def __str__(self):
         return f"SankeyNode: {self.name} ({self.count})"
+
+
+class SankeySinkNode:
+    def __init__(self, from_period: int):
+        self.name = ""
+        self.count = 1e-5
+        self.period = from_period
+        self.id = Optional[int] = None
+        self.x_pos: Optional[float] = None
+        self.y_pos: Optional[float] = None
+        self.color: list[float] = PLAIN_GRAY_COLOR
+
+    def __str__(self):
+        return f"SankeySinkNode: {self.name} ({self.count})"
 
 
 class SankeyColumn:
@@ -66,9 +81,9 @@ class SankeyColumn:
 
 class SankeyLink:
     def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
-        if self.source.period == self.target.period:
+        if source.period == target.period:
             raise ArgumentValueError("Source and target cannot be in the same period")
-        if self.value <= 0:
+        if value <= 0:
             raise ArgumentValueError("Value must be greater than 0")
         self.source = source
         self.target = target
@@ -82,8 +97,12 @@ class SankeyDiagram:
         columns: Optional[List[SankeyColumn]] = None,
         links: Optional[List[SankeyLink]] = None,
     ):
-        self.columns = self.add_columns(columns) if columns else {}
-        self.links = self.add_links(links) if links else []
+        self.columns = {}
+        self.links = []
+        if columns:
+            self.add_columns(columns)
+        if links:
+            self.add_links(links)
 
     def add_column(self, column: SankeyColumn):
         self.columns[column.period] = column
@@ -124,9 +143,11 @@ class SankeyDiagram:
                         SankeyLink(source=node, target=match, value=node.count)
                     )
             else:
-                outflow = col2.get_or_create_sink_node()
+                sink = col1.get_or_create_sink_node(
+                    source_period=col1.period, target_period=col2.period
+                )
                 self.links.append(
-                    SankeyLink(source=node, target=outflow, value=node.count)
+                    SankeyLink(source=node, target=sink, value=node.count)
                 )
 
     def assign_node_ids(self):
