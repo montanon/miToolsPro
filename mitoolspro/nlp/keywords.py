@@ -7,9 +7,142 @@ import plotly.graph_objects as go
 from pandas import DataFrame
 from plotly.graph_objects import Sankey
 
+from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.pandas_utils import idxslice
 from mitoolspro.utils.decorators import validate_dataframe_structure
 from mitoolspro.utils.validation_templates.sankey import sankey_plot_validation
+
+
+class SankeyNode:
+    def __init__(self, name: str, count: float, period: int, rank: int):
+        self.name = name
+        self.count = count
+        self.period = period
+        self.rank = rank
+        self.id: Optional[int] = None
+        self.x_pos: Optional[float] = None
+        self.y_pos: Optional[float] = None
+
+    def __str__(self):
+        return f"SankeyNode: {self.name} ({self.count})"
+
+
+class SankeyColumn:
+    def __init__(
+        self, name: str, period: int, nodes: Optional[List[SankeyNode]] = None
+    ):
+        self.name = name
+        self.period = period
+        self.nodes: List[SankeyNode] = nodes if nodes else []
+
+    def __str__(self):
+        return f"SankeyColumn: {self.name} ({self.period})"
+
+    def add_node(self, gram: str, count: float, period: int, rank: int):
+        self.nodes.append(SankeyNode(gram, count, period, rank))
+
+    def get_node(self, name: str) -> Optional[SankeyNode]:
+        return next((n for n in self.nodes if n.name == name), None)
+
+    def normalize_positions(self, max_rank: int, x_pos: float):
+        for node in self.nodes:
+            node.x_pos = x_pos
+            node.y_pos = node.rank / max_rank if max_rank > 0 else 0.001
+
+
+class SankeyLink:
+    def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
+        self.source = source
+        self.target = target
+        self.value = value
+
+    def __post_init__(self):
+        if self.source.period == self.target.period:
+            raise ArgumentValueError("Source and target cannot be in the same period")
+        if self.value <= 0:
+            raise ArgumentValueError("Value must be greater than 0")
+
+
+class SankeyDiagram:
+    def __init__(
+        self,
+        columns: Optional[List[SankeyColumn]] = None,
+        links: Optional[List[SankeyLink]] = None,
+    ):
+        self.columns = self.add_columns(columns) if columns else []
+        self.links = self.add_links(links) if links else []
+
+    def add_column(self, column: SankeyColumn):
+        self.columns[column.period] = column
+
+    def add_link(self, link: SankeyLink):
+        if link.source.period not in self.columns:
+            raise ArgumentValueError(f"Source {link.source.name} not in columns")
+        if link.target.period not in self.columns:
+            raise ArgumentValueError(f"Target {link.target.name} not in columns")
+        if link.source not in self.columns[link.source.period].nodes:
+            raise ArgumentValueError(f"Source {link.source.name} not in nodes")
+        if link.target not in self.columns[link.target.period].nodes:
+            raise ArgumentValueError(f"Target {link.target.name} not in nodes")
+        self.links.append(link)
+
+    def add_columns(self, columns: List[SankeyColumn]):
+        for column in columns:
+            self.add_column(column)
+
+    def add_links(self, links: List[SankeyLink]):
+        for link in links:
+            self.add_link(link)
+
+    def connect_columns(self):
+        periods = list(self.columns.keys())
+        for i in range(len(periods) - 1):
+            self._connect_column_pair(
+                self.columns[periods[i]], self.columns[periods[i + 1]]
+            )
+
+    def _connect_column_pair(self, col1: SankeyColumn, col2: SankeyColumn):
+        for node in col1.nodes:
+            match = col2.get_node(node.name)
+            if match:
+                self.links.append(
+                    SankeyLink(source=node, target=match, value=node.count)
+                )
+
+    def assign_node_ids(self):
+        all_nodes = [node for col in self.columns.values() for node in col.nodes]
+        for idx, node in enumerate(all_nodes):
+            node.id = idx
+
+    def normalize_positions(self):
+        periods = list(self.columns.keys())
+        for i, col in enumerate(periods):
+            max_rank = max((node.rank for node in self.columns[col].nodes), default=1)
+            self.columns[col].normalize_positions(
+                max_rank=max_rank, x_pos=i / (len(periods) - 1)
+            )
+
+    def render(self, width: int = 1500, height: int = 500) -> go.Figure:
+        self.assign_node_ids()
+        self.normalize_positions()
+
+        all_nodes = [node for col in self.columns.values() for node in col.nodes]
+        label = [node.name for node in all_nodes]
+        x = [node.x_pos for node in all_nodes]
+        y = [node.y_pos for node in all_nodes]
+
+        source = [link.source.id for link in self.links]
+        target = [link.target.id for link in self.links]
+        value = [link.value for link in self.links]
+
+        sankey_data = go.Sankey(
+            node=dict(label=label, x=x, y=y, pad=20, thickness=20),
+            link=dict(source=source, target=target, value=value),
+            arrangement="fixed",
+        )
+        fig = go.Figure(sankey_data)
+        fig.update_layout(width=width, height=height, font_size=12)
+        return fig
 
 
 def get_yearly_ranges_ngram(
