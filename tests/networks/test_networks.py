@@ -144,6 +144,59 @@ class TestBuildNxGraphs(TestCase):
         self.assertEqual(len(graphs), 0)
         self.assertEqual(len(graph_files), 0)
 
+    def test_gml_file_storage(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            graphs, graph_files = build_nx_graphs(
+                self.proximity_vectors,
+                networks_folder=temp_dir,
+                origin="node_i",
+                destination="node_j",
+                recalculate=True,
+            )
+
+            for key, gml_path in graph_files.items():
+                self.assertTrue(gml_path.exists())
+                self.assertEqual(gml_path.suffix, ".gml")
+                self.assertEqual(gml_path.parent, Path(temp_dir))
+
+                loaded_graph = nx.read_gml(gml_path)
+                self.assertEqual(len(loaded_graph.nodes), len(graphs[key].nodes))
+                self.assertEqual(len(loaded_graph.edges), len(graphs[key].edges))
+
+                for node in graphs[key].nodes:
+                    self.assertIn(node, loaded_graph.nodes)
+
+                for u, v in graphs[key].edges:
+                    self.assertTrue(loaded_graph.has_edge(u, v))
+                    self.assertAlmostEqual(
+                        graphs[key][u][v]["weight"], loaded_graph[u][v]["weight"]
+                    )
+
+    def test_gml_file_reuse(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # First build and store graphs
+            build_nx_graphs(
+                self.proximity_vectors,
+                networks_folder=temp_dir,
+                origin="node_i",
+                destination="node_j",
+                recalculate=True,
+            )
+
+            # Then load existing graphs
+            graphs, graph_files = build_nx_graphs(
+                self.proximity_vectors,
+                networks_folder=temp_dir,
+                origin="node_i",
+                destination="node_j",
+                recalculate=False,
+            )
+
+            for key, gml_path in graph_files.items():
+                self.assertTrue(gml_path.exists())
+                self.assertEqual(gml_path.suffix, ".gml")
+                self.assertEqual(gml_path.parent, Path(temp_dir))
+
 
 class TestBuildMSTGraph(TestCase):
     def setUp(self):
@@ -302,6 +355,62 @@ class TestBuildMSTGraphs(TestCase):
         )
         self.assertEqual(len(graphs), 0)  # No graphs should be built
         self.assertEqual(len(graph_files), 0)
+
+    def test_mst_gml_file_storage(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            graphs, graph_files = build_mst_graphs(
+                self.proximity_vectors,
+                networks_folder=temp_dir,
+                origin="node_i",
+                destination="node_j",
+                attribute="weight",
+                recalculate=True,
+            )
+
+            for key, gml_path in graph_files.items():
+                self.assertTrue(gml_path.exists())
+                self.assertEqual(gml_path.suffix, ".gml")
+                self.assertEqual(gml_path.parent, Path(temp_dir))
+
+                loaded_graph = nx.read_gml(gml_path)
+                self.assertEqual(len(loaded_graph.nodes), len(graphs[key].nodes))
+                self.assertEqual(len(loaded_graph.edges), len(graphs[key].edges))
+
+                for node in graphs[key].nodes:
+                    self.assertIn(node, loaded_graph.nodes)
+
+                for u, v in graphs[key].edges:
+                    self.assertTrue(loaded_graph.has_edge(u, v))
+                    self.assertAlmostEqual(
+                        graphs[key][u][v]["weight"], loaded_graph[u][v]["weight"]
+                    )
+
+    def test_mst_gml_file_reuse(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # First build and store graphs
+            build_mst_graphs(
+                self.proximity_vectors,
+                networks_folder=temp_dir,
+                origin="node_i",
+                destination="node_j",
+                attribute="weight",
+                recalculate=True,
+            )
+
+            # Then load existing graphs
+            graphs, graph_files = build_mst_graphs(
+                self.proximity_vectors,
+                networks_folder=temp_dir,
+                origin="node_i",
+                destination="node_j",
+                attribute="weight",
+                recalculate=False,
+            )
+
+            for key, gml_path in graph_files.items():
+                self.assertTrue(gml_path.exists())
+                self.assertEqual(gml_path.suffix, ".gml")
+                self.assertEqual(gml_path.parent, Path(temp_dir))
 
 
 class TestAssignNetNodesAttributes(TestCase):
@@ -545,6 +654,43 @@ class TestBuildVisGraphs(TestCase):
             physics_kwargs=physics_kwargs,
         )
         self.assertIsInstance(vis_graphs[1], VisNetwork)
+
+    def test_vis_html_file_storage(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vis_graphs, graph_files = build_vis_graphs(
+                self.graphs_data,
+                networks_folder=temp_dir,
+            )
+
+            for key, html_path in graph_files.items():
+                self.assertTrue(html_path.exists())
+                self.assertEqual(html_path.suffix, ".html")
+                self.assertEqual(html_path.parent, Path(temp_dir))
+
+                with open(html_path, "r") as f:
+                    content = f.read()
+                    self.assertIn("vis-network", content)
+                    self.assertIn("nodes", content)
+                    self.assertIn("edges", content)
+
+    def test_vis_html_file_reuse(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # First build and store graphs
+            build_vis_graphs(
+                self.graphs_data,
+                networks_folder=temp_dir,
+            )
+
+            # Then load existing graphs
+            vis_graphs, graph_files = build_vis_graphs(
+                self.graphs_data,
+                networks_folder=temp_dir,
+            )
+
+            for key, html_path in graph_files.items():
+                self.assertTrue(html_path.exists())
+                self.assertEqual(html_path.suffix, ".html")
+                self.assertEqual(html_path.parent, Path(temp_dir))
 
 
 class TestAssignNetEdgesAttributes(TestCase):
