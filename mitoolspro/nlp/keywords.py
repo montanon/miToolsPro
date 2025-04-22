@@ -135,10 +135,10 @@ class SankeyDiagram:
             self.column_order.append(column.period)
             self.column_order.sort()
 
-    def get_column_by_index(self, position: int) -> SankeyColumn:
-        if position < 0 or position >= len(self.column_order):
-            raise ArgumentValueError(f"Position {position} out of range")
-        period = self.column_order[position]
+    def get_column_by_index(self, index: int) -> SankeyColumn:
+        if abs(index) >= len(self.column_order):
+            raise ArgumentValueError(f"Position {index} out of range")
+        period = self.column_order[index]
         return self.columns[period]
 
     def get_column_index(self, period: int) -> int:
@@ -221,7 +221,14 @@ class SankeyDiagram:
         periods = list(self.columns.keys())
         periods.extend(list(self.sink_nodes.keys()))
         positions = self.scale_array(np.array(periods), ascending)
-        for period, x_pos in zip(periods, positions):
+        max_name_length = max(
+            len(name.split(" ")) for name in self.get_column_by_index(-1).names()
+        )
+        for n, period, x_pos in enumerate(zip(periods, positions)):
+            # Heuristic for wider last period with names to the left
+            period = (
+                period if n != len(periods) - 1 else period + 0.25 * max_name_length
+            )
             if period in self.columns:
                 self.columns[period].set_x_positions(x_pos)
             elif period in self.sink_nodes:
@@ -271,16 +278,6 @@ class SankeyDiagram:
         fig = go.Figure(sankey_data)
         fig.update_layout(width=width, height=height, font_size=12)
         return fig
-
-
-def get_yearly_ranges_ngram(
-    yearly_ranges_ngrams: DataFrame, n_gram: str, max_ngram: int
-) -> DataFrame:
-    yearly_ranges_ngram = yearly_ranges_ngrams.loc[
-        :, idxslice(yearly_ranges_ngrams, "n-gram", n_gram, axis=1)
-    ]
-    yearly_ranges_ngram = yearly_ranges_ngram.iloc[:max_ngram, :]
-    return yearly_ranges_ngram
 
 
 def create_grams_data(
@@ -417,14 +414,6 @@ def update_periods_links(
     return periods_links
 
 
-def update_grams_data(grams_data: DataFrame) -> DataFrame:
-    grams_data["x_pos"] = grams_data["x_pos"] / grams_data["x_pos"].max()
-    grams_data["x_pos"] = grams_data["x_pos"].clip(0.001, 0.999)
-    grams_data["y_pos"] = grams_data["y_pos"] / grams_data["y_pos"].max()
-    grams_data["y_pos"] = grams_data["y_pos"].clip(0.001, 0.999)
-    return grams_data
-
-
 def create_sankey_data(
     periods_links: DataFrame,
     grams_data: DataFrame,
@@ -507,7 +496,6 @@ def evolution_sankey_plot_clusters_ngrams(
     periods_links = update_periods_links(
         yearly_ranges_ngram, grams_data, periods, n_gram
     )
-    grams_data = update_grams_data(grams_data)
     fig = create_sankey_data(
         periods_links, grams_data, periods, width=width, height=height
     )
