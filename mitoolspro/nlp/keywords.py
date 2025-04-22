@@ -1,4 +1,5 @@
-from typing import List, Optional
+import json
+from typing import Any, List, Optional
 
 import matplotlib.pyplot as mpl
 import numpy as np
@@ -34,16 +35,20 @@ class SankeyNode:
     def __str__(self):
         return f"SankeyNode: {self.name} ({self.count})"
 
+    def to_dict(self) -> dict[str, Any]:
+        return self.__dict__
 
-class SankeySinkNode:
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "SankeyNode":
+        node = SankeyNode(data["name"], data["count"], data["period"], data["rank"])
+        node.__dict__.update(data)
+        return node
+
+
+class SankeySinkNode(SankeyNode):
     def __init__(self, period: int):
-        self.name = ""
-        self.count = 1e-5
-        self.period = period
-        self.id: Optional[int] = None
-        self.x_pos: Optional[float] = None
-        self.y_pos: Optional[float] = None
-        self.color: Optional[list[float]] = None
+        super().__init__(name="", count=1e-5, period=period, rank=-1)
+        self.color = f"rgba({PLAIN_GRAY_COLOR[0]},{PLAIN_GRAY_COLOR[1]},{PLAIN_GRAY_COLOR[2]},{PLAIN_GRAY_COLOR[3]})"
 
     def __str__(self):
         return f"SankeySinkNode: {self.name} ({self.count})"
@@ -62,6 +67,16 @@ class SankeyLink:
 
     def __str__(self):
         return f"SankeyLink: {self.source.period}:{self.source.name} -> {self.target.period}:{self.target.name} ({self.value})"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source": self.source.name,
+            "target": self.target.name,
+            "source_period": self.source.period,
+            "target_period": self.target.period,
+            "value": self.value,
+            "color": self.color,
+        }
 
 
 class SankeyColumn:
@@ -320,3 +335,42 @@ class SankeyDiagram:
             )
         fig.update_layout(width=width, height=height, font_size=12)
         return fig
+
+    def to_json(self) -> str:
+        data = {
+            "columns": [
+                {
+                    "name": col.name,
+                    "period": col.period,
+                    "nodes": [node.to_dict() for node in col.nodes],
+                }
+                for col in self.columns.values()
+            ],
+            "links": [link.to_dict() for link in self.links + self.sink_links],
+        }
+        return json.dumps(data, indent=2)
+
+    @staticmethod
+    def from_json(json_str: str) -> "SankeyDiagram":
+        data = json.loads(json_str)
+        columns = [
+            SankeyColumn(
+                name=col_data["name"],
+                period=col_data["period"],
+                nodes=[SankeyNode.from_dict(n) for n in col_data["nodes"]],
+            )
+            for col_data in data["columns"]
+        ]
+        diagram = SankeyDiagram(columns)
+        all_nodes = {
+            (node.name, node.period): node
+            for col in diagram.columns.values()
+            for node in col.nodes
+        }
+        for link_data in data["links"]:
+            src = all_nodes[(link_data["source"], link_data["source_period"])]
+            tgt = all_nodes[(link_data["target"], link_data["target_period"])]
+            link = SankeyLink(source=src, target=tgt, value=link_data["value"])
+            link.color = link_data.get("color")
+            diagram.add_link(link)
+        return diagram
