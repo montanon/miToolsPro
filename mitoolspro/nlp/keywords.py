@@ -31,11 +31,11 @@ class SankeyNode:
 
 
 class SankeySinkNode:
-    def __init__(self, from_period: int):
+    def __init__(self, period: int):
         self.name = ""
         self.count = 1e-5
-        self.period = from_period
-        self.id = Optional[int] = None
+        self.period = period
+        self.id: Optional[int] = None
         self.x_pos: Optional[float] = None
         self.y_pos: Optional[float] = None
         self.color: list[float] = PLAIN_GRAY_COLOR
@@ -79,8 +79,6 @@ class SankeyColumn:
     def set_y_positions(self, y_positions: List[float]):
         for node, y_pos in zip(self.nodes, y_positions):
             node.y_pos = y_pos
-   
-
 
 
 class SankeyLink:
@@ -115,15 +113,15 @@ class SankeyDiagram:
         self.columns[column.period] = column
         if column.period not in self.column_order:
             self.column_order.append(column.period)
-            self.column_order.sort()  # Keep periods in order
+            self.column_order.sort()
 
-    def get_column_by_position(self, position: int) -> SankeyColumn:
+    def get_column_by_index(self, position: int) -> SankeyColumn:
         if position < 0 or position >= len(self.column_order):
             raise ArgumentValueError(f"Position {position} out of range")
         period = self.column_order[position]
         return self.columns[period]
 
-    def get_column_position(self, period: int) -> int:
+    def get_column_index(self, period: int) -> int:
         if period not in self.column_order:
             raise ArgumentValueError(f"Period {period} not found")
         return self.column_order.index(period)
@@ -165,9 +163,7 @@ class SankeyDiagram:
                     )
         if self._columns_require_sink(col1, col2):
             between_period = (col1.period + col2.period) / 2
-            self.sink_nodes[between_period] = SankeySinkNode(
-                from_period=col1.period, to_period=col2.period
-            )
+            self.sink_nodes[between_period] = SankeySinkNode(period=between_period)
             for node in col1.nodes:
                 if node.name not in target_names:
                     self.sink_links.append(
@@ -202,29 +198,35 @@ class SankeyDiagram:
         for idx, node in enumerate(all_nodes):
             node.id = idx
 
+    def normalize_x_positions(self, ascending: bool = True):
+        periods = list(self.columns.keys())
+        periods.extend(list(self.sink_nodes.keys()))
+        periods = np.asarray(periods)
+        max_period = np.max(periods)
+        min_period = np.min(periods)
+        if min_period == max_period:
+            positions = np.zeros_like(periods) if ascending else np.ones_like(periods)
+        else:
+            positions = (periods - min_period) / (max_period - min_period)
+            positions = positions if ascending else 1 - positions
+        for period, x_pos in zip(periods, positions):
+            if period in self.columns:
+                self.columns[period].set_x_positions(x_pos)
+            elif period in self.sink_nodes:
+                self.sink_nodes[period].x_pos = x_pos
+
     def normalize_positions(self):
         # TODO: Allow for different length columns
-        periods = list(self.columns.keys())
-        for i, col in enumerate(periods):
-            max_rank = max((node.rank for node in self.columns[col].nodes), default=1)
-            self.columns[col].normalize_positions(
-                max_rank=max_rank, x_pos=i / (len(periods) - 1)
-            )
-        sink_periods = list(self.sink_nodes.keys())
-        for i, period in enumerate(sink_periods):
-                self.sink_nodes[col].x_pos = 
-
-    def normalize_columns_counts(self):
-        pass 
+        for col in self.columns.values():
+            col.normalize_y_positions()
+        self.normalize_x_positions()
 
     def update(self):
-        # TODO: Keeps all data structures up to date
-        pass
+        self.assign_node_ids()
+        self.normalize_positions()
 
     def render(self, width: int = 1500, height: int = 500) -> go.Figure:
         self.update()
-        self.assign_node_ids()
-        self.normalize_positions()
 
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
         all_nodes.extend([node for node in self.sink_nodes.values()])
