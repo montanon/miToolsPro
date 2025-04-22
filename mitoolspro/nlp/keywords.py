@@ -49,7 +49,7 @@ class SankeySinkNode:
         self.id: Optional[int] = None
         self.x_pos: Optional[float] = None
         self.y_pos: Optional[float] = None
-        self.color: list[float] = PLAIN_GRAY_COLOR
+        self.color: Optional[list[float]] = None
 
     def __str__(self):
         return f"SankeySinkNode: {self.name} ({self.count})"
@@ -248,9 +248,35 @@ class SankeyDiagram:
             for node in self.sink_nodes.values():
                 node.y_pos = 0.999 * 1.5
 
+    def scale_array(self, array: np.ndarray, ascending: bool = True) -> np.ndarray:
+        return _scale_array(array, ascending)
+
+    def assign_colors(self, color_map: str = "Spectral_r"):
+        all_names = sorted(
+            {node.name for col in self.columns.values() for node in col.nodes}
+        )
+        cmap = mpl.colormaps[color_map]
+        colors = cmap(np.linspace(0, 1, len(all_names)))
+        label_to_color = {name: color for name, color in zip(all_names, colors)}
+        label_to_color[""] = np.array(PLAIN_GRAY_COLOR)
+
+        for col in self.columns.values():
+            for node in col.nodes:
+                rgba = label_to_color.get(node.name, PLAIN_GRAY_COLOR)
+                node.color = f"rgba({rgba[0]},{rgba[1]},{rgba[2]},{rgba[3]})"
+        for node in self.sink_nodes.values():
+            rgba = label_to_color.get(node.name, PLAIN_GRAY_COLOR)
+            node.color = f"rgba({rgba[0]},{rgba[1]},{rgba[2]},{rgba[3]})"
+
+        for link in self.links + self.sink_links:
+            name = link.source.name if link.source.name != "" else link.target.name
+            rgba = label_to_color.get(name, PLAIN_GRAY_COLOR)
+            link.color = f"rgba({rgba[0]},{rgba[1]},{rgba[2]},{0.5})"
+
     def update(self):
         self.assign_node_ids()
         self.normalize_positions()
+        self.assign_colors()
 
     def render(self, width: int = 1500, height: int = 500) -> go.Figure:
         self.update()
@@ -258,34 +284,30 @@ class SankeyDiagram:
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
         all_nodes.extend([node for node in self.sink_nodes.values()])
         label = [node.name for node in all_nodes]
-        label.extend([node.name for node in self.sink_nodes.values()])
 
         x = [node.x_pos for node in all_nodes]
-        x.extend([node.x_pos for node in self.sink_nodes.values()])
         x = self.scale_array(np.array(x))
 
         y = [node.y_pos for node in all_nodes]
-        y.extend([node.y_pos for node in self.sink_nodes.values()])
         y = self.scale_array(np.array(y))
 
-        source = [link.source.id for link in self.links]
-        source.extend([link.source.id for link in self.sink_links])
-        target = [link.target.id for link in self.links]
-        target.extend([link.target.id for link in self.sink_links])
-        value = [link.value for link in self.links]
-        value.extend([link.value for link in self.sink_links])
+        all_links = self.links + self.sink_links
+
+        node_colors = [node.color for node in all_nodes]
+        link_colors = [link.color for link in all_links]
+
+        source = [link.source.id for link in all_links]
+        target = [link.target.id for link in all_links]
+        value = [link.value for link in all_links]
 
         sankey_data = go.Sankey(
-            node=dict(label=label, x=x, y=y, pad=20, thickness=20),
-            link=dict(source=source, target=target, value=value),
+            node=dict(label=label, x=x, y=y, pad=20, thickness=20, color=node_colors),
+            link=dict(source=source, target=target, value=value, color=link_colors),
             arrangement="fixed",
         )
         fig = go.Figure(sankey_data)
         fig.update_layout(width=width, height=height, font_size=12)
         return fig
-
-    def scale_array(self, array: np.ndarray, ascending: bool = True) -> np.ndarray:
-        return _scale_array(array, ascending)
 
 
 def create_grams_data(
