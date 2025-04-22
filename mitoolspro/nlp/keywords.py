@@ -70,8 +70,7 @@ class SankeyColumn:
         else:
             positions = (ranks - min_rank) / (max_rank - min_rank)
             positions = positions if ascending else 1 - positions
-            positions = positions.clip(0.001, 0.999)
-        positions = [float(pos) for pos in positions.tolist()]
+        positions = positions * 0.998 + 0.001
         self.set_y_positions(positions)
 
     def set_x_positions(self, x_position: float):
@@ -88,6 +87,9 @@ class SankeyColumn:
     def y_positions(self) -> List[float]:
         return [node.y_pos for node in self.nodes]
 
+    def names(self) -> List[str]:
+        return [node.name for node in self.nodes]
+
 
 class SankeyLink:
     def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
@@ -99,6 +101,9 @@ class SankeyLink:
         self.target = target
         self.value = value
         self.color: Optional[str] = None
+
+    def __str__(self):
+        return f"SankeyLink: {self.source.period}:{self.source.name} -> {self.target.period}:{self.target.name} ({self.value})"
 
 
 class SankeyDiagram:
@@ -161,9 +166,8 @@ class SankeyDiagram:
             )
 
     def _connect_column_pair(self, col1: SankeyColumn, col2: SankeyColumn):
-        target_names = {node.name for node in col2.nodes}
         for node in col1.nodes:
-            if node.name in target_names:
+            if node.name in col2.names():
                 match = col2.get_node(node.name)
                 if match:
                     self.links.append(
@@ -173,7 +177,7 @@ class SankeyDiagram:
             between_period = (col1.period + col2.period) / 2
             self.sink_nodes[between_period] = SankeySinkNode(period=between_period)
             for node in col1.nodes:
-                if node.name not in target_names:
+                if node.name not in col2.names():
                     self.sink_links.append(
                         SankeyLink(
                             source=node,
@@ -182,11 +186,11 @@ class SankeyDiagram:
                         )
                     )
             for node in col2.nodes:
-                if node.name not in target_names:
+                if node.name not in col1.names():
                     self.sink_links.append(
                         SankeyLink(
-                            source=node,
-                            target=self.sink_nodes[between_period],
+                            source=self.sink_nodes[between_period],
+                            target=node,
                             value=node.count,
                         )
                     )
@@ -217,8 +221,7 @@ class SankeyDiagram:
         else:
             positions = (periods - min_period) / (max_period - min_period)
             positions = positions if ascending else 1 - positions
-            positions = positions.clip(0.001, 0.999)
-        positions = [float(pos) for pos in positions.tolist()]
+        positions = positions * 0.998 + 0.001
         for period, x_pos in zip(periods, positions):
             if period in self.columns:
                 self.columns[period].set_x_positions(x_pos)
@@ -226,10 +229,12 @@ class SankeyDiagram:
                 self.sink_nodes[period].x_pos = x_pos
 
     def normalize_positions(self):
-        # TODO: Allow for different length columns
         for col in self.columns.values():
             col.normalize_y_positions()
         self.normalize_x_positions()
+        if self.sink_nodes:
+            for node in self.sink_nodes.values():
+                node.y_pos = 0.999 * 1.5
 
     def update(self):
         self.assign_node_ids()
@@ -242,14 +247,25 @@ class SankeyDiagram:
         all_nodes.extend([node for node in self.sink_nodes.values()])
         label = [node.name for node in all_nodes]
         label.extend([node.name for node in self.sink_nodes.values()])
+
         x = [node.x_pos for node in all_nodes]
         x.extend([node.x_pos for node in self.sink_nodes.values()])
+        x = np.array(x)
+        x = (x - np.min(x)) / (np.max(x) - np.min(x))
+        x = x * 0.998 + 0.001
+
         y = [node.y_pos for node in all_nodes]
         y.extend([node.y_pos for node in self.sink_nodes.values()])
+        y = np.array(y)
+        y = (y - np.min(y)) / (np.max(y) - np.min(y))
+        y = y * 0.998 + 0.001
 
         source = [link.source.id for link in self.links]
+        source.extend([link.source.id for link in self.sink_links])
         target = [link.target.id for link in self.links]
+        target.extend([link.target.id for link in self.sink_links])
         value = [link.value for link in self.links]
+        value.extend([link.value for link in self.sink_links])
 
         sankey_data = go.Sankey(
             node=dict(label=label, x=x, y=y, pad=20, thickness=20),
