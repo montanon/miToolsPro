@@ -158,16 +158,26 @@ class SankeyDiagram:
             raise ArgumentValueError(f"Period {period} not found")
         return self.column_order.index(period)
 
+    def _is_sink_node(self, node: SankeyNode) -> bool:
+        return isinstance(node, SankeySinkNode) or (
+            node.name == "" and node.period in self.sink_nodes
+        )
+
     def add_link(self, link: SankeyLink):
-        if link.source.period not in self.columns:
-            raise ArgumentValueError(f"Source {link.source.name} not in columns")
-        if link.target.period not in self.columns:
-            raise ArgumentValueError(f"Target {link.target.name} not in columns")
-        if link.source not in self.columns[link.source.period].nodes:
-            raise ArgumentValueError(f"Source {link.source.name} not in nodes")
-        if link.target not in self.columns[link.target.period].nodes:
-            raise ArgumentValueError(f"Target {link.target.name} not in nodes")
-        self.links.append(link)
+        if not self._is_sink_node(link.source):
+            if link.source.period not in self.columns:
+                raise ArgumentValueError(f"Source {link.source.name} not in columns")
+            if link.source not in self.columns[link.source.period].nodes:
+                raise ArgumentValueError(f"Source {link.source.name} not in nodes")
+        if not self._is_sink_node(link.target):
+            if link.target.period not in self.columns:
+                raise ArgumentValueError(f"Target {link.target.name} not in columns")
+            if link.target not in self.columns[link.target.period].nodes:
+                raise ArgumentValueError(f"Target {link.target.name} not in nodes")
+        if self._is_sink_node(link.source) or self._is_sink_node(link.target):
+            self.sink_links.append(link)
+        else:
+            self.links.append(link)
 
     def add_columns(self, columns: List[SankeyColumn]):
         for column in columns:
@@ -367,9 +377,20 @@ class SankeyDiagram:
             for col in diagram.columns.values()
             for node in col.nodes
         }
+
+        def get_or_create_node(name: str, period: float) -> SankeyNode:
+            key = (name, period)
+            if key in all_nodes:
+                return all_nodes[key]
+            if name == "":
+                if period not in diagram.sink_nodes:
+                    diagram.sink_nodes[period] = SankeySinkNode(period)
+                return diagram.sink_nodes[period]
+            raise KeyError(f"Node {key} not found in loaded data.")
+
         for link_data in data["links"]:
-            src = all_nodes[(link_data["source"], link_data["source_period"])]
-            tgt = all_nodes[(link_data["target"], link_data["target_period"])]
+            src = get_or_create_node(link_data["source"], link_data["source_period"])
+            tgt = get_or_create_node(link_data["target"], link_data["target_period"])
             link = SankeyLink(source=src, target=tgt, value=link_data["value"])
             link.color = link_data.get("color")
             diagram.add_link(link)
