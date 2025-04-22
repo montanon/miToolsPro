@@ -15,6 +15,17 @@ from mitoolspro.utils.validation_templates.sankey import sankey_plot_validation
 PLAIN_GRAY_COLOR = [193 / 255.0, 193 / 255.0, 193 / 255.0, 1.0]
 
 
+def _scale_array(array: np.ndarray, ascending: bool = True) -> np.ndarray:
+    array_max = np.max(array)
+    array_min = np.min(array)
+    if array_max == array_min:
+        array = np.full_like(array, 0.001 if ascending else 0.999)
+    else:
+        array = (array - array_min) / (array_max - array_min)
+        array = array * 0.998 + 0.001 if ascending else 1 - array * 0.998 - 0.001
+    return array
+
+
 class SankeyNode:
     def __init__(self, name: str, count: float, period: int, rank: int):
         self.name = name
@@ -63,14 +74,7 @@ class SankeyColumn:
 
     def normalize_y_positions(self, ascending: bool = True):
         ranks = np.asarray([node.rank for node in self.nodes])
-        max_rank = np.max(ranks)
-        min_rank = np.min(ranks)
-        if min_rank == max_rank:
-            positions = np.full_like(ranks, 0.001 if ascending else 0.999)
-        else:
-            positions = (ranks - min_rank) / (max_rank - min_rank)
-            positions = positions if ascending else 1 - positions
-        positions = positions * 0.998 + 0.001
+        positions = self.scale_array(ranks, ascending)
         self.set_y_positions(positions)
 
     def set_x_positions(self, x_position: float):
@@ -89,6 +93,9 @@ class SankeyColumn:
 
     def names(self) -> List[str]:
         return [node.name for node in self.nodes]
+
+    def scale_array(self, array: np.ndarray, ascending: bool = True) -> np.ndarray:
+        return _scale_array(array, ascending)
 
 
 class SankeyLink:
@@ -213,15 +220,7 @@ class SankeyDiagram:
     def normalize_x_positions(self, ascending: bool = True):
         periods = list(self.columns.keys())
         periods.extend(list(self.sink_nodes.keys()))
-        periods = np.asarray(periods)
-        max_period = np.max(periods)
-        min_period = np.min(periods)
-        if min_period == max_period:
-            positions = np.full_like(periods, 0.001 if ascending else 0.999)
-        else:
-            positions = (periods - min_period) / (max_period - min_period)
-            positions = positions if ascending else 1 - positions
-        positions = positions * 0.998 + 0.001
+        positions = self.scale_array(np.array(periods), ascending)
         for period, x_pos in zip(periods, positions):
             if period in self.columns:
                 self.columns[period].set_x_positions(x_pos)
@@ -243,6 +242,7 @@ class SankeyDiagram:
     def render(self, width: int = 1500, height: int = 500) -> go.Figure:
         self.update()
 
+        # Heuristic for wider last period
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
         all_nodes.extend([node for node in self.sink_nodes.values()])
         label = [node.name for node in all_nodes]
@@ -250,15 +250,11 @@ class SankeyDiagram:
 
         x = [node.x_pos for node in all_nodes]
         x.extend([node.x_pos for node in self.sink_nodes.values()])
-        x = np.array(x)
-        x = (x - np.min(x)) / (np.max(x) - np.min(x))
-        x = x * 0.998 + 0.001
+        x = self.scale_array(np.array(x))
 
         y = [node.y_pos for node in all_nodes]
         y.extend([node.y_pos for node in self.sink_nodes.values()])
-        y = np.array(y)
-        y = (y - np.min(y)) / (np.max(y) - np.min(y))
-        y = y * 0.998 + 0.001
+        y = self.scale_array(np.array(y))
 
         source = [link.source.id for link in self.links]
         source.extend([link.source.id for link in self.sink_links])
