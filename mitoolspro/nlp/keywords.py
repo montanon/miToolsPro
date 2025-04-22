@@ -220,19 +220,25 @@ class SankeyDiagram:
     def normalize_x_positions(self, ascending: bool = True):
         periods = list(self.columns.keys())
         periods.extend(list(self.sink_nodes.keys()))
-        positions = self.scale_array(np.array(periods), ascending)
+        max_period = max(periods)
         max_name_length = max(
             len(name.split(" ")) for name in self.get_column_by_index(-1).names()
         )
-        for n, period, x_pos in enumerate(zip(periods, positions)):
-            # Heuristic for wider last period with names to the left
-            period = (
-                period if n != len(periods) - 1 else period + 0.25 * max_name_length
-            )
+        last_period_extra = 0.25 * max_name_length
+        # Heuristic for wider last period with names to the left
+        periods = [
+            period + last_period_extra if period == max_period else period
+            for period in periods
+        ]
+        positions = self.scale_array(np.array(periods), ascending)
+        for period, x_pos in zip(periods, positions):
             if period in self.columns:
                 self.columns[period].set_x_positions(x_pos)
             elif period in self.sink_nodes:
                 self.sink_nodes[period].x_pos = x_pos
+            # Handle wider last period with names to the left
+            elif period - last_period_extra in self.columns:
+                self.columns[period - last_period_extra].set_x_positions(x_pos)
 
     def normalize_positions(self):
         for col in self.columns.values():
@@ -249,7 +255,6 @@ class SankeyDiagram:
     def render(self, width: int = 1500, height: int = 500) -> go.Figure:
         self.update()
 
-        # Heuristic for wider last period
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
         all_nodes.extend([node for node in self.sink_nodes.values()])
         label = [node.name for node in all_nodes]
@@ -278,6 +283,9 @@ class SankeyDiagram:
         fig = go.Figure(sankey_data)
         fig.update_layout(width=width, height=height, font_size=12)
         return fig
+
+    def scale_array(self, array: np.ndarray, ascending: bool = True) -> np.ndarray:
+        return _scale_array(array, ascending)
 
 
 def create_grams_data(
@@ -433,6 +441,7 @@ def create_sankey_data(
         "target": periods_links["targets_id"].values.tolist(),
         "value": periods_links["values"].values.tolist(),
     }
+
     label_names = sorted(list(set(grams_data["Gram"].values.tolist())))
     colors = mpl.colormaps["Spectral_r"](np.linspace(0, 1, len(label_names)))
     labels_colors = {w: c for w, c in zip(label_names, colors)}
