@@ -61,11 +61,26 @@ class SankeyColumn:
     def get_node(self, name: str) -> Optional[SankeyNode]:
         return next((n for n in self.nodes if n.name == name), None)
 
-    def normalize_positions(self, max_rank: int, x_pos: float):
-        # TODO: Add a reference such that normalization is done from top-to-botom or bottom-to-top
+    def normalize_y_positions(self, ascending: bool = True):
+        ranks = np.asarray([node.rank for node in self.nodes])
+        max_rank = np.max(ranks)
+        min_rank = np.min(ranks)
+        if min_rank == max_rank:
+            positions = np.zeros_like(ranks) if ascending else np.ones_like(ranks)
+        else:
+            positions = (ranks - min_rank) / (max_rank - min_rank)
+            positions = positions if ascending else 1 - positions
+        self.set_y_positions(positions)
+
+    def set_x_positions(self, x_position: float):
         for node in self.nodes:
-            node.x_pos = x_pos
-            node.y_pos = node.rank / max_rank if max_rank > 0 else 0.001
+            node.x_pos = x_position
+
+    def set_y_positions(self, y_positions: List[float]):
+        for node, y_pos in zip(self.nodes, y_positions):
+            node.y_pos = y_pos
+   
+
 
 
 class SankeyLink:
@@ -183,6 +198,7 @@ class SankeyDiagram:
 
     def assign_node_ids(self):
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
+        all_nodes.extend([node for node in self.sink_nodes.values()])
         for idx, node in enumerate(all_nodes):
             node.id = idx
 
@@ -194,9 +210,12 @@ class SankeyDiagram:
             self.columns[col].normalize_positions(
                 max_rank=max_rank, x_pos=i / (len(periods) - 1)
             )
+        sink_periods = list(self.sink_nodes.keys())
+        for i, period in enumerate(sink_periods):
+                self.sink_nodes[col].x_pos = 
 
     def normalize_columns_counts(self):
-        pass
+        pass 
 
     def update(self):
         # TODO: Keeps all data structures up to date
@@ -208,9 +227,13 @@ class SankeyDiagram:
         self.normalize_positions()
 
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
+        all_nodes.extend([node for node in self.sink_nodes.values()])
         label = [node.name for node in all_nodes]
+        label.extend([node.name for node in self.sink_nodes.values()])
         x = [node.x_pos for node in all_nodes]
+        x.extend([node.x_pos for node in self.sink_nodes.values()])
         y = [node.y_pos for node in all_nodes]
+        y.extend([node.y_pos for node in self.sink_nodes.values()])
 
         source = [link.source.id for link in self.links]
         target = [link.target.id for link in self.links]
