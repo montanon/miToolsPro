@@ -55,6 +55,21 @@ class SankeySinkNode:
         return f"SankeySinkNode: {self.name} ({self.count})"
 
 
+class SankeyLink:
+    def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
+        if source.period == target.period:
+            raise ArgumentValueError("Source and target cannot be in the same period")
+        if value <= 0:
+            raise ArgumentValueError("Value must be greater than 0")
+        self.source = source
+        self.target = target
+        self.value = value
+        self.color: Optional[str] = None
+
+    def __str__(self):
+        return f"SankeyLink: {self.source.period}:{self.source.name} -> {self.target.period}:{self.target.name} ({self.value})"
+
+
 class SankeyColumn:
     def __init__(
         self, name: str, period: int, nodes: Optional[List[SankeyNode]] = None
@@ -96,21 +111,6 @@ class SankeyColumn:
 
     def scale_array(self, array: np.ndarray, ascending: bool = True) -> np.ndarray:
         return _scale_array(array, ascending)
-
-
-class SankeyLink:
-    def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
-        if source.period == target.period:
-            raise ArgumentValueError("Source and target cannot be in the same period")
-        if value <= 0:
-            raise ArgumentValueError("Value must be greater than 0")
-        self.source = source
-        self.target = target
-        self.value = value
-        self.color: Optional[str] = None
-
-    def __str__(self):
-        return f"SankeyLink: {self.source.period}:{self.source.name} -> {self.target.period}:{self.target.name} ({self.value})"
 
 
 class SankeyDiagram:
