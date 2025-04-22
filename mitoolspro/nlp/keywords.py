@@ -304,14 +304,18 @@ class SankeyDiagram:
         )
         fig = go.Figure(sankey_data)
         for col in self.columns.values():
+            if len(col.name) > 20:
+                column_label = col.name[:17] + "..."
+            else:
+                column_label = col.name
             fig.add_annotation(
                 dict(
                     font=dict(color="black", size=14, family="Helvetica, sans-serif"),
-                    x=col.x_position() - 0.001 * len(col.name),
+                    x=col.x_position(),
                     y=1.25,
                     showarrow=False,
                     xanchor="center",
-                    text=f"<b>{col.name}</b>",
+                    text=f"<b>{column_label}</b>",
                 )
             )
         fig.update_layout(width=width, height=height, font_size=12)
