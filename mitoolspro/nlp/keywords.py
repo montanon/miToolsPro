@@ -51,7 +51,6 @@ class SankeyColumn:
         self.name = name
         self.period = period
         self.nodes: List[SankeyNode] = nodes if nodes else []
-        self.requires_sink: bool = False
 
     def __str__(self):
         return f"SankeyColumn: {self.name} ({self.period})"
@@ -151,6 +150,15 @@ class SankeyDiagram:
             else:
                 col1.requires_sink = True
 
+    def _columns_require_sink(self, col1: SankeyColumn, col2: SankeyColumn) -> bool:
+        case1 = any(
+            node.name not in {n.name for n in col2.nodes} for node in col1.nodes
+        )
+        case2 = any(
+            node.name not in {n.name for n in col1.nodes} for node in col2.nodes
+        )
+        return case1 or case2
+
     def assign_node_ids(self):
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
         for idx, node in enumerate(all_nodes):
@@ -168,7 +176,12 @@ class SankeyDiagram:
     def normalize_columns_counts(self):
         pass
 
+    def update(self):
+        # TODO: Keeps all data structures up to date
+        pass
+
     def render(self, width: int = 1500, height: int = 500) -> go.Figure:
+        self.update()
         self.assign_node_ids()
         self.normalize_positions()
 
