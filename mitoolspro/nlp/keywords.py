@@ -51,7 +51,7 @@ class SankeyColumn:
         self.name = name
         self.period = period
         self.nodes: List[SankeyNode] = nodes if nodes else []
-        self._sink_node: Optional[SankeyNode] = None
+        self.requires_sink: bool = False
 
     def __str__(self):
         return f"SankeyColumn: {self.name} ({self.period})"
@@ -63,20 +63,10 @@ class SankeyColumn:
         return next((n for n in self.nodes if n.name == name), None)
 
     def normalize_positions(self, max_rank: int, x_pos: float):
+        # TODO: Add a reference such that normalization is done from top-to-botom or bottom-to-top
         for node in self.nodes:
             node.x_pos = x_pos
             node.y_pos = node.rank / max_rank if max_rank > 0 else 0.001
-
-    def get_or_create_sink_node(self) -> SankeyNode:
-        if self._sink_node is None:
-            max_rank = max((n.rank for n in self.nodes), default=0)
-            node = SankeyNode(
-                name="", count=1e-5, period=self.period, rank=max_rank + 3
-            )
-            node.is_sink = True
-            self.nodes.append(node)
-            self._sink_node = node
-        return self._sink_node
 
 
 class SankeyLink:
@@ -98,14 +88,30 @@ class SankeyDiagram:
         links: Optional[List[SankeyLink]] = None,
     ):
         self.columns = {}
+        self.column_order = []
         self.links = []
         if columns:
             self.add_columns(columns)
         if links:
             self.add_links(links)
+        self.sink_nodes = {}
 
     def add_column(self, column: SankeyColumn):
         self.columns[column.period] = column
+        if column.period not in self.column_order:
+            self.column_order.append(column.period)
+            self.column_order.sort()  # Keep periods in order
+
+    def get_column_by_position(self, position: int) -> SankeyColumn:
+        if position < 0 or position >= len(self.column_order):
+            raise ArgumentValueError(f"Position {position} out of range")
+        period = self.column_order[position]
+        return self.columns[period]
+
+    def get_column_position(self, period: int) -> int:
+        if period not in self.column_order:
+            raise ArgumentValueError(f"Period {period} not found")
+        return self.column_order.index(period)
 
     def add_link(self, link: SankeyLink):
         if link.source.period not in self.columns:
@@ -143,12 +149,7 @@ class SankeyDiagram:
                         SankeyLink(source=node, target=match, value=node.count)
                     )
             else:
-                sink = col1.get_or_create_sink_node(
-                    source_period=col1.period, target_period=col2.period
-                )
-                self.links.append(
-                    SankeyLink(source=node, target=sink, value=node.count)
-                )
+                col1.requires_sink = True
 
     def assign_node_ids(self):
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
@@ -156,12 +157,16 @@ class SankeyDiagram:
             node.id = idx
 
     def normalize_positions(self):
+        # TODO: Allow for different length columns
         periods = list(self.columns.keys())
         for i, col in enumerate(periods):
             max_rank = max((node.rank for node in self.columns[col].nodes), default=1)
             self.columns[col].normalize_positions(
                 max_rank=max_rank, x_pos=i / (len(periods) - 1)
             )
+
+    def normalize_columns_counts(self):
+        pass
 
     def render(self, width: int = 1500, height: int = 500) -> go.Figure:
         self.assign_node_ids()
