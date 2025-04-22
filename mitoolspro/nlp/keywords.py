@@ -94,6 +94,7 @@ class SankeyDiagram:
         if links:
             self.add_links(links)
         self.sink_nodes = {}
+        self.sink_links = []
 
     def add_column(self, column: SankeyColumn):
         self.columns[column.period] = column
@@ -147,8 +148,29 @@ class SankeyDiagram:
                     self.links.append(
                         SankeyLink(source=node, target=match, value=node.count)
                     )
-            else:
-                col1.requires_sink = True
+        if self._columns_require_sink(col1, col2):
+            between_period = (col1.period + col2.period) / 2
+            self.sink_nodes[between_period] = SankeySinkNode(
+                from_period=col1.period, to_period=col2.period
+            )
+            for node in col1.nodes:
+                if node.name not in target_names:
+                    self.sink_links.append(
+                        SankeyLink(
+                            source=node,
+                            target=self.sink_nodes[between_period],
+                            value=node.count,
+                        )
+                    )
+            for node in col2.nodes:
+                if node.name not in target_names:
+                    self.sink_links.append(
+                        SankeyLink(
+                            source=node,
+                            target=self.sink_nodes[between_period],
+                            value=node.count,
+                        )
+                    )
 
     def _columns_require_sink(self, col1: SankeyColumn, col2: SankeyColumn) -> bool:
         case1 = any(
