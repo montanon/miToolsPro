@@ -66,10 +66,12 @@ class SankeyColumn:
         max_rank = np.max(ranks)
         min_rank = np.min(ranks)
         if min_rank == max_rank:
-            positions = np.zeros_like(ranks) if ascending else np.ones_like(ranks)
+            positions = np.full_like(ranks, 0.001 if ascending else 0.999)
         else:
             positions = (ranks - min_rank) / (max_rank - min_rank)
             positions = positions if ascending else 1 - positions
+            positions = positions.clip(0.001, 0.999)
+        positions = [float(pos) for pos in positions.tolist()]
         self.set_y_positions(positions)
 
     def set_x_positions(self, x_position: float):
@@ -79,6 +81,12 @@ class SankeyColumn:
     def set_y_positions(self, y_positions: List[float]):
         for node, y_pos in zip(self.nodes, y_positions):
             node.y_pos = y_pos
+
+    def x_positions(self) -> List[float]:
+        return [node.x_pos for node in self.nodes]
+
+    def y_positions(self) -> List[float]:
+        return [node.y_pos for node in self.nodes]
 
 
 class SankeyLink:
@@ -205,10 +213,12 @@ class SankeyDiagram:
         max_period = np.max(periods)
         min_period = np.min(periods)
         if min_period == max_period:
-            positions = np.zeros_like(periods) if ascending else np.ones_like(periods)
+            positions = np.full_like(periods, 0.001 if ascending else 0.999)
         else:
             positions = (periods - min_period) / (max_period - min_period)
             positions = positions if ascending else 1 - positions
+            positions = positions.clip(0.001, 0.999)
+        positions = [float(pos) for pos in positions.tolist()]
         for period, x_pos in zip(periods, positions):
             if period in self.columns:
                 self.columns[period].set_x_positions(x_pos)
