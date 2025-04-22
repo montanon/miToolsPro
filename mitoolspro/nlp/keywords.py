@@ -1,8 +1,9 @@
 import json
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import matplotlib.pyplot as mpl
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 
 from mitoolspro.exceptions import ArgumentValueError
@@ -394,4 +395,96 @@ class SankeyDiagram:
             link = SankeyLink(source=src, target=tgt, value=link_data["value"])
             link.color = link_data.get("color")
             diagram.add_link(link)
+        return diagram
+
+    def to_dataframe(
+        self, include_links: bool = True
+    ) -> Union[pd.DataFrame, tuple[pd.DataFrame, pd.DataFrame]]:
+        node_rows = []
+        for col in self.columns.values():
+            for node in col.nodes:
+                node_rows.append(
+                    {
+                        "name": node.name,
+                        "count": node.count,
+                        "period": node.period,
+                        "rank": node.rank,
+                        "x_pos": node.x_pos,
+                        "y_pos": node.y_pos,
+                        "color": node.color,
+                        "is_sink": False,
+                    }
+                )
+        for node in self.sink_nodes.values():
+            node_rows.append(
+                {
+                    "name": node.name,
+                    "count": node.count,
+                    "period": node.period,
+                    "rank": node.rank,
+                    "x_pos": node.x_pos,
+                    "y_pos": node.y_pos,
+                    "color": node.color,
+                    "is_sink": True,
+                }
+            )
+        if include_links:
+            link_rows = [
+                {
+                    "source_name": link.source.name,
+                    "source_period": link.source.period,
+                    "target_name": link.target.name,
+                    "target_period": link.target.period,
+                    "value": link.value,
+                    "color": link.color,
+                }
+                for link in self.links + self.sink_links
+            ]
+            return pd.DataFrame(node_rows), pd.DataFrame(link_rows)
+        else:
+            return pd.DataFrame(node_rows)
+
+    @staticmethod
+    def from_dataframe(
+        node_df: pd.DataFrame, link_df: Optional[pd.DataFrame] = None
+    ) -> "SankeyDiagram":
+        columns: dict[int, SankeyColumn] = {}
+        node_map: dict[tuple[str, float], SankeyNode] = {}
+        sink_nodes: dict[float, SankeySinkNode] = {}
+
+        for _, row in node_df.iterrows():
+            name, period = row["name"], row["period"]
+            if row.get("is_sink", False):
+                node = SankeySinkNode(period=period)
+            else:
+                node = SankeyNode(name, row["count"], period, row["rank"])
+
+            node.x_pos = row.get("x_pos")
+            node.y_pos = row.get("y_pos")
+            node.color = row.get("color")
+
+            node_map[(name, period)] = node
+
+            if isinstance(node, SankeySinkNode):
+                sink_nodes[period] = node
+            else:
+                if period not in columns:
+                    columns[period] = SankeyColumn(
+                        name=f"Period {period}", period=period
+                    )
+                columns[period].nodes.append(node)
+
+        diagram = SankeyDiagram(columns=list(columns.values()))
+        diagram.sink_nodes = sink_nodes
+
+        if link_df is not None:
+            for _, row in link_df.iterrows():
+                src = node_map[(row["source_name"], row["source_period"])]
+                tgt = node_map[(row["target_name"], row["target_period"])]
+                link = SankeyLink(src, tgt, row["value"])
+                link.color = row.get("color")
+                diagram.add_link(link)
+        else:
+            diagram.connect_columns()
+
         return diagram
