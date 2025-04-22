@@ -405,6 +405,7 @@ class SankeyDiagram:
             for node in col.nodes:
                 node_rows.append(
                     {
+                        "column_name": col.name,
                         "name": node.name,
                         "count": node.count,
                         "period": node.period,
@@ -468,10 +469,9 @@ class SankeyDiagram:
             if isinstance(node, SankeySinkNode):
                 sink_nodes[period] = node
             else:
+                col_name = row.get("column_name", f"Period {period}")
                 if period not in columns:
-                    columns[period] = SankeyColumn(
-                        name=f"Period {period}", period=period
-                    )
+                    columns[period] = SankeyColumn(name=col_name, period=period)
                 columns[period].nodes.append(node)
 
         diagram = SankeyDiagram(columns=list(columns.values()))
