@@ -2,15 +2,9 @@ from typing import List, Optional
 
 import matplotlib.pyplot as mpl
 import numpy as np
-import pandas as pd
 import plotly.graph_objects as go
-from pandas import DataFrame
-from plotly.graph_objects import Sankey
 
 from mitoolspro.exceptions import ArgumentValueError
-from mitoolspro.pandas_utils import idxslice
-from mitoolspro.utils.decorators import validate_dataframe_structure
-from mitoolspro.utils.validation_templates.sankey import sankey_plot_validation
 
 PLAIN_GRAY_COLOR = [193 / 255.0, 193 / 255.0, 193 / 255.0, 1.0]
 
