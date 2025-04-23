@@ -12,6 +12,7 @@ PLAIN_GRAY_COLOR = [193 / 255.0, 193 / 255.0, 193 / 255.0, 1.0]
 
 
 def _scale_array(array: np.ndarray, ascending: bool = True) -> np.ndarray:
+    array = array.astype(np.float64)
     array_max = np.max(array)
     array_min = np.min(array)
     if array_max == array_min:
