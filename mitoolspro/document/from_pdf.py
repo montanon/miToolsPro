@@ -176,27 +176,37 @@ def extract_lines_from_pdf(line_obj: LTTextLineHorizontal) -> Line:
                 cchar = CID_MAPPING.get(
                     cchar, ""
                 )  # Convert CID to actual character or empty string if unknown
-            if (
-                current_run is None
-                or current_run.fontname != cfont
-                or not isclose(current_run.size, csize, abs_tol=CHAR_SIZE_TOLERANCE)
-            ):
-                if current_run:
-                    line.add_run(current_run)
-                current_run = Run(cfont, csize)
-            current_run.append_char(
-                Char(
-                    cchar,
-                    cfont,
-                    csize,
-                    BBox(char_obj.x0, char_obj.y0, char_obj.x1, char_obj.y1),
+            try:
+                cchar = cchar.encode("utf-8", errors="ignore").decode("utf-8")
+                if (
+                    current_run is None
+                    or current_run.fontname != cfont
+                    or not isclose(current_run.size, csize, abs_tol=CHAR_SIZE_TOLERANCE)
+                ):
+                    if current_run:
+                        line.add_run(current_run)
+                    current_run = Run(cfont, csize)
+                current_run.append_char(
+                    Char(
+                        cchar,
+                        cfont,
+                        csize,
+                        BBox(char_obj.x0, char_obj.y0, char_obj.x1, char_obj.y1),
+                    )
                 )
-            )
+            except Exception:
+                continue  # Skip problematic characters
         elif isinstance(char_obj, LTAnno) and current_run:
             space = char_obj.get_text()
-            current_run.append_char(
-                Char(space, current_run.fontname, current_run.size, BBox(0, 0, 0, 0))
-            )
+            try:
+                space = space.encode("utf-8", errors="ignore").decode("utf-8")
+                current_run.append_char(
+                    Char(
+                        space, current_run.fontname, current_run.size, BBox(0, 0, 0, 0)
+                    )
+                )
+            except Exception:
+                continue  # Skip problematic spaces
     if current_run:
         line.add_run(current_run)
     return line
