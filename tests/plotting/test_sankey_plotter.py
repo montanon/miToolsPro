@@ -228,22 +228,23 @@ class TestSankeyPlotter(unittest.TestCase):
         self.node2 = SankeyNode("Node2", 5.0, 2, 1)
         self.column1.nodes = [self.node1]
         self.column2.nodes = [self.node2]
+        self.plotter.add_column(self.column1)
+        self.plotter.add_column(self.column2)
 
     def test_initialization(self):
-        self.assertEqual(self.plotter.columns, {})
-        self.assertEqual(self.plotter.column_order, [])
+        self.assertEqual(self.plotter.columns, {1: self.column1, 2: self.column2})
+        self.assertEqual(self.plotter.column_order, [1, 2])
         self.assertEqual(self.plotter.links, [])
         self.assertEqual(self.plotter.sink_nodes, {})
         self.assertEqual(self.plotter.sink_links, [])
 
     def test_add_column(self):
-        self.plotter.add_column(self.column1)
-        self.assertEqual(self.plotter.columns[1], self.column1)
-        self.assertEqual(self.plotter.column_order, [1])
+        new_plotter = SankeyPlotter()
+        new_plotter.add_column(self.column1)
+        self.assertEqual(new_plotter.columns[1], self.column1)
+        self.assertEqual(new_plotter.column_order, [1])
 
     def test_get_column_by_index(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         result = self.plotter.get_column_by_index(0)
         self.assertEqual(result, self.column1)
         result = self.plotter.get_column_by_index(-1)
@@ -252,26 +253,23 @@ class TestSankeyPlotter(unittest.TestCase):
             self.plotter.get_column_by_index(2)
 
     def test_get_column_index(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         self.assertEqual(self.plotter.get_column_index(1), 0)
         self.assertEqual(self.plotter.get_column_index(2), 1)
         with self.assertRaises(ArgumentValueError):
             self.plotter.get_column_index(3)
 
     def test_add_link(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         link = SankeyLink(self.node1, self.node2, 5.0)
         self.plotter.add_link(link)
         self.assertEqual(len(self.plotter.links), 1)
         self.assertEqual(self.plotter.links[0], link)
 
     def test_add_columns(self):
-        self.plotter.add_columns([self.column1, self.column2])
-        self.assertEqual(self.plotter.columns[1], self.column1)
-        self.assertEqual(self.plotter.columns[2], self.column2)
-        self.assertEqual(self.plotter.column_order, [1, 2])
+        new_plotter = SankeyPlotter()
+        new_plotter.add_columns([self.column1, self.column2])
+        self.assertEqual(new_plotter.columns[1], self.column1)
+        self.assertEqual(new_plotter.columns[2], self.column2)
+        self.assertEqual(new_plotter.column_order, [1, 2])
 
     def test_add_links(self):
         link1 = SankeyLink(self.node1, self.node2, 5.0)
@@ -282,29 +280,21 @@ class TestSankeyPlotter(unittest.TestCase):
         self.assertEqual(self.plotter.links[1], link2)
 
     def test_connect_columns(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         self.plotter.connect_columns()
         self.assertEqual(len(self.plotter.links), 0)
-        self.assertEqual(len(self.plotter.sink_links), 0)
+        self.assertEqual(len(self.plotter.sink_links), 2)
 
     def test_assign_node_ids(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         self.plotter.assign_node_ids()
         self.assertEqual(self.node1.id, 0)
         self.assertEqual(self.node2.id, 1)
 
     def test_normalize_x_positions(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         self.plotter.normalize_x_positions()
         self.assertTrue(0.001 <= self.node1.x_pos <= 0.999)
         self.assertTrue(0.001 <= self.node2.x_pos <= 0.999)
 
     def test_normalize_positions(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         self.plotter.normalize_positions()
         self.assertTrue(0.001 <= self.node1.x_pos <= 0.999)
         self.assertTrue(0.001 <= self.node1.y_pos <= 0.999)
@@ -312,30 +302,28 @@ class TestSankeyPlotter(unittest.TestCase):
         self.assertTrue(0.001 <= self.node2.y_pos <= 0.999)
 
     def test_assign_colors(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         self.plotter.assign_colors()
         self.assertIsNotNone(self.node1.color)
         self.assertIsNotNone(self.node2.color)
 
     def test_to_json(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         json_str = self.plotter.to_json()
         data = json.loads(json_str)
         self.assertEqual(len(data["columns"]), 2)
         self.assertEqual(data["columns"][0]["name"], "Column1")
         self.assertEqual(data["columns"][1]["name"], "Column2")
+        self.assertEqual(len(data["columns"][0]["nodes"]), 1)
+        self.assertEqual(len(data["columns"][1]["nodes"]), 1)
 
     def test_from_json(self):
         json_str = self.plotter.to_json()
         new_plotter = SankeyPlotter.from_json(json_str)
         self.assertEqual(len(new_plotter.columns), 2)
         self.assertEqual(new_plotter.column_order, [1, 2])
+        self.assertEqual(len(new_plotter.columns[1].nodes), 1)
+        self.assertEqual(len(new_plotter.columns[2].nodes), 1)
 
     def test_to_dataframe(self):
-        self.plotter.add_column(self.column1)
-        self.plotter.add_column(self.column2)
         node_df, link_df = self.plotter.to_dataframe(include_links=True)
         self.assertEqual(len(node_df), 2)
         self.assertEqual(len(link_df), 0)
