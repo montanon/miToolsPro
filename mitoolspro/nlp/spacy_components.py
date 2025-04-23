@@ -689,3 +689,20 @@ def create_doc_token_extractor(
     return DocTokenExtractor(
         nlp, attribute, n_grams, keep_stop_words, drop_punctuation, lowercase, lemmatize
     )
+
+
+@Language.factory("sentence_indices")
+def create_cache_sentence_indices(nlp: Language, name: str):
+    if not Doc.has_extension("sents_list"):
+        Doc.set_extension("sents_list", default=None)
+    if not Span.has_extension("index"):
+        Span.set_extension("index", default=None)
+
+    def cache_sentence_indices(doc: Doc) -> Doc:
+        sents = list(doc.sents)
+        doc._.sents_list = sents
+        for i, sent in enumerate(sents):
+            sent._.index = i
+        return doc
+
+    return cache_sentence_indices

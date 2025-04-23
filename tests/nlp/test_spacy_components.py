@@ -1402,5 +1402,48 @@ class TestPipelineFunctionality(unittest.TestCase):
         self.assertEqual(docs[0]._.tokens[2].count("the quick"), 1)
 
 
+class TestSentenceIndices(unittest.TestCase):
+    def setUp(self):
+        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp.add_pipe("sentence_indices")
+
+    def test_sentence_indices_basic(self):
+        doc = self.nlp("This is the first sentence. This is the second sentence.")
+        self.assertEqual(len(doc._.sents_list), 2)
+        self.assertEqual(doc._.sents_list[0]._.index, 0)
+        self.assertEqual(doc._.sents_list[1]._.index, 1)
+        self.assertEqual(doc._.sents_list[0].text, "This is the first sentence.")
+        self.assertEqual(doc._.sents_list[1].text, "This is the second sentence.")
+
+    def test_sentence_indices_single_sentence(self):
+        doc = self.nlp("This is a single sentence.")
+        self.assertEqual(len(doc._.sents_list), 1)
+        self.assertEqual(doc._.sents_list[0]._.index, 0)
+        self.assertEqual(doc._.sents_list[0].text, "This is a single sentence.")
+
+    def test_sentence_indices_empty_doc(self):
+        doc = self.nlp("")
+        self.assertEqual(len(doc._.sents_list), 0)
+
+    def test_sentence_indices_multiple_sentences(self):
+        doc = self.nlp("First. Second. Third. Fourth.")
+        self.assertEqual(len(doc._.sents_list), 4)
+        for i, sent in enumerate(doc._.sents_list):
+            self.assertEqual(sent._.index, i)
+            self.assertEqual(sent.text, ["First.", "Second.", "Third.", "Fourth."][i])
+
+    def test_sentence_indices_pipeline(self):
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe("sentence_indices")
+        docs = list(nlp.pipe(["First. Second.", "Third. Fourth."]))
+        self.assertEqual(len(docs), 2)
+        self.assertEqual(len(docs[0]._.sents_list), 2)
+        self.assertEqual(len(docs[1]._.sents_list), 2)
+        self.assertEqual(docs[0]._.sents_list[0]._.index, 0)
+        self.assertEqual(docs[0]._.sents_list[1]._.index, 1)
+        self.assertEqual(docs[1]._.sents_list[0]._.index, 0)
+        self.assertEqual(docs[1]._.sents_list[1]._.index, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
