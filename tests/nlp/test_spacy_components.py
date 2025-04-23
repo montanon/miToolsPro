@@ -1410,16 +1410,16 @@ class TestSentenceIndices(unittest.TestCase):
     def test_sentence_indices_basic(self):
         doc = self.nlp("This is the first sentence. This is the second sentence.")
         self.assertEqual(len(doc._.sents_list), 2)
-        self.assertEqual(doc._.sents_list[0]._.index, 0)
-        self.assertEqual(doc._.sents_list[1]._.index, 1)
-        self.assertEqual(doc._.sents_list[0].text, "This is the first sentence.")
-        self.assertEqual(doc._.sents_list[1].text, "This is the second sentence.")
+        self.assertEqual(doc._.sents_list[0][0], "This is the first sentence.")
+        self.assertEqual(doc._.sents_list[1][0], "This is the second sentence.")
+        for i, sent in enumerate(list(doc.sents)):
+            self.assertEqual(sent._.index, i)
 
     def test_sentence_indices_single_sentence(self):
         doc = self.nlp("This is a single sentence.")
         self.assertEqual(len(doc._.sents_list), 1)
-        self.assertEqual(doc._.sents_list[0]._.index, 0)
-        self.assertEqual(doc._.sents_list[0].text, "This is a single sentence.")
+        self.assertEqual(doc._.sents_list[0][0], "This is a single sentence.")
+        self.assertEqual(list(doc.sents)[0]._.index, 0)
 
     def test_sentence_indices_empty_doc(self):
         doc = self.nlp("")
@@ -1428,9 +1428,9 @@ class TestSentenceIndices(unittest.TestCase):
     def test_sentence_indices_multiple_sentences(self):
         doc = self.nlp("First. Second. Third. Fourth.")
         self.assertEqual(len(doc._.sents_list), 4)
-        for i, sent in enumerate(doc._.sents_list):
-            self.assertEqual(sent._.index, i)
-            self.assertEqual(sent.text, ["First.", "Second.", "Third.", "Fourth."][i])
+        for i, (text, start, end) in enumerate(doc._.sents_list):
+            self.assertEqual(text, ["First.", "Second.", "Third.", "Fourth."][i])
+            self.assertEqual(list(doc.sents)[i]._.index, i)
 
     def test_sentence_indices_pipeline(self):
         nlp = spacy.load("en_core_web_sm")
@@ -1439,10 +1439,14 @@ class TestSentenceIndices(unittest.TestCase):
         self.assertEqual(len(docs), 2)
         self.assertEqual(len(docs[0]._.sents_list), 2)
         self.assertEqual(len(docs[1]._.sents_list), 2)
-        self.assertEqual(docs[0]._.sents_list[0]._.index, 0)
-        self.assertEqual(docs[0]._.sents_list[1]._.index, 1)
-        self.assertEqual(docs[1]._.sents_list[0]._.index, 0)
-        self.assertEqual(docs[1]._.sents_list[1]._.index, 1)
+        self.assertEqual(docs[0]._.sents_list[0][0], "First.")
+        self.assertEqual(docs[0]._.sents_list[1][0], "Second.")
+        self.assertEqual(docs[1]._.sents_list[0][0], "Third.")
+        self.assertEqual(docs[1]._.sents_list[1][0], "Fourth.")
+        for i, sent in enumerate(list(docs[0].sents)):
+            self.assertEqual(sent._.index, i)
+        for i, sent in enumerate(list(docs[1].sents)):
+            self.assertEqual(sent._.index, i)
 
 
 if __name__ == "__main__":
