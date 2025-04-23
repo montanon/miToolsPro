@@ -85,25 +85,26 @@ def extract_images_from_pdf(
                     if xref not in xref_to_info:
                         continue
 
-                    pix = fitz.Pixmap(doc, xref)
-                    if pix.n - pix.alpha > 3:
-                        pix = fitz.Pixmap(fitz.csRGB, pix)
+                    try:
+                        pix = fitz.Pixmap(doc, xref)
+                        if pix.n - pix.alpha > 3:
+                            pix = fitz.Pixmap(fitz.csRGB, pix)
 
-                    img_bytes = pix.tobytes(image_extension)
-                    count = found_xrefs.get(xref, 0)
-                    name = (
-                        f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
-                    )
+                        img_bytes = pix.tobytes(image_extension)
+                        count = found_xrefs.get(xref, 0)
+                        name = f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
 
-                    box = build_image_box(
-                        bbox=bbox,
-                        img_bytes=img_bytes,
-                        name=name,
-                        mimetype=f"image/{image_extension}",
-                    )
-                    boxes.append(box)
-                    found_xrefs[xref] = count + 1
-                    processed_blocks.add(block_idx)
+                        box = build_image_box(
+                            bbox=bbox,
+                            img_bytes=img_bytes,
+                            name=name,
+                            mimetype=f"image/{image_extension}",
+                        )
+                        boxes.append(box)
+                        found_xrefs[xref] = count + 1
+                        processed_blocks.add(block_idx)
+                    except Exception:
+                        continue  # Skip problematic images
 
                 except Exception:
                     continue  # skip problematic images
@@ -132,29 +133,36 @@ def extract_images_from_pdf(
                         if xref not in xref_to_info:
                             continue
 
-                        pix = fitz.Pixmap(doc, xref)
-                        if pix.n - pix.alpha > 3:
-                            pix = fitz.Pixmap(fitz.csRGB, pix)
+                        try:
+                            pix = fitz.Pixmap(doc, xref)
+                            if pix.n - pix.alpha > 3:
+                                pix = fitz.Pixmap(fitz.csRGB, pix)
 
-                        img_bytes = pix.tobytes(image_extension)
-                        count = found_xrefs.get(xref, 0)
-                        name = f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
+                            img_bytes = pix.tobytes(image_extension)
+                            count = found_xrefs.get(xref, 0)
+                            name = f"image_page{page_index}_xref{xref}_{count}.{image_extension}"
 
-                        box = build_image_box(
-                            bbox=bbox,
-                            img_bytes=img_bytes,
-                            name=name,
-                            mimetype=f"image/{image_extension}",
-                        )
-                        boxes.append(box)
-                        found_xrefs[xref] = count + 1
-                        processed_blocks.add(block_idx)
+                            box = build_image_box(
+                                bbox=bbox,
+                                img_bytes=img_bytes,
+                                name=name,
+                                mimetype=f"image/{image_extension}",
+                            )
+                            boxes.append(box)
+                            found_xrefs[xref] = count + 1
+                            processed_blocks.add(block_idx)
+                        except Exception:
+                            continue  # Skip problematic images
 
                     except Exception:
                         continue
 
             all_boxes.append(boxes)
 
+    except Exception:
+        all_boxes = [
+            [] for _ in range(len(doc))
+        ]  # Return empty boxes for all pages if there's an error
     finally:
         doc.close()
 
