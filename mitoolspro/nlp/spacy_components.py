@@ -66,6 +66,8 @@ class SentenceLemmaTagger:
                 Span.set_extension(cat, default=False)
             if keep_tags and not Span.has_extension(f"{cat}_tags"):
                 Span.set_extension(f"{cat}_tags", default=[])
+            if keep_tags and not Span.has_extension(f"{cat}_matches"):
+                Span.set_extension(f"{cat}_matches", default=[])
         self.ignore_case = ignore_case
         self.keep_tags = keep_tags
 
@@ -80,6 +82,7 @@ class SentenceLemmaTagger:
             sent._.set(category, True)
             if self.keep_tags:
                 sent._.get(f"{category}_tags").append(doc[start:end].text)
+                sent._.get(f"{category}_matches").append([start, end])
         if self.ignore_case:
             for token, original_lemma in zip(doc, original_lemmas):
                 token.lemma_ = original_lemma
@@ -126,6 +129,8 @@ class DocLemmaTagger:
                 Doc.set_extension(cat, default=False)
             if keep_tags and not Doc.has_extension(f"{cat}_tags"):
                 Doc.set_extension(f"{cat}_tags", default=[])
+            if keep_tags and not Doc.has_extension(f"{cat}_matches"):
+                Doc.set_extension(f"{cat}_matches", default=[])
         self.ignore_case = ignore_case
         self.keep_tags = keep_tags
 
@@ -139,6 +144,7 @@ class DocLemmaTagger:
             setattr(doc._, category, True)
             if self.keep_tags:
                 doc._.get(f"{category}_tags").append(doc[start:end].text)
+                doc._.get(f"{category}_matches").append([start, end])
         if self.ignore_case:
             for token, orig in zip(doc, original_lemmas):
                 token.lemma_ = orig
@@ -207,6 +213,8 @@ class SentenceWordTagger:
                 Span.set_extension(cat, default=False)
             if keep_tags and not Span.has_extension(f"{cat}_tags"):
                 Span.set_extension(f"{cat}_tags", default=[])
+            if keep_tags and not Span.has_extension(f"{cat}_matches"):
+                Span.set_extension(f"{cat}_matches", default=[])
         self.ignore_case = ignore_case
         self.keep_tags = keep_tags
 
@@ -217,6 +225,7 @@ class SentenceWordTagger:
             sent._.set(category, True)
             if self.keep_tags:
                 sent._.get(f"{category}_tags").append(doc[start:end].text)
+                sent._.get(f"{category}_matches").append([start, end])
         return doc
 
 
@@ -261,6 +270,8 @@ class DocWordTagger:
                 Doc.set_extension(cat, default=False)
             if keep_tags and not Doc.has_extension(f"{cat}_tags"):
                 Doc.set_extension(f"{cat}_tags", default=[])
+            if keep_tags and not Doc.has_extension(f"{cat}_matches"):
+                Doc.set_extension(f"{cat}_matches", default=[])
         self.ignore_case = ignore_case
         self.keep_tags = keep_tags
 
@@ -270,6 +281,7 @@ class DocWordTagger:
             setattr(doc._, category, True)
             if self.keep_tags:
                 doc._.get(f"{category}_tags").append(doc[start:end].text)
+                doc._.get(f"{category}_matches").append([start, end])
         return doc
 
 
@@ -328,6 +340,8 @@ class SentenceRegexTagger:
                 Span.set_extension(cat, default=False)
             if keep_tags and not Span.has_extension(f"{cat}_tags"):
                 Span.set_extension(f"{cat}_tags", default=[])
+            if keep_tags and not Span.has_extension(f"{cat}_matches"):
+                Span.set_extension(f"{cat}_matches", default=[])
 
     def __call__(self, doc: Doc) -> Doc:
         for sent in doc.sents:
@@ -339,6 +353,9 @@ class SentenceRegexTagger:
                     if self.keep_tags:
                         for match in matches:
                             sent._.get(f"{cat}_tags").append(match.group())
+                            sent._.get(f"{cat}_matches").append(
+                                [match.start(), match.end()]
+                            )
         return doc
 
 
@@ -388,6 +405,8 @@ class DocRegexTagger:
                 Doc.set_extension(cat, default=False)
             if keep_tags and not Doc.has_extension(f"{cat}_tags"):
                 Doc.set_extension(f"{cat}_tags", default=[])
+            if keep_tags and not Doc.has_extension(f"{cat}_matches"):
+                Doc.set_extension(f"{cat}_matches", default=[])
 
     def __call__(self, doc: Doc) -> Doc:
         text = _strip_accents(doc.text) if self.strip_accents else doc.text
@@ -398,6 +417,7 @@ class DocRegexTagger:
                 if self.keep_tags:
                     for match in matches:
                         doc._.get(f"{cat}_tags").append(match.group())
+                        doc._.get(f"{cat}_matches").append([match.start(), match.end()])
         return doc
 
 
