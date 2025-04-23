@@ -120,6 +120,8 @@ class TestSentenceLemmaTagger(unittest.TestCase):
         self.assertTrue(doc[7].sent._.drink)
         self.assertEqual(doc[3].sent._.food_tags, ["apples", "bananas"])
         self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
+        self.assertEqual(doc[3].sent._.food_matches, [[2, 3], [4, 5]])
+        self.assertEqual(doc[7].sent._.drink_matches, [[6, 7]])
 
 
 class TestBuildWordPatterns(unittest.TestCase):
@@ -193,6 +195,8 @@ class TestSentenceWordTagger(unittest.TestCase):
         self.assertTrue(doc[7].sent._.drink)
         self.assertEqual(doc[3].sent._.food_tags, ["apple", "banana"])
         self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
+        self.assertEqual(doc[3].sent._.food_matches, [[2, 3], [4, 5]])
+        self.assertEqual(doc[7].sent._.drink_matches, [[6, 7]])
 
 
 class TestBuildRegexPatternTable(unittest.TestCase):
@@ -273,6 +277,8 @@ class TestSentenceRegexTagger(unittest.TestCase):
             doc[4].sent._.email_tags, ["test@example.com", "test2@example.com"]
         )
         self.assertEqual(doc[4].sent._.phone_tags, ["123-456-7890"])
+        self.assertEqual(doc[4].sent._.email_matches, [[14, 30], [51, 68]])
+        self.assertEqual(doc[4].sent._.phone_matches, [[34, 46]])
 
 
 class TestDocLemmaTagger(unittest.TestCase):
@@ -325,6 +331,8 @@ class TestDocLemmaTagger(unittest.TestCase):
         self.assertTrue(doc._.drink)
         self.assertEqual(doc._.food_tags, ["apples", "bananas"])
         self.assertEqual(doc._.drink_tags, ["coffee"])
+        self.assertEqual(doc._.food_matches, [[2, 3], [4, 5]])
+        self.assertEqual(doc._.drink_matches, [[6, 7]])
 
 
 class TestDocWordTagger(unittest.TestCase):
@@ -375,6 +383,8 @@ class TestDocWordTagger(unittest.TestCase):
         self.assertTrue(doc._.drink)
         self.assertEqual(doc._.food_tags, ["apple", "banana"])
         self.assertEqual(doc._.drink_tags, ["coffee"])
+        self.assertEqual(doc._.food_matches, [[2, 3], [4, 5]])
+        self.assertEqual(doc._.drink_matches, [[6, 7]])
 
 
 class TestDocRegexTagger(unittest.TestCase):
@@ -430,6 +440,8 @@ class TestDocRegexTagger(unittest.TestCase):
         self.assertTrue(doc._.phone)
         self.assertEqual(doc._.email_tags, ["test@example.com", "test2@example.com"])
         self.assertEqual(doc._.phone_tags, ["123-456-7890"])
+        self.assertEqual(doc._.email_matches, [[14, 30], [51, 68]])
+        self.assertEqual(doc._.phone_matches, [[34, 46]])
 
 
 class TestDocFreqDistExtractor(unittest.TestCase):
