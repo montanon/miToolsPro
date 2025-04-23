@@ -20,4 +20,5 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
 )
 from mitoolspro.plotting.plots.pie_plotter import PiePlotter
 from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.sankey_plotter import SankeyPlotter
 from mitoolspro.plotting.plots.scatter_plotter import ScatterPlotter

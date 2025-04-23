@@ -1,1 +1,1 @@
-from mitoolspro.nlp import embeddings, keywords, spacy_components
+from mitoolspro.nlp import embeddings, spacy_components

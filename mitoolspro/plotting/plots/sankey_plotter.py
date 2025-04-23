@@ -126,7 +126,7 @@ class SankeyColumn:
         return _scale_array(array, ascending)
 
 
-class SankeyDiagram:
+class SankeyPlotter:
     def __init__(
         self,
         columns: Optional[List[SankeyColumn]] = None,
@@ -411,7 +411,7 @@ class SankeyDiagram:
         return json.dumps(data, indent=2)
 
     @staticmethod
-    def from_json(json_str: str) -> "SankeyDiagram":
+    def from_json(json_str: str) -> "SankeyPlotter":
         data = json.loads(json_str)
         columns = [
             SankeyColumn(
@@ -421,7 +421,7 @@ class SankeyDiagram:
             )
             for col_data in data["columns"]
         ]
-        diagram = SankeyDiagram(columns)
+        diagram = SankeyPlotter(columns)
         all_nodes = {
             (node.name, node.period): node
             for col in diagram.columns.values()
@@ -499,7 +499,7 @@ class SankeyDiagram:
         node_df: pd.DataFrame,
         link_df: Optional[pd.DataFrame] = None,
         auto_link: bool = True,
-    ) -> "SankeyDiagram":
+    ) -> "SankeyPlotter":
         columns: dict[int, SankeyColumn] = {}
         node_map: dict[tuple[str, float], SankeyNode] = {}
         sink_nodes: dict[float, SankeySinkNode] = {}
@@ -525,7 +525,7 @@ class SankeyDiagram:
                     columns[period] = SankeyColumn(name=col_name, period=period)
                 columns[period].nodes.append(node)
 
-        diagram = SankeyDiagram(columns=list(columns.values()))
+        diagram = SankeyPlotter(columns=list(columns.values()))
         diagram.sink_nodes = sink_nodes
 
         if link_df is not None:
