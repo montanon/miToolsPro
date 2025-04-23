@@ -189,13 +189,14 @@ class SankeyDiagram:
             self.add_link(link)
 
     def connect_columns(self):
-        periods = list(self.columns.keys())
+        periods = sorted(self.columns.keys())
         for i in range(len(periods) - 1):
-            self._connect_column_pair(
+            self._connect_column_pair_no_sink(
                 self.columns[periods[i]], self.columns[periods[i + 1]]
             )
+        self.create_sink_links()
 
-    def _connect_column_pair(self, col1: SankeyColumn, col2: SankeyColumn):
+    def _connect_column_pair_no_sink(self, col1: SankeyColumn, col2: SankeyColumn):
         for node in col1.nodes:
             if node.name in col2.names():
                 match = col2.get_node(node.name)
@@ -203,6 +204,54 @@ class SankeyDiagram:
                     self.links.append(
                         SankeyLink(source=node, target=match, value=node.count)
                     )
+
+    def create_sink_links(self):
+        period_nodes: dict[int, List[SankeyNode]] = {
+            col.period: col.nodes for col in self.columns.values()
+        }
+        sorted_periods = sorted(period_nodes.keys())
+
+        links_by_period = {}
+        for link in self.links:
+            key = (link.source.period, link.target.period)
+            links_by_period.setdefault(key, []).append(link)
+
+        for i in range(len(sorted_periods) - 1):
+            period, next_period = sorted_periods[i], sorted_periods[i + 1]
+            col1_nodes = period_nodes[period]
+            col2_nodes = period_nodes[next_period]
+
+            sources = {
+                link.source for link in links_by_period.get((period, next_period), [])
+            }
+            targets = {
+                link.target for link in links_by_period.get((period, next_period), [])
+            }
+
+            unlinked_sources = [n for n in col1_nodes if n not in sources]
+            unlinked_targets = [n for n in col2_nodes if n not in targets]
+
+            if not unlinked_sources and not unlinked_targets:
+                continue
+
+            between = (period + next_period) / 2
+            if between not in self.sink_nodes:
+                self.sink_nodes[between] = SankeySinkNode(period=between)
+
+            sink = self.sink_nodes[between]
+
+            for node in unlinked_sources:
+                self.sink_links.append(
+                    SankeyLink(source=node, target=sink, value=node.count)
+                )
+
+            for node in unlinked_targets:
+                self.sink_links.append(
+                    SankeyLink(source=sink, target=node, value=node.count)
+                )
+
+    def _connect_column_pair(self, col1: SankeyColumn, col2: SankeyColumn):
+        self._connect_column_pair_no_sink(col1, col2)
         if self._columns_require_sink(col1, col2):
             between_period = (col1.period + col2.period) / 2
             self.sink_nodes[between_period] = SankeySinkNode(period=between_period)
@@ -447,7 +496,9 @@ class SankeyDiagram:
 
     @staticmethod
     def from_dataframe(
-        node_df: pd.DataFrame, link_df: Optional[pd.DataFrame] = None
+        node_df: pd.DataFrame,
+        link_df: Optional[pd.DataFrame] = None,
+        auto_link: bool = True,
     ) -> "SankeyDiagram":
         columns: dict[int, SankeyColumn] = {}
         node_map: dict[tuple[str, float], SankeyNode] = {}
@@ -484,7 +535,7 @@ class SankeyDiagram:
                 link = SankeyLink(src, tgt, row["value"])
                 link.color = row.get("color")
                 diagram.add_link(link)
-        else:
+        elif auto_link:
             diagram.connect_columns()
 
         return diagram
