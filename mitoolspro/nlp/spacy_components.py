@@ -10,14 +10,20 @@ from spacy.tokens import Doc, Span
 from mitoolspro.nlp.spacy_utils import _strip_accents
 
 
-@Language.factory("strip_accents")
-def create_strip_accents(nlp: Language, name: str):
-    def strip_accents_component(doc: Doc) -> Doc:
+class StripAccents:
+    def __init__(self, nlp: Language, name: str):
+        self.nlp = nlp
+        self.name = name
+
+    def __call__(self, doc: Doc) -> Doc:
         accentless_text = _strip_accents(doc.text)
-        new_doc = nlp.make_doc(accentless_text)
+        new_doc = self.nlp.make_doc(accentless_text)
         return new_doc
 
-    return strip_accents_component
+
+@Language.factory("strip_accents")
+def create_strip_accents(nlp: Language, name: str):
+    return StripAccents(nlp, name)
 
 
 def build_lemma_patterns(
@@ -691,18 +697,23 @@ def create_doc_token_extractor(
     )
 
 
-@Language.factory("sentence_indices")
-def create_cache_sentence_indices(nlp: Language, name: str):
-    if not Doc.has_extension("sents_list"):
-        Doc.set_extension("sents_list", default=None)
-    if not Span.has_extension("index"):
-        Span.set_extension("index", default=None)
+class CacheSentenceIndices:
+    def __init__(self, nlp: Language, name: str):
+        self.nlp = nlp
+        self.name = name
+        if not Doc.has_extension("sents_list"):
+            Doc.set_extension("sents_list", default=None)
+        if not Span.has_extension("index"):
+            Span.set_extension("index", default=None)
 
-    def cache_sentence_indices(doc: Doc) -> Doc:
-        sents = list(doc.sents)
+    def __call__(self, doc: Doc) -> Doc:
+        sents = [(sent.text, sent.start, sent.end) for sent in doc.sents]
         doc._.sents_list = sents
-        for i, sent in enumerate(sents):
+        for i, sent in enumerate(doc.sents):
             sent._.index = i
         return doc
 
-    return cache_sentence_indices
+
+@Language.factory("sentence_indices")
+def create_cache_sentence_indices(nlp: Language, name: str):
+    return CacheSentenceIndices(nlp, name)
