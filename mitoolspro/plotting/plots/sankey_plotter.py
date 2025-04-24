@@ -24,7 +24,14 @@ def _scale_array(array: np.ndarray, ascending: bool = True) -> np.ndarray:
 
 
 class SankeyNode:
-    def __init__(self, name: str, count: float, period: int, rank: int):
+    def __init__(
+        self,
+        name: str,
+        count: float,
+        period: int,
+        rank: int,
+        color: Optional[str] = None,
+    ):
         self.name = name
         self.count = count
         self.period = period
@@ -32,7 +39,7 @@ class SankeyNode:
         self.id: Optional[int] = None
         self.x_pos: Optional[float] = None
         self.y_pos: Optional[float] = None
-        self.color: Optional[str] = None
+        self.color: str = color
 
     def __str__(self):
         return f"SankeyNode: {self.name} ({self.count})"
@@ -57,7 +64,13 @@ class SankeySinkNode(SankeyNode):
 
 
 class SankeyLink:
-    def __init__(self, source: SankeyNode, target: SankeyNode, value: float):
+    def __init__(
+        self,
+        source: SankeyNode,
+        target: SankeyNode,
+        value: float,
+        color: Optional[str] = None,
+    ):
         if source.period == target.period:
             raise ArgumentValueError("Source and target cannot be in the same period")
         if value <= 0:
@@ -65,7 +78,7 @@ class SankeyLink:
         self.source = source
         self.target = target
         self.value = value
-        self.color: Optional[str] = None
+        self.color: Optional[str] = color
 
     def __str__(self):
         return f"SankeyLink: {self.source.period}:{self.source.name} -> {self.target.period}:{self.target.name} ({self.value})"
@@ -335,13 +348,19 @@ class SankeyPlotter:
 
         for col in self.columns.values():
             for node in col.nodes:
+                if node.color:
+                    continue
                 rgba = label_to_color.get(node.name, PLAIN_GRAY_COLOR)
                 node.color = f"rgba({rgba[0]},{rgba[1]},{rgba[2]},{rgba[3]})"
         for node in self.sink_nodes.values():
+            if node.color:
+                continue
             rgba = label_to_color.get(node.name, PLAIN_GRAY_COLOR)
             node.color = f"rgba({rgba[0]},{rgba[1]},{rgba[2]},{rgba[3]})"
 
         for link in self.links + self.sink_links:
+            if link.color:
+                continue
             name = link.source.name if link.source.name != "" else link.target.name
             rgba = label_to_color.get(name, PLAIN_GRAY_COLOR)
             link.color = f"rgba({rgba[0]},{rgba[1]},{rgba[2]},{0.5})"
@@ -351,7 +370,9 @@ class SankeyPlotter:
         self.normalize_positions()
         self.assign_colors()
 
-    def render(self, width: int = 1500, height: int = 500) -> go.Figure:
+    def render(
+        self, width: int = 1500, height: int = 500, pad: int = 20, thickness: int = 20
+    ) -> go.Figure:
         self.update()
 
         all_nodes = [node for col in self.columns.values() for node in col.nodes]
@@ -374,7 +395,9 @@ class SankeyPlotter:
         value = [link.value for link in all_links]
 
         sankey_data = go.Sankey(
-            node=dict(label=label, x=x, y=y, pad=20, thickness=20, color=node_colors),
+            node=dict(
+                label=label, x=x, y=y, pad=pad, thickness=thickness, color=node_colors
+            ),
             link=dict(source=source, target=target, value=value, color=link_colors),
             arrangement="fixed",
         )
