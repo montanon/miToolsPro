@@ -3,6 +3,7 @@ from mitoolspro.exceptions.custom_exceptions import (
     ArgumentStructureError,
     ArgumentTimeoutError,
     ArgumentTypeError,
+    ArgumentValidationError,
     ArgumentValueError,
     AxesComposerException,
     ColumnTypeError,
