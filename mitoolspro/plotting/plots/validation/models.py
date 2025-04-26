@@ -103,24 +103,36 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
 
         return {"value": normalized}
 
-    # @model_validator(mode="after")
-    # def validate_element_types(self) -> "SequencesParam[T]":
-    #     expected_type = self.__pydantic_generic_metadata__["args"][0]
-
-    #     for sequence_param in self.value:
-    #         for item in sequence_param.value:
-    #             if not isinstance(item, expected_type):
-    #                 raise ArgumentValidationError(
-    #                     f"Expected inner element of type {expected_type}, got {type(item)}"
-    #                 )
-    #     return self
-
 
 class NumericSequenceParam(SequenceParam[NumericType]):
     pass
 
 
-class NumericSequencesParam(SequencesParam[NumericSequenceParam]):
+class NumericSequencesParam(SequencesParam[NumericType]):
+    pass
+
+
+class StrSequenceParam(SequenceParam[str]):
+    pass
+
+
+class StrSequencesParam(SequencesParam[str]):
+    pass
+
+
+class BoolSequenceParam(SequenceParam[bool]):
+    pass
+
+
+class BoolSequencesParam(SequencesParam[bool]):
+    pass
+
+
+class DictSequenceParam(SequenceParam[dict]):
+    pass
+
+
+class DictSequencesParam(SequencesParam[dict]):
     pass
 
 
@@ -157,14 +169,17 @@ if __name__ == "__main__":
     except ValidationError as e:
         print(e)
     print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6]]))
-    # print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6]]))
-    # print(
-    #     NumericSequencesParam(
-    #         value=[
-    #             [1, 2, 3],
-    #             np.array([4, 5, 6]),
-    #             Series([7, 8, 9]),
-    #             tuple([10, -10, 12]),
-    #         ]
-    #     )
-    # )
+    print(
+        NumericSequencesParam(
+            value=[
+                [1, 2, 3],
+                np.array([4, 5, 6]),
+                Series([7, 8, 9]),
+                tuple([10, -10, 12]),
+            ]
+        )
+    )
+    try:
+        print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6, "abcd"]]))
+    except ValidationError as e:
+        print(e)
