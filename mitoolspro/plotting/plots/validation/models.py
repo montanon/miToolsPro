@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Annotated, Any, Generic, Literal, TypeAlias, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, Optional, TypeAlias, TypeVar, Union
 
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
@@ -32,6 +32,23 @@ class Param[T](BaseModel):
     value: T
 
     model_config = ConfigDict(extra="forbid")
+
+
+class RangeParam(Param[NumericType]):
+    min_value: Optional[NumericType] = -np.inf
+    max_value: Optional[NumericType] = np.inf
+
+    @model_validator(mode="after")
+    def validate_range(self) -> "RangeParam":
+        if not isinstance(self.value, (int, float)):
+            raise ArgumentValidationError(
+                f"Expected numeric value, got {type(self.value)}"
+            )
+        if not (self.min_value <= self.value <= self.max_value):
+            raise ArgumentValidationError(
+                f"Value {self.value} is not in range [{self.min_value}, {self.max_value}]"
+            )
+        return self
 
 
 class StrParam(Param[str]):
@@ -137,49 +154,9 @@ class DictSequencesParam(SequencesParam[dict]):
 
 
 if __name__ == "__main__":
-    print(SequenceParam(value=[1, 2, 3, "abcd", True, False]))
-    print(SequenceParam(value=(1, 2, 3, "abcd", True, False)))
-    print(SequenceParam(value=np.array([1, 2, 3, "abcd", True, False])))
-    print(SequenceParam(value=Series([1, 2, 3, "abcd", True, False])))
+    print(RangeParam(value=1))
+    print(RangeParam(value=1, min_value=0, max_value=10))
     try:
-        print(SequenceParam(value=1))
-    except ValidationError as e:
-        print(e)
-    print(SequencesParam(value=[[1, 2, 3], [4, 5, 6]]))
-    print(
-        SequencesParam(
-            value=[
-                [1, 2, 3],
-                np.array([4, 5, 6]),
-                Series([7, 8, 9]),
-                tuple([10, "abcd", 12]),
-            ]
-        )
-    )
-    try:
-        print(SequencesParam(value=1))
-    except ValidationError as e:
-        print(e)
-    print(NumericSequenceParam(value=[1, 2, 3]))
-    print(NumericSequenceParam(value=Series([1, 2, 3])))
-    print(NumericSequenceParam(value=(1, 2, 3)))
-    print(NumericSequenceParam(value=np.array([1, 2, 3])))
-    try:
-        print(NumericSequenceParam(value=[1, 2, 3, "abcd", True, False]))
-    except ValidationError as e:
-        print(e)
-    print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6]]))
-    print(
-        NumericSequencesParam(
-            value=[
-                [1, 2, 3],
-                np.array([4, 5, 6]),
-                Series([7, 8, 9]),
-                tuple([10, -10, 12]),
-            ]
-        )
-    )
-    try:
-        print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6, "abcd"]]))
+        print(RangeParam(value=1, min_value=2))
     except ValidationError as e:
         print(e)
