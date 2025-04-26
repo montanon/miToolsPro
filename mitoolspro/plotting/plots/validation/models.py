@@ -160,6 +160,10 @@ class NumericTupleParam(Param[NumericTuple]):
         if self.sizes is not None:
             if not isinstance(self.sizes, Sequence):
                 self.sizes = [self.sizes]
+            if not all(size > 0 for size in self.sizes):
+                raise ArgumentValidationError(
+                    f"All sizes must be positive, got {self.sizes}."
+                )
             if len(self.value) not in self.sizes:
                 raise ArgumentValidationError(
                     f"Invalid tuple length {len(self.value)}. Allowed sizes: {self.sizes}."
