@@ -31,7 +31,7 @@ NumericType: TypeAlias = float | int
 class Param[T](BaseModel):
     value: T
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", strict=True)
 
 
 class RangeParam(Param[NumericType]):
@@ -153,10 +153,37 @@ class DictSequencesParam(SequencesParam[dict]):
     pass
 
 
+class NumericTupleParam(Param[tuple[NumericType, ...]]):
+    sizes: Optional[Sequence[int] | int] = None
+
+    @model_validator(mode="after")
+    def validate_numeric_tuple(self) -> "NumericTupleParam":
+        if self.sizes is not None:
+            if not isinstance(self.sizes, list):
+                self.sizes = [self.sizes]
+            if len(self.value) not in self.sizes:
+                raise ArgumentValidationError(
+                    f"Tuple length {len(self.value)} not in allowed sizes {self.sizes}"
+                )
+        return self
+
+
 if __name__ == "__main__":
     print(RangeParam(value=1))
     print(RangeParam(value=1, min_value=0, max_value=10))
     try:
         print(RangeParam(value=1, min_value=2))
+    except ValidationError as e:
+        print(e)
+    print(NumericTupleParam(value=(1, 2, 3)))
+    print(NumericTupleParam(value=(1, 2, 3), sizes=3))
+    print(NumericTupleParam(value=(1, 2, 3), sizes=[2, 3]))
+    try:
+        print(NumericTupleParam(value=(1, 2, 3), sizes=4))
+        print(NumericTupleParam(value=(1, 2, 3), sizes=[1, 4]))
+    except ValidationError as e:
+        print(e)
+    try:
+        print(NumericTupleParam(value=(1, "2", 3), sizes=[2, 3]))
     except ValidationError as e:
         print(e)
