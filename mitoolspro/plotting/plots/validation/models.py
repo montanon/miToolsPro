@@ -33,23 +33,30 @@ NumericTuple: TypeAlias = tuple[NumericType, ...]
 class Param[T](BaseModel):
     value: T
 
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid", strict=True, arbitrary_types_allowed=True)
 
 
 class RangeParam(Param[NumericType]):
-    min_value: Optional[NumericType] = -np.inf
-    max_value: Optional[NumericType] = np.inf
+    min_value: NumericType = -np.inf
+    max_value: NumericType = np.inf
+    strict: bool = False
 
     @model_validator(mode="after")
     def validate_range(self) -> "RangeParam":
         if not isinstance(self.value, (int, float)):
             raise ArgumentValidationError(
-                f"Expected numeric value, got {type(self.value)}"
+                f"Expected numeric {self.value=}, got {type(self.value)}"
             )
-        if not (self.min_value <= self.value <= self.max_value):
-            raise ArgumentValidationError(
-                f"Value {self.value} is not in range [{self.min_value}, {self.max_value}]"
-            )
+        if not self.strict:
+            if not (self.min_value <= self.value <= self.max_value):
+                raise ArgumentValidationError(
+                    f"Value {self.value} is not in range [{self.min_value}, {self.max_value}]"
+                )
+        else:
+            if not (self.min_value < self.value < self.max_value):
+                raise ArgumentValidationError(
+                    f"Value {self.value} is not in range ({self.min_value}, {self.max_value})"
+                )
         return self
 
 
@@ -83,8 +90,24 @@ class SequenceParam[T](Param[Sequence[T]]):
         return {"value": values}
 
 
-class SequencesParam[T](Param[SequenceParam[list[T]]]):
-    value: SequenceParam[SequenceParam[T]]
+class NumericSequenceParam(SequenceParam[NumericType]):
+    pass
+
+
+class StrSequenceParam(SequenceParam[str]):
+    pass
+
+
+class BoolSequenceParam(SequenceParam[bool]):
+    pass
+
+
+class DictSequenceParam(SequenceParam[dict]):
+    pass
+
+
+class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
+    value: Sequence[Sequence[T]]
 
     @model_validator(mode="before")
     @classmethod
@@ -116,15 +139,7 @@ class SequencesParam[T](Param[SequenceParam[list[T]]]):
         return {"value": normalized}
 
 
-class NumericSequenceParam(SequenceParam[NumericType]):
-    pass
-
-
 class NumericSequencesParam(SequencesParam[NumericType]):
-    pass
-
-
-class StrSequenceParam(SequenceParam[str]):
     pass
 
 
@@ -132,15 +147,7 @@ class StrSequencesParam(SequencesParam[str]):
     pass
 
 
-class BoolSequenceParam(SequenceParam[bool]):
-    pass
-
-
 class BoolSequencesParam(SequencesParam[bool]):
-    pass
-
-
-class DictSequenceParam(SequenceParam[dict]):
     pass
 
 
@@ -257,35 +264,4 @@ class NumericTupleSequencesParam(Param[SequenceParam[SequenceParam[NumericTuple]
 
 
 if __name__ == "__main__":
-    seq = NumericTupleSequencesParam(
-        value=[
-            [(1, 2, 3), (1, 2, 3)],
-            [(1, 2, 3), (1, 2, 3)],
-        ],
-    )
-
-    print(
-        NumericTupleSequencesParam(
-            value=[
-                [(1, 2, 3), (1, 2, 3)],
-                [(1, 2, 3), (1, 2, 3)],
-            ],
-            sizes=3,
-        )
-    )
-    try:
-        print(
-            NumericTupleSequencesParam(
-                value=[
-                    [(1, 2, 3), (1, 2, 3)],
-                    [(1, 2, 3), (1, 2, 3)],
-                ],
-                sizes=4,
-            )
-        )
-    except (ArgumentValidationError, ValidationError) as e:
-        print(e)
-    seq2 = SequenceParam[NumericTuple](value=[(1, 2, 3), (1, 2, 3)])
-    seq3 = SequencesParam[NumericTuple](
-        value=[[(1, 2, 3), (1, 2, 3)], [(1, 2, 3), (1, 2, 3)]]
-    )
+    seq = SequenceParam[tuple](value=[(1, 2, 3), (1, 2, 3)])
