@@ -17,6 +17,7 @@ from mitoolspro.plotting.plots.validation.models import (
     NumericSequenceParam,
     NumericSequencesParam,
     NumericTupleParam,
+    NumericTupleSequenceParam,
     Param,
     RangeParam,
     SequenceParam,
@@ -993,6 +994,215 @@ class TestNumericTupleParam(TestCase):
         param = NumericTupleParam(value=(1,), sizes=1)
         self.assertEqual(param.value, (1,))
         self.assertEqual(param.sizes, [1])
+
+
+class TestNumericTupleSequenceParam(TestCase):
+    def test_init_with_valid_sequence(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)])
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertIsNone(param.sizes)
+
+    def test_init_with_valid_sequence_and_size(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=2)
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2])
+
+    def test_init_with_valid_sequence_and_sizes(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4, 5)], sizes=[2, 3])
+        self.assertEqual(param.value, [(1, 2), (3, 4, 5)])
+        self.assertEqual(param.sizes, [2, 3])
+
+    def test_init_with_mixed_numeric_types(self):
+        param = NumericTupleSequenceParam(value=[(1, 2.0), (3.0, 4)])
+        self.assertEqual(param.value, [(1, 2.0), (3.0, 4)])
+
+    def test_init_with_float_tuples(self):
+        param = NumericTupleSequenceParam(value=[(1.0, 2.0), (3.0, 4.0)])
+        self.assertEqual(param.value, [(1.0, 2.0), (3.0, 4.0)])
+
+    def test_init_with_int_tuples(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)])
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+
+    def test_init_with_empty_sequence(self):
+        param = NumericTupleSequenceParam(value=[])
+        self.assertEqual(param.value, [])
+
+    def test_init_with_single_element_sequence(self):
+        param = NumericTupleSequenceParam(value=[(1, 2)])
+        self.assertEqual(param.value, [(1, 2)])
+
+    def test_init_with_very_large_sequence(self):
+        large_sequence = [(i, i + 1) for i in range(1000)]
+        param = NumericTupleSequenceParam(value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
+
+    def test_init_with_invalid_sequence_type(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value="not_a_sequence")
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value={"key": "value"})
+
+    def test_init_with_non_tuple_elements(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[1, 2, 3])
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=["1", "2", "3"])
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[True, False, True])
+
+    def test_init_with_non_numeric_tuple_elements(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[("1", "2"), ("3", "4")])
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(True, False), (False, True)])
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(None, None), (None, None)])
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=None)
+
+    def test_init_with_none_in_sequence(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), None])
+
+    def test_init_with_invalid_size(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=3)
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[3, 4])
+
+    def test_init_with_valid_size_range(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4, 5)], sizes=[2, 3])
+        self.assertEqual(param.value, [(1, 2), (3, 4, 5)])
+        self.assertEqual(param.sizes, [2, 3])
+
+    def test_init_with_single_size(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=2)
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2])
+
+    def test_init_with_empty_size_list(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[])
+
+    def test_init_with_none_size(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=None)
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertIsNone(param.sizes)
+
+    def test_init_with_invalid_size_type(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes="not_a_size")
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes={"key": "value"})
+
+    def test_init_with_negative_size(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=-1)
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[-1, -2])
+
+    def test_init_with_zero_size(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(), ()], sizes=0)
+
+    def test_init_with_very_large_size(self):
+        large_sequence = [(i,) for i in range(1000)]
+        param = NumericTupleSequenceParam(value=large_sequence, sizes=1)
+        self.assertEqual(len(param.value), 1000)
+        self.assertEqual(param.sizes, [1])
+
+    def test_init_with_float_size(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=2.0)
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[2.0, 3.0])
+
+    def test_init_with_numpy_array_as_size(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=np.array([2, 3]))
+
+    def test_init_with_pandas_series_as_size(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=pd.Series([2, 3]))
+
+    def test_init_with_none_in_size_list(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[2, None, 3])
+
+    def test_init_with_negative_in_size_list(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[2, -1, 3])
+
+    def test_init_with_duplicate_sizes(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[2, 2, 3])
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2, 2, 3])
+
+    def test_init_with_single_size_matching(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=2)
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2])
+
+    def test_init_with_multiple_sizes_matching(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4, 5)], sizes=[2, 3])
+        self.assertEqual(param.value, [(1, 2), (3, 4, 5)])
+        self.assertEqual(param.sizes, [2, 3])
+
+    def test_init_with_size_not_matching(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[(1, 2), (3, 4)], sizes=[3, 4])
+
+    def test_init_with_empty_tuple_sequence(self):
+        param = NumericTupleSequenceParam(value=[(), ()])
+        self.assertEqual(param.value, [(), ()])
+
+    def test_init_with_single_element_sequence_and_size(self):
+        param = NumericTupleSequenceParam(value=[(1,)], sizes=1)
+        self.assertEqual(param.value, [(1,)])
+        self.assertEqual(param.sizes, [1])
+
+    def test_init_with_uneven_tuple_sizes(self):
+        param = NumericTupleSequenceParam(
+            value=[(1,), (2, 3), (4, 5, 6)], sizes=[1, 2, 3]
+        )
+        self.assertEqual(param.value, [(1,), (2, 3), (4, 5, 6)])
+        self.assertEqual(param.sizes, [1, 2, 3])
+
+    def test_init_with_numpy_arrays_in_tuples(self):
+        param = NumericTupleSequenceParam(
+            value=[(np.array(1), np.array(2)), (np.array(3), np.array(4))]
+        )
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+
+    def test_init_with_pandas_series_in_tuples(self):
+        param = NumericTupleSequenceParam(
+            value=[(pd.Series([1]), pd.Series([2])), (pd.Series([3]), pd.Series([4]))]
+        )
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+
+    def test_init_with_mixed_sequence_types(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4, 5), (6,)])
+        self.assertEqual(param.value, [(1, 2), (3, 4, 5), (6,)])
+
+    def test_init_with_nested_sequences(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam(value=[[(1, 2)], [(3, 4)]])
+
+    def test_init_with_dict_initialization(self):
+        param = NumericTupleSequenceParam.model_validate(
+            {"value": [(1, 2), (3, 4)], "sizes": 2}
+        )
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2])
+
+    def test_init_with_invalid_dict_initialization(self):
+        with self.assertRaises(ValidationError):
+            NumericTupleSequenceParam.model_validate(
+                {"value": [(1, 2), (3, 4)], "sizes": "invalid"}
+            )
 
 
 if __name__ == "__main__":

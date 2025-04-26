@@ -197,6 +197,10 @@ class NumericTupleSequenceParam(SequenceParam[NumericTuple]):
         if self.sizes is not None:
             if not isinstance(self.sizes, Sequence):
                 self.sizes = [self.sizes]
+            if not all(size > 0 for size in self.sizes):
+                raise ArgumentValidationError(
+                    f"All sizes must be positive, got {self.sizes}."
+                )
             for idx, tup in enumerate(self.value):
                 if len(tup) not in self.sizes:
                     raise ArgumentValidationError(
