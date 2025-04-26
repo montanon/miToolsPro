@@ -8,12 +8,17 @@ from pydantic import ValidationError
 from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.models import (
     BoolParam,
+    BoolSequenceParam,
     DictParam,
+    DictSequenceParam,
     NumericParam,
+    NumericSequenceParam,
     Param,
     RangeParam,
     SequenceParam,
+    SequencesParam,
     StrParam,
+    StrSequenceParam,
 )
 
 
@@ -487,6 +492,70 @@ class TestSequenceParam(TestCase):
         self.assertEqual(len(param.value), 2)
         self.assertEqual(param.value[0].x, 1)
         self.assertEqual(param.value[1].x, 2)
+
+
+class TestSpecializedSequenceParams(TestCase):
+    def test_numeric_sequence_param_valid_values(self):
+        param = NumericSequenceParam(value=[1, 2, 3])
+        self.assertEqual(param.value, [1, 2, 3])
+        param = NumericSequenceParam(value=[1.0, 2.0, 3.0])
+        self.assertEqual(param.value, [1.0, 2.0, 3.0])
+        param = NumericSequenceParam(value=np.array([1, 2, 3]))
+        self.assertEqual(param.value, [1, 2, 3])
+
+    def test_numeric_sequence_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            NumericSequenceParam(value=["1", "2", "3"])
+        with self.assertRaises(ValidationError):
+            NumericSequenceParam(value=[True, False])
+        with self.assertRaises(ValidationError):
+            NumericSequenceParam(value=[None, None])
+
+    def test_str_sequence_param_valid_values(self):
+        param = StrSequenceParam(value=["a", "b", "c"])
+        self.assertEqual(param.value, ["a", "b", "c"])
+        param = StrSequenceParam(value=["1", "2", "3"])
+        self.assertEqual(param.value, ["1", "2", "3"])
+        param = StrSequenceParam(value=["", "", ""])
+        self.assertEqual(param.value, ["", "", ""])
+
+    def test_str_sequence_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            StrSequenceParam(value=[1, 2, 3])
+        with self.assertRaises(ValidationError):
+            StrSequenceParam(value=[True, False])
+        with self.assertRaises(ValidationError):
+            StrSequenceParam(value=[None, None])
+
+    def test_bool_sequence_param_valid_values(self):
+        param = BoolSequenceParam(value=[True, False, True])
+        self.assertEqual(param.value, [True, False, True])
+        param = BoolSequenceParam(value=[False, False])
+        self.assertEqual(param.value, [False, False])
+
+    def test_bool_sequence_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            BoolSequenceParam(value=[1, 0])
+        with self.assertRaises(ValidationError):
+            BoolSequenceParam(value=["true", "false"])
+        with self.assertRaises(ValidationError):
+            BoolSequenceParam(value=[None, None])
+
+    def test_dict_sequence_param_valid_values(self):
+        param = DictSequenceParam(value=[{"a": 1}, {"b": 2}])
+        self.assertEqual(param.value, [{"a": 1}, {"b": 2}])
+        param = DictSequenceParam(value=[{}, {}])
+        self.assertEqual(param.value, [{}, {}])
+        param = DictSequenceParam(value=[{"nested": {"key": "value"}}])
+        self.assertEqual(param.value, [{"nested": {"key": "value"}}])
+
+    def test_dict_sequence_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            DictSequenceParam(value=["not_a_dict"])
+        with self.assertRaises(ValidationError):
+            DictSequenceParam(value=[None])
+        with self.assertRaises(ValidationError):
+            DictSequenceParam(value=[1, 2, 3])
 
 
 if __name__ == "__main__":
