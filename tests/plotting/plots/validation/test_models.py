@@ -4,7 +4,14 @@ from unittest import TestCase
 from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentValidationError
-from mitoolspro.plotting.plots.validation.models import Param, RangeParam
+from mitoolspro.plotting.plots.validation.models import (
+    BoolParam,
+    DictParam,
+    NumericParam,
+    Param,
+    RangeParam,
+    StrParam,
+)
 
 
 class TestParam(TestCase):
@@ -226,6 +233,102 @@ class TestRangeParam(TestCase):
     def test_strict_range_with_mixed_numeric_types(self):
         param = RangeParam(value=5, min_value=0.0, max_value=10, strict=True)
         self.assertEqual(param.value, 5)
+
+
+class TestSpecializedParams(TestCase):
+    def test_str_param_valid_values(self):
+        param = StrParam(value="test")
+        self.assertEqual(param.value, "test")
+        param = StrParam(value="")
+        self.assertEqual(param.value, "")
+        param = StrParam(value="123")
+        self.assertEqual(param.value, "123")
+
+    def test_str_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            StrParam(value=123)
+        with self.assertRaises(ValidationError):
+            StrParam(value=None)
+        with self.assertRaises(ValidationError):
+            StrParam(value=[])
+
+    def test_bool_param_valid_values(self):
+        param = BoolParam(value=True)
+        self.assertEqual(param.value, True)
+        param = BoolParam(value=False)
+        self.assertEqual(param.value, False)
+
+    def test_bool_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            BoolParam(value=1)
+        with self.assertRaises(ValidationError):
+            BoolParam(value="true")
+        with self.assertRaises(ValidationError):
+            BoolParam(value=None)
+
+    def test_numeric_param_valid_values(self):
+        param = NumericParam(value=42)
+        self.assertEqual(param.value, 42)
+        param = NumericParam(value=3.14)
+        self.assertEqual(param.value, 3.14)
+        param = NumericParam(value=-1)
+        self.assertEqual(param.value, -1)
+
+    def test_numeric_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            NumericParam(value="42")
+        with self.assertRaises(ValidationError):
+            NumericParam(value=None)
+        with self.assertRaises(ValidationError):
+            NumericParam(value=[])
+
+    def test_dict_param_valid_values(self):
+        param = DictParam(value={})
+        self.assertEqual(param.value, {})
+        param = DictParam(value={"key": "value"})
+        self.assertEqual(param.value, {"key": "value"})
+        param = DictParam(value={"nested": {"key": "value"}})
+        self.assertEqual(param.value, {"nested": {"key": "value"}})
+
+    def test_dict_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            DictParam(value="not_a_dict")
+        with self.assertRaises(ValidationError):
+            DictParam(value=None)
+        with self.assertRaises(ValidationError):
+            DictParam(value=[])
+
+    def test_str_param_with_extra_fields(self):
+        with self.assertRaises(ValidationError):
+            StrParam(value="test", extra_field="should_fail")
+
+    def test_bool_param_with_extra_fields(self):
+        with self.assertRaises(ValidationError):
+            BoolParam(value=True, extra_field="should_fail")
+
+    def test_numeric_param_with_extra_fields(self):
+        with self.assertRaises(ValidationError):
+            NumericParam(value=42, extra_field="should_fail")
+
+    def test_dict_param_with_extra_fields(self):
+        with self.assertRaises(ValidationError):
+            DictParam(value={}, extra_field="should_fail")
+
+    def test_str_param_with_dict_initialization(self):
+        param = StrParam.model_validate({"value": "test"})
+        self.assertEqual(param.value, "test")
+
+    def test_bool_param_with_dict_initialization(self):
+        param = BoolParam.model_validate({"value": True})
+        self.assertEqual(param.value, True)
+
+    def test_numeric_param_with_dict_initialization(self):
+        param = NumericParam.model_validate({"value": 42})
+        self.assertEqual(param.value, 42)
+
+    def test_dict_param_with_dict_initialization(self):
+        param = DictParam.model_validate({"value": {"key": "value"}})
+        self.assertEqual(param.value, {"key": "value"})
 
 
 if __name__ == "__main__":
