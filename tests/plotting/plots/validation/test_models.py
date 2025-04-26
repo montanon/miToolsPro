@@ -558,5 +558,139 @@ class TestSpecializedSequenceParams(TestCase):
             DictSequenceParam(value=[1, 2, 3])
 
 
+class TestSequencesParam(TestCase):
+    def test_init_with_list_of_lists(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_list_of_tuples(self):
+        param = SequencesParam[int](value=[(1, 2), (3, 4)])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_mixed_sequence_types(self):
+        param = SequencesParam[int](value=[[1, 2], (3, 4)])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_numpy_arrays(self):
+        param = SequencesParam[int](value=[np.array([1, 2]), np.array([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_pandas_series(self):
+        param = SequencesParam[int](value=[pd.Series([1, 2]), pd.Series([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_sequence_param_instances(self):
+        with self.assertRaises(ValidationError):
+            inner_seq = SequenceParam[int](value=[1, 2])
+            SequencesParam[int](value=[inner_seq])
+
+    def test_init_with_mixed_sequence_param_instances(self):
+        with self.assertRaises(ValidationError):
+            inner_seq1 = SequenceParam[int](value=[1, 2])
+            inner_seq2 = [3, 4]
+            SequencesParam[int](value=[inner_seq1, inner_seq2])
+
+    def test_init_with_empty_sequences(self):
+        param = SequencesParam[int](value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_init_with_single_sequence(self):
+        param = SequencesParam[int](value=[[1, 2, 3]])
+        self.assertEqual(param.value, [[1, 2, 3]])
+
+    def test_init_with_uneven_lengths(self):
+        param = SequencesParam[int](value=[[1], [2, 3]])
+        self.assertEqual(param.value, [[1], [2, 3]])
+
+    def test_init_with_nested_sequences(self):
+        param = SequencesParam[list](value=[[[1, 2]], [[3, 4]]])
+        self.assertEqual(param.value, [[[1, 2]], [[3, 4]]])
+
+    def test_init_with_nested_sequences_and_types(self):
+        param = SequencesParam[list[int]](value=[[[1, 2]], [[3, 4]]])
+        self.assertEqual(param.value, [[[1, 2]], [[3, 4]]])
+
+    def test_init_with_very_large_sequences(self):
+        large_sequence = [list(range(1000)), list(range(1000))]
+        param = SequencesParam[int](value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
+
+    def test_init_with_dict_initialization(self):
+        param = SequencesParam[int].model_validate({"value": [[1, 2], [3, 4]]})
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_str_sequences(self):
+        param = SequencesParam[str](value=[["a", "b"], ["c", "d"]])
+        self.assertEqual(param.value, [["a", "b"], ["c", "d"]])
+
+    def test_init_with_bool_sequences(self):
+        param = SequencesParam[bool](value=[[True, False], [False, True]])
+        self.assertEqual(param.value, [[True, False], [False, True]])
+
+    def test_init_with_float_sequences(self):
+        param = SequencesParam[float](value=[[1.0, 2.0], [3.0, 4.0]])
+        self.assertEqual(param.value, [[1.0, 2.0], [3.0, 4.0]])
+
+    def test_init_with_dict_sequences(self):
+        param = SequencesParam[dict](value=[[{"a": 1}], [{"b": 2}]])
+        self.assertEqual(param.value, [[{"a": 1}], [{"b": 2}]])
+
+    def test_init_with_mixed_numeric_types(self):
+        param = SequencesParam[float](value=[[1, 2.0], [3, 4.0]])
+        self.assertEqual(param.value, [[1.0, 2.0], [3.0, 4.0]])
+
+    def test_init_with_invalid_sequence_param(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value=[42])
+
+    def test_init_with_invalid_nested_type(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value=[[1, 2], ["3", "4"]])
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value=None)
+
+    def test_init_with_none_in_sequence(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value=[[1, 2], None])
+
+    def test_init_with_none_in_nested_sequence(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value=[[1, None], [3, 4]])
+
+    def test_init_with_empty_dict(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value={})
+
+    def test_init_with_dict_containing_invalid_value(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int].model_validate({"value": [42]})
+
+    def test_init_with_single_value(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value=42)
+
+    def test_init_with_non_sequence(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value="not_a_sequence")
+
+    def test_init_with_set(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value={1, 2})
+
+    def test_init_with_dict_value(self):
+        with self.assertRaises(ValidationError):
+            SequencesParam[int](value={"key": "value"})
+
+    def test_init_with_complex_nested_sequences(self):
+        param = SequencesParam[list](value=[[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+        self.assertEqual(param.value, [[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+
+    def test_init_with_very_deep_nesting(self):
+        param = SequencesParam[list](value=[[[[1]]], [[[2]]]])
+        self.assertEqual(param.value, [[[[1]]], [[[2]]]])
+
+
 if __name__ == "__main__":
     unittest.main()

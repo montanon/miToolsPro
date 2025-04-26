@@ -118,6 +118,7 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
             input_value = values
 
         input_value = coerce_to_list(input_value)
+
         if not isinstance(input_value, Sequence):
             raise ArgumentValidationError(
                 f"Expected a Sequence, got {type(input_value)}"
@@ -126,15 +127,11 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
         normalized = []
         for value in input_value:
             value = coerce_to_list(value)
-            if isinstance(value, (list, tuple)):
-                sequence_param = SequenceParam[T](value=value)
-            elif isinstance(value, SequenceParam):
-                sequence_param = value
-            else:
+            if not isinstance(value, Sequence):
                 raise ArgumentValidationError(
-                    f"Expected a SequenceParam[T] or raw sequence, got {type(value)}"
+                    f"Expected a Sequence inside outer list, got {type(value)}"
                 )
-            normalized.append(sequence_param)
+            normalized.append(value)
 
         return {"value": normalized}
 
