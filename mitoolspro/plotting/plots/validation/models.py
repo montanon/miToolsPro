@@ -23,9 +23,11 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
     NORMALIZATIONS,
     NumericSequences,
 )
+from mitoolspro.plotting.plots.validation.functions import coerce_to_list
 
 T = TypeVar("T")
 NumericType: TypeAlias = float | int
+NumericTuple: TypeAlias = tuple[NumericType, ...]
 
 
 class Param[T](BaseModel):
@@ -75,16 +77,13 @@ class SequenceParam[T](Param[Sequence[T]]):
     def validate_type(cls, values: Any) -> dict:
         if isinstance(values, dict):
             values = values["value"]
-        if isinstance(values, (ndarray, Series)):
-            values = values.tolist()
-        elif isinstance(values, tuple):
-            values = list(values)
+        values = coerce_to_list(values)
         if not isinstance(values, Sequence):
             raise ArgumentValidationError(f"Expected Sequence, got {type(values)}")
         return {"value": values}
 
 
-class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
+class SequencesParam[T](Param[SequenceParam[list[T]]]):
     value: SequenceParam[SequenceParam[T]]
 
     @model_validator(mode="before")
@@ -95,8 +94,7 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
         else:
             input_value = values
 
-        if isinstance(input_value, (ndarray, Series)):
-            input_value = input_value.tolist()
+        input_value = coerce_to_list(input_value)
         if not isinstance(input_value, Sequence):
             raise ArgumentValidationError(
                 f"Expected a Sequence, got {type(input_value)}"
@@ -104,11 +102,8 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
 
         normalized = []
         for value in input_value:
-            if isinstance(value, (list, tuple, ndarray, Series)):
-                if isinstance(value, (ndarray, Series)):
-                    value = value.tolist()
-                elif isinstance(value, tuple):
-                    value = list(value)
+            value = coerce_to_list(value)
+            if isinstance(value, (list, tuple)):
                 sequence_param = SequenceParam[T](value=value)
             elif isinstance(value, SequenceParam):
                 sequence_param = value
@@ -153,37 +148,144 @@ class DictSequencesParam(SequencesParam[dict]):
     pass
 
 
-class NumericTupleParam(Param[tuple[NumericType, ...]]):
+class NumericTupleParam(Param[NumericTuple]):
     sizes: Optional[Sequence[int] | int] = None
 
     @model_validator(mode="after")
     def validate_numeric_tuple(self) -> "NumericTupleParam":
         if self.sizes is not None:
-            if not isinstance(self.sizes, list):
+            if not isinstance(self.sizes, Sequence):
                 self.sizes = [self.sizes]
             if len(self.value) not in self.sizes:
                 raise ArgumentValidationError(
-                    f"Tuple length {len(self.value)} not in allowed sizes {self.sizes}"
+                    f"Invalid tuple length {len(self.value)}. Allowed sizes: {self.sizes}."
                 )
         return self
 
 
+class NumericTupleSequenceParam(SequenceParam[NumericTuple]):
+    sizes: Optional[Sequence[int] | int] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_type(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            values = values["value"]
+
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
+
+        for idx, v in enumerate(values):
+            if not isinstance(v, tuple):
+                raise ArgumentValidationError(
+                    f"Expected each element to be a tuple, got {type(v)} at index {idx}"
+                )
+
+        return {"value": values, "sizes": sizes}
+
+    @model_validator(mode="after")
+    def validate_numeric_tuple_sequence(self) -> "NumericTupleSequenceParam":
+        if self.sizes is not None:
+            if not isinstance(self.sizes, Sequence):
+                self.sizes = [self.sizes]
+            for idx, tup in enumerate(self.value):
+                if len(tup) not in self.sizes:
+                    raise ArgumentValidationError(
+                        f"Invalid tuple length {len(tup)} at index {idx}. Allowed sizes: {self.sizes}."
+                    )
+        return self
+
+
+class NumericTupleSequencesParam(Param[SequenceParam[SequenceParam[NumericTuple]]]):
+    sizes: Optional[Sequence[int] | int] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def standardize_input(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            input_value = values["value"]
+            sizes = values.get("sizes", None)
+        else:
+            input_value = values
+            sizes = None
+
+        input_value = coerce_to_list(input_value)
+        if not isinstance(input_value, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence, got {type(input_value)}"
+            )
+
+        normalized_outer = []
+        for outer_value in input_value:
+            outer_value = coerce_to_list(outer_value)
+
+            if not isinstance(outer_value, Sequence):
+                raise ArgumentValidationError(
+                    f"Expected each element to be a Sequence of tuples, got {type(outer_value)}"
+                )
+
+            normalized_inner = []
+            for inner_value in outer_value:
+                if not isinstance(inner_value, tuple):
+                    raise ArgumentValidationError(
+                        f"Expected a tuple, got {type(inner_value)}"
+                    )
+                normalized_inner.append(inner_value)
+
+            inner_sequence_param = SequenceParam[NumericTuple](value=normalized_inner)
+            normalized_outer.append(inner_sequence_param)
+
+        outer_sequence_param = SequenceParam[SequenceParam[NumericTuple]](
+            value=normalized_outer
+        )
+
+        return {"value": outer_sequence_param, "sizes": sizes}
+
+    @model_validator(mode="after")
+    def validate_numeric_tuple_sequences(self) -> "NumericTupleSequencesParam":
+        if self.sizes is not None:
+            if not isinstance(self.sizes, Sequence):
+                self.sizes = [self.sizes]
+            for outer_idx, inner_sequence_param in enumerate(self.value.value):
+                for inner_idx, tup in enumerate(inner_sequence_param.value):
+                    if len(tup) not in self.sizes:
+                        raise ArgumentValidationError(
+                            f"Invalid tuple length {len(tup)} at outer {outer_idx}, inner {inner_idx}. Allowed sizes: {self.sizes}."
+                        )
+        return self
+
+
 if __name__ == "__main__":
-    print(RangeParam(value=1))
-    print(RangeParam(value=1, min_value=0, max_value=10))
+    seq = NumericTupleSequencesParam(
+        value=[
+            [(1, 2, 3), (1, 2, 3)],
+            [(1, 2, 3), (1, 2, 3)],
+        ],
+    )
+
+    print(
+        NumericTupleSequencesParam(
+            value=[
+                [(1, 2, 3), (1, 2, 3)],
+                [(1, 2, 3), (1, 2, 3)],
+            ],
+            sizes=3,
+        )
+    )
     try:
-        print(RangeParam(value=1, min_value=2))
-    except ValidationError as e:
+        print(
+            NumericTupleSequencesParam(
+                value=[
+                    [(1, 2, 3), (1, 2, 3)],
+                    [(1, 2, 3), (1, 2, 3)],
+                ],
+                sizes=4,
+            )
+        )
+    except (ArgumentValidationError, ValidationError) as e:
         print(e)
-    print(NumericTupleParam(value=(1, 2, 3)))
-    print(NumericTupleParam(value=(1, 2, 3), sizes=3))
-    print(NumericTupleParam(value=(1, 2, 3), sizes=[2, 3]))
-    try:
-        print(NumericTupleParam(value=(1, 2, 3), sizes=4))
-        print(NumericTupleParam(value=(1, 2, 3), sizes=[1, 4]))
-    except ValidationError as e:
-        print(e)
-    try:
-        print(NumericTupleParam(value=(1, "2", 3), sizes=[2, 3]))
-    except ValidationError as e:
-        print(e)
+    seq2 = SequenceParam[NumericTuple](value=[(1, 2, 3), (1, 2, 3)])
+    seq3 = SequencesParam[NumericTuple](
+        value=[[(1, 2, 3), (1, 2, 3)], [(1, 2, 3), (1, 2, 3)]]
+    )
