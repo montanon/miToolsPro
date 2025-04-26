@@ -116,6 +116,14 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
     #     return self
 
 
+class NumericSequenceParam(SequenceParam[NumericType]):
+    pass
+
+
+class NumericSequencesParam(SequencesParam[NumericSequenceParam]):
+    pass
+
+
 if __name__ == "__main__":
     print(SequenceParam(value=[1, 2, 3, "abcd", True, False]))
     print(SequenceParam(value=(1, 2, 3, "abcd", True, False)))
@@ -140,3 +148,23 @@ if __name__ == "__main__":
         print(SequencesParam(value=1))
     except ValidationError as e:
         print(e)
+    print(NumericSequenceParam(value=[1, 2, 3]))
+    print(NumericSequenceParam(value=Series([1, 2, 3])))
+    print(NumericSequenceParam(value=(1, 2, 3)))
+    print(NumericSequenceParam(value=np.array([1, 2, 3])))
+    try:
+        print(NumericSequenceParam(value=[1, 2, 3, "abcd", True, False]))
+    except ValidationError as e:
+        print(e)
+    print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6]]))
+    # print(NumericSequencesParam(value=[[1, 2, 3], [4, 5, 6]]))
+    # print(
+    #     NumericSequencesParam(
+    #         value=[
+    #             [1, 2, 3],
+    #             np.array([4, 5, 6]),
+    #             Series([7, 8, 9]),
+    #             tuple([10, -10, 12]),
+    #         ]
+    #     )
+    # )
