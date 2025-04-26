@@ -9,16 +9,20 @@ from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.models import (
     BoolParam,
     BoolSequenceParam,
+    BoolSequencesParam,
     DictParam,
     DictSequenceParam,
+    DictSequencesParam,
     NumericParam,
     NumericSequenceParam,
+    NumericSequencesParam,
     Param,
     RangeParam,
     SequenceParam,
     SequencesParam,
     StrParam,
     StrSequenceParam,
+    StrSequencesParam,
 )
 
 
@@ -690,6 +694,150 @@ class TestSequencesParam(TestCase):
     def test_init_with_very_deep_nesting(self):
         param = SequencesParam[list](value=[[[[1]]], [[[2]]]])
         self.assertEqual(param.value, [[[[1]]], [[[2]]]])
+
+
+class TestSpecializedSequencesParams(TestCase):
+    def test_numeric_sequences_param_valid_values(self):
+        param = NumericSequencesParam(value=[[1, 2], [3, 4]])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        param = NumericSequencesParam(value=[[1.0, 2.0], [3.0, 4.0]])
+        self.assertEqual(param.value, [[1.0, 2.0], [3.0, 4.0]])
+        param = NumericSequencesParam(value=[np.array([1, 2]), np.array([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_numeric_sequences_param_with_mixed_numeric_types(self):
+        param = NumericSequencesParam(value=[[1, 2.0], [3, 4.0]])
+        self.assertEqual(param.value, [[1.0, 2.0], [3.0, 4.0]])
+
+    def test_numeric_sequences_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            NumericSequencesParam(value=[["1", "2"], ["3", "4"]])
+        with self.assertRaises(ValidationError):
+            NumericSequencesParam(value=[[True, False], [False, True]])
+        with self.assertRaises(ValidationError):
+            NumericSequencesParam(value=[[None, None], [None, None]])
+
+    def test_str_sequences_param_valid_values(self):
+        param = StrSequencesParam(value=[["a", "b"], ["c", "d"]])
+        self.assertEqual(param.value, [["a", "b"], ["c", "d"]])
+        param = StrSequencesParam(value=[["1", "2"], ["3", "4"]])
+        self.assertEqual(param.value, [["1", "2"], ["3", "4"]])
+        param = StrSequencesParam(value=[["", ""], ["", ""]])
+        self.assertEqual(param.value, [["", ""], ["", ""]])
+
+    def test_str_sequences_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            StrSequencesParam(value=[[1, 2], [3, 4]])
+        with self.assertRaises(ValidationError):
+            StrSequencesParam(value=[[True, False], [False, True]])
+        with self.assertRaises(ValidationError):
+            StrSequencesParam(value=[[None, None], [None, None]])
+
+    def test_bool_sequences_param_valid_values(self):
+        param = BoolSequencesParam(value=[[True, False], [False, True]])
+        self.assertEqual(param.value, [[True, False], [False, True]])
+        param = BoolSequencesParam(value=[[False, False], [True, True]])
+        self.assertEqual(param.value, [[False, False], [True, True]])
+
+    def test_bool_sequences_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            BoolSequencesParam(value=[[1, 0], [0, 1]])
+        with self.assertRaises(ValidationError):
+            BoolSequencesParam(value=[["true", "false"], ["false", "true"]])
+        with self.assertRaises(ValidationError):
+            BoolSequencesParam(value=[[None, None], [None, None]])
+
+    def test_dict_sequences_param_valid_values(self):
+        param = DictSequencesParam(value=[[{"a": 1}], [{"b": 2}]])
+        self.assertEqual(param.value, [[{"a": 1}], [{"b": 2}]])
+        param = DictSequencesParam(value=[[{}, {}], [{}, {}]])
+        self.assertEqual(param.value, [[{}, {}], [{}, {}]])
+        param = DictSequencesParam(value=[[{"nested": {"key": "value"}}]])
+        self.assertEqual(param.value, [[{"nested": {"key": "value"}}]])
+
+    def test_dict_sequences_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            DictSequencesParam(value=[["not_a_dict"], ["not_a_dict"]])
+        with self.assertRaises(ValidationError):
+            DictSequencesParam(value=[[None], [None]])
+        with self.assertRaises(ValidationError):
+            DictSequencesParam(value=[[1, 2], [3, 4]])
+
+    def test_numeric_sequences_param_with_uneven_lengths(self):
+        param = NumericSequencesParam(value=[[1], [2, 3]])
+        self.assertEqual(param.value, [[1], [2, 3]])
+
+    def test_str_sequences_param_with_uneven_lengths(self):
+        param = StrSequencesParam(value=[["a"], ["b", "c"]])
+        self.assertEqual(param.value, [["a"], ["b", "c"]])
+
+    def test_bool_sequences_param_with_uneven_lengths(self):
+        param = BoolSequencesParam(value=[[True], [False, True]])
+        self.assertEqual(param.value, [[True], [False, True]])
+
+    def test_dict_sequences_param_with_uneven_lengths(self):
+        param = DictSequencesParam(value=[[{"a": 1}], [{"b": 2}, {"c": 3}]])
+        self.assertEqual(param.value, [[{"a": 1}], [{"b": 2}, {"c": 3}]])
+
+    def test_numeric_sequences_param_with_empty_sequences(self):
+        param = NumericSequencesParam(value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_str_sequences_param_with_empty_sequences(self):
+        param = StrSequencesParam(value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_bool_sequences_param_with_empty_sequences(self):
+        param = BoolSequencesParam(value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_dict_sequences_param_with_empty_sequences(self):
+        param = DictSequencesParam(value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_numeric_sequences_param_with_single_sequence(self):
+        param = NumericSequencesParam(value=[[1, 2, 3]])
+        self.assertEqual(param.value, [[1, 2, 3]])
+
+    def test_str_sequences_param_with_single_sequence(self):
+        param = StrSequencesParam(value=[["a", "b", "c"]])
+        self.assertEqual(param.value, [["a", "b", "c"]])
+
+    def test_bool_sequences_param_with_single_sequence(self):
+        param = BoolSequencesParam(value=[[True, False, True]])
+        self.assertEqual(param.value, [[True, False, True]])
+
+    def test_dict_sequences_param_with_single_sequence(self):
+        param = DictSequencesParam(value=[[{"a": 1}, {"b": 2}]])
+        self.assertEqual(param.value, [[{"a": 1}, {"b": 2}]])
+
+    def test_numeric_sequences_param_with_numpy_arrays(self):
+        param = NumericSequencesParam(value=[np.array([1, 2]), np.array([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_numeric_sequences_param_with_pandas_series(self):
+        param = NumericSequencesParam(value=[pd.Series([1, 2]), pd.Series([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_numeric_sequences_param_with_very_large_sequences(self):
+        large_sequence = [list(range(1000)), list(range(1000))]
+        param = NumericSequencesParam(value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
+
+    def test_str_sequences_param_with_very_large_sequences(self):
+        large_sequence = [["a"] * 1000, ["b"] * 1000]
+        param = StrSequencesParam(value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
+
+    def test_bool_sequences_param_with_very_large_sequences(self):
+        large_sequence = [[True] * 1000, [False] * 1000]
+        param = BoolSequencesParam(value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
+
+    def test_dict_sequences_param_with_very_large_sequences(self):
+        large_sequence = [[{"a": 1}] * 1000, [{"b": 2}] * 1000]
+        param = DictSequencesParam(value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
 
 
 if __name__ == "__main__":
