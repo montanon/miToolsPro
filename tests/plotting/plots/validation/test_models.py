@@ -19,6 +19,7 @@ from mitoolspro.plotting.plots.validation.models import (
     EdgeColorParam,
     EdgeColorSequenceParam,
     EdgeColorSequencesParam,
+    MarkerParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -2373,6 +2374,149 @@ class TestEdgeColorParams(TestCase):
     def test_edgecolor_sequences_param_mixed_valid_invalid(self):
         with self.assertRaises(ValidationError):
             EdgeColorSequencesParam(value=[["face", "#FF0000"], ["invalid", "red"]])
+
+
+class TestMarkerParam(TestCase):
+    def test_init_with_valid_string_markers(self):
+        MarkerParam(value="o")
+        MarkerParam(value=".")
+        MarkerParam(value="s")
+        MarkerParam(value="^")
+        MarkerParam(value="*")
+        MarkerParam(value="+")
+        MarkerParam(value="x")
+        MarkerParam(value="D")
+        MarkerParam(value="d")
+        MarkerParam(value="|")
+        MarkerParam(value="_")
+        MarkerParam(value="h")
+        MarkerParam(value="H")
+        MarkerParam(value="v")
+        MarkerParam(value="<")
+        MarkerParam(value=">")
+        MarkerParam(value="1")
+        MarkerParam(value="2")
+        MarkerParam(value="3")
+        MarkerParam(value="4")
+        MarkerParam(value="p")
+        MarkerParam(value="P")
+        MarkerParam(value=",")
+        MarkerParam(value="")
+        MarkerParam(value=" ")
+        MarkerParam(value="none")
+        MarkerParam(value="None")
+
+    def test_init_with_valid_numeric_markers(self):
+        for i in range(12):
+            MarkerParam(value=i)
+
+    def test_init_with_valid_dict_markers(self):
+        MarkerParam(value={"marker": "o"})
+        MarkerParam(value={"marker": "o", "fillstyle": "full"})
+        MarkerParam(value={"marker": "o", "fillstyle": "none"})
+        MarkerParam(value={"marker": "o", "fillstyle": "left"})
+        MarkerParam(value={"marker": "o", "fillstyle": "right"})
+        MarkerParam(value={"marker": "o", "fillstyle": "bottom"})
+        MarkerParam(value={"marker": "o", "fillstyle": "top"})
+        MarkerParam(value={"marker": "o", "capstyle": "butt"})
+        MarkerParam(value={"marker": "o", "capstyle": "round"})
+        MarkerParam(value={"marker": "o", "capstyle": "projecting"})
+        MarkerParam(value={"marker": "o", "joinstyle": "miter"})
+        MarkerParam(value={"marker": "o", "joinstyle": "round"})
+        MarkerParam(value={"marker": "o", "joinstyle": "bevel"})
+        MarkerParam(value={"marker": "o", "transform": "identity"})
+        MarkerParam(value={"marker": "o", "transform": "scale"})
+
+    def test_init_with_valid_markerstyle(self):
+        from matplotlib.markers import MarkerStyle
+
+        MarkerParam(value=MarkerStyle("o"))
+        MarkerParam(value=MarkerStyle("s"))
+        MarkerParam(value=MarkerStyle("^"))
+        MarkerParam(value=MarkerStyle("*"))
+
+    def test_init_with_none(self):
+        MarkerParam(value=None)
+
+    def test_init_with_invalid_string_markers(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value="invalid")
+        with self.assertRaises(ValidationError):
+            MarkerParam(value="invalid_marker")
+
+    def test_init_with_invalid_numeric_markers(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=-1)
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=12)
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=100)
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=1.5)
+
+    def test_init_with_invalid_dict_markers(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"invalid": "o"})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"marker": "invalid"})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"marker": "o", "fillstyle": "invalid"})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"marker": "o", "capstyle": "invalid"})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"marker": "o", "joinstyle": "invalid"})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"marker": "o", "transform": "invalid"})
+
+    def test_init_with_invalid_markerstyle(self):
+        from matplotlib.markers import MarkerStyle
+
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=MarkerStyle("invalid"))
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=MarkerStyle(""))
+
+    def test_init_with_invalid_types(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=[])
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=())
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=1.5)
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=True)
+        with self.assertRaises(ValidationError):
+            MarkerParam(value=object())
+
+    def test_init_with_dict_initialization(self):
+        MarkerParam(value={"value": "o"})
+        MarkerParam(value={"value": 0})
+        MarkerParam(value={"value": {"marker": "o"}})
+        MarkerParam(value={"value": None})
+
+    def test_init_with_invalid_dict_initialization(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"value": "invalid"})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"value": -1})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"value": {"marker": "invalid"}})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"value": []})
+
+    def test_init_with_empty_dict(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={})
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"value": {}})
+
+    def test_init_with_empty_string(self):
+        with self.assertRaises(ValidationError):
+            MarkerParam(value="")
+        with self.assertRaises(ValidationError):
+            MarkerParam(value={"value": ""})
 
 
 if __name__ == "__main__":
