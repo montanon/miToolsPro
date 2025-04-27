@@ -25,6 +25,7 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
     is_color,
+    is_literal,
     is_marker,
     normalize_rgb_tuple,
 )
@@ -531,3 +532,26 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
             normalized_outer.append(normalized_inner)
 
         return {"value": normalized_outer}
+
+
+class LiteralParam(Param[str]):
+    value: str
+    options: Sequence[str]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_literal(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            options = values.get("options")
+            value = values.get("value")
+        else:
+            raise ArgumentValidationError(
+                "Expected dict input with 'value' and 'options' keys."
+            )
+
+        if not is_literal(value, options):
+            raise ArgumentValidationError(
+                f"Invalid literal: {value!r}. Allowed options: {options}."
+            )
+
+        return {"value": value, "options": options}
