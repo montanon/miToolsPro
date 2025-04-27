@@ -559,3 +559,42 @@ class LiteralParam(StrParam):
             )
 
         return {"value": value, "options": options}
+
+
+class LiteralSequenceParam(SequenceParam[str]):
+    options: Optional[Sequence[str]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_literal_sequence(cls, values: Any) -> dict:
+        if not isinstance(values, dict):
+            raise ArgumentValidationError(
+                "Expected dict input with 'value' and 'options' keys."
+            )
+
+        options = values.get("options")
+        input_value = values.get("value")
+
+        if (
+            options is None
+            or not isinstance(options, Sequence)
+            or isinstance(options, str)
+        ):
+            raise ArgumentValidationError(
+                "Literal options must be a non-empty sequence of strings."
+            )
+
+        input_value = coerce_to_list(input_value)
+
+        if not isinstance(input_value, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence, got {type(input_value)}."
+            )
+
+        for idx, v in enumerate(input_value):
+            if not is_literal(v, options):
+                raise ArgumentValidationError(
+                    f"Invalid literal at index {idx}: {v!r}. Allowed options: {options}."
+                )
+
+        return {"value": input_value, "options": options}
