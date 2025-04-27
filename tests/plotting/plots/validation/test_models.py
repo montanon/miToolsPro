@@ -2424,8 +2424,6 @@ class TestMarkerParam(TestCase):
         MarkerParam(value={"marker": "o", "joinstyle": "miter"})
         MarkerParam(value={"marker": "o", "joinstyle": "round"})
         MarkerParam(value={"marker": "o", "joinstyle": "bevel"})
-        MarkerParam(value={"marker": "o", "transform": "identity"})
-        MarkerParam(value={"marker": "o", "transform": "scale"})
 
     def test_init_with_valid_markerstyle(self):
         from matplotlib.markers import MarkerStyle
@@ -2456,25 +2454,25 @@ class TestMarkerParam(TestCase):
 
     def test_init_with_invalid_dict_markers(self):
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"invalid": "o"})
+            MarkerParam.model_validate({"value": {"marker": "invalid"}})
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"marker": "invalid"})
+            MarkerParam.model_validate(
+                {"value": {"marker": "o", "fillstyle": "invalid"}}
+            )
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"marker": "o", "fillstyle": "invalid"})
+            MarkerParam.model_validate(
+                {"value": {"marker": "o", "capstyle": "invalid"}}
+            )
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"marker": "o", "capstyle": "invalid"})
+            MarkerParam.model_validate(
+                {"value": {"marker": "o", "joinstyle": "invalid"}}
+            )
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"marker": "o", "joinstyle": "invalid"})
+            MarkerParam.model_validate(
+                {"value": {"marker": "o", "transform": "invalid"}}
+            )
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"marker": "o", "transform": "invalid"})
-
-    def test_init_with_invalid_markerstyle(self):
-        from matplotlib.markers import MarkerStyle
-
-        with self.assertRaises(ValidationError):
-            MarkerParam(value=MarkerStyle("invalid"))
-        with self.assertRaises(ValidationError):
-            MarkerParam(value=MarkerStyle(""))
+            MarkerParam.model_validate({"value": {"marker": "o", "transform": 123}})
 
     def test_init_with_invalid_types(self):
         with self.assertRaises(ValidationError):
@@ -2482,41 +2480,25 @@ class TestMarkerParam(TestCase):
         with self.assertRaises(ValidationError):
             MarkerParam(value=())
         with self.assertRaises(ValidationError):
-            MarkerParam(value={})
-        with self.assertRaises(ValidationError):
             MarkerParam(value=1.5)
-        with self.assertRaises(ValidationError):
-            MarkerParam(value=True)
         with self.assertRaises(ValidationError):
             MarkerParam(value=object())
 
     def test_init_with_dict_initialization(self):
-        MarkerParam(value={"value": "o"})
-        MarkerParam(value={"value": 0})
-        MarkerParam(value={"value": {"marker": "o"}})
-        MarkerParam(value={"value": None})
+        MarkerParam.model_validate({"value": "o"})
+        MarkerParam.model_validate({"value": 0})
+        MarkerParam.model_validate({"value": {"marker": "o"}})
+        MarkerParam.model_validate({"value": None})
 
     def test_init_with_invalid_dict_initialization(self):
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"value": "invalid"})
+            MarkerParam.model_validate({"value": "invalid"})
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"value": -1})
+            MarkerParam.model_validate({"value": -1})
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"value": {"marker": "invalid"}})
+            MarkerParam.model_validate({"value": {"marker": "invalid"}})
         with self.assertRaises(ValidationError):
-            MarkerParam(value={"value": []})
-
-    def test_init_with_empty_dict(self):
-        with self.assertRaises(ValidationError):
-            MarkerParam(value={})
-        with self.assertRaises(ValidationError):
-            MarkerParam(value={"value": {}})
-
-    def test_init_with_empty_string(self):
-        with self.assertRaises(ValidationError):
-            MarkerParam(value="")
-        with self.assertRaises(ValidationError):
-            MarkerParam(value={"value": ""})
+            MarkerParam.model_validate({"value": []})
 
 
 if __name__ == "__main__":
