@@ -1,11 +1,13 @@
 import unittest
+from typing import Optional
 from unittest import TestCase
 
 import numpy as np
 import pandas as pd
+from matplotlib.colors import Colormap, Normalize
+from matplotlib.markers import MarkerStyle
 from pydantic import ValidationError
 
-from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
     BinsSequenceParam,
@@ -125,8 +127,6 @@ class TestParam(TestCase):
         self.assertEqual(param.value, "test")
 
     def test_init_with_optional_type(self):
-        from typing import Optional
-
         param = Param[Optional[int]](value=42)
         self.assertEqual(param.value, 42)
         param = Param[Optional[int]](value=None)
@@ -2440,8 +2440,6 @@ class TestMarkerParam(TestCase):
         MarkerParam(value={"marker": "o", "joinstyle": "bevel"})
 
     def test_init_with_valid_markerstyle(self):
-        from matplotlib.markers import MarkerStyle
-
         MarkerParam(value=MarkerStyle("o"))
         MarkerParam(value=MarkerStyle("s"))
         MarkerParam(value=MarkerStyle("^"))
@@ -2692,8 +2690,6 @@ class TestNormalizationParam(TestCase):
         NormalizationParam(value="symlog")
 
     def test_init_with_valid_normalize_instance(self):
-        from matplotlib.colors import Normalize
-
         NormalizationParam(value=Normalize())
 
     def test_init_with_invalid_literals(self):
@@ -2709,13 +2705,9 @@ class TestNormalizationSequenceParam(TestCase):
         NormalizationSequenceParam(value=["linear"])
 
     def test_init_with_valid_normalize_instances(self):
-        from matplotlib.colors import Normalize
-
         NormalizationSequenceParam(value=[Normalize(), Normalize()])
 
     def test_init_with_mixed_valid_values(self):
-        from matplotlib.colors import Normalize
-
         NormalizationSequenceParam(value=["linear", Normalize(), "log"])
 
     def test_init_with_invalid_values(self):
@@ -2733,13 +2725,9 @@ class TestNormalizationSequencesParam(TestCase):
         NormalizationSequencesParam(value=[["linear"]])
 
     def test_init_with_valid_normalize_instances(self):
-        from matplotlib.colors import Normalize
-
         NormalizationSequencesParam(value=[[Normalize()], [Normalize()]])
 
     def test_init_with_mixed_valid_values(self):
-        from matplotlib.colors import Normalize
-
         NormalizationSequencesParam(value=[["linear", Normalize()], ["log"]])
 
     def test_init_with_invalid_values(self):
@@ -2762,8 +2750,6 @@ class TestColormapParam(TestCase):
         ColormapParam(value="inferno")
 
     def test_init_with_valid_colormap_instance(self):
-        from matplotlib.colors import Colormap
-
         ColormapParam(value=Colormap("viridis"))
 
     def test_init_with_invalid_literals(self):
@@ -2782,13 +2768,9 @@ class TestColormapSequenceParam(TestCase):
         ColormapSequenceParam(value=["viridis", "plasma", "inferno"])
 
     def test_init_with_valid_colormap_instances(self):
-        from matplotlib.colors import Colormap
-
         ColormapSequenceParam(value=[Colormap("viridis"), Colormap("plasma")])
 
     def test_init_with_mixed_valid_values(self):
-        from matplotlib.colors import Colormap
-
         ColormapSequenceParam(value=["viridis", Colormap("plasma"), "inferno"])
 
     def test_init_with_invalid_values(self):
@@ -2806,13 +2788,9 @@ class TestColormapSequencesParam(TestCase):
         ColormapSequencesParam(value=[["viridis", "plasma"], ["inferno", "magma"]])
 
     def test_init_with_valid_colormap_instances(self):
-        from matplotlib.colors import Colormap
-
         ColormapSequencesParam(value=[[Colormap("viridis")], [Colormap("plasma")]])
 
     def test_init_with_mixed_valid_values(self):
-        from matplotlib.colors import Colormap
-
         ColormapSequencesParam(value=[["viridis", Colormap("plasma")], ["inferno"]])
 
     def test_init_with_invalid_values(self):
