@@ -25,6 +25,7 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
 )
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
+    is_bins,
     is_color,
     is_literal,
     is_marker,
@@ -791,6 +792,68 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
                 else:
                     raise ArgumentValidationError(
                         f"Invalid colormap at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {CMAPS}."
+                    )
+            normalized_outer.append(normalized_inner)
+
+        return {"value": normalized_outer}
+
+
+class BinsParam(Param[int | str]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_bins(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+
+        if not is_bins(values):
+            raise ArgumentValidationError(
+                f"Invalid bins value: {values!r}. Must be a positive integer or one of {BINS}."
+            )
+
+        return {"value": values}
+
+
+class BinsSequenceParam(SequenceParam[int | str]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_bins_sequence(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+
+        values = coerce_to_list(values)
+
+        normalized = []
+        for idx, value in enumerate(values):
+            if is_bins(value):
+                normalized.append(value)
+            else:
+                raise ArgumentValidationError(
+                    f"Invalid bins value at index {idx}: {value!r}. Must be a positive integer or one of {BINS}."
+                )
+
+        return {"value": normalized}
+
+
+class BinsSequencesParam(SequencesParam[int | str]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_bins_sequences(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+
+        values = coerce_to_list(values)
+
+        normalized_outer = []
+        for outer_idx, outer in enumerate(values):
+            outer = coerce_to_list(outer)
+
+            normalized_inner = []
+            for inner_idx, value in enumerate(outer):
+                if is_bins(value):
+                    normalized_inner.append(value)
+                else:
+                    raise ArgumentValidationError(
+                        f"Invalid bins value at [{outer_idx}, {inner_idx}]: {value!r}. Must be a positive integer or one of {BINS}."
                     )
             normalized_outer.append(normalized_inner)
 

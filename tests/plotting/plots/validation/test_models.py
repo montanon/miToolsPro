@@ -7,6 +7,9 @@ from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.models import (
+    BinsParam,
+    BinsSequenceParam,
+    BinsSequencesParam,
     BoolParam,
     BoolSequenceParam,
     BoolSequencesParam,
@@ -2820,6 +2823,60 @@ class TestColormapSequencesParam(TestCase):
 
     def test_init_with_empty_sequences(self):
         ColormapSequencesParam(value=[[], []])
+
+
+class TestBinsParam(TestCase):
+    def test_init_with_valid_integer(self):
+        BinsParam(value=10)
+
+    def test_init_with_valid_literal(self):
+        BinsParam(value="auto")
+
+    def test_init_with_invalid_value(self):
+        with self.assertRaises(ValidationError):
+            BinsParam(value=-1)
+        with self.assertRaises(ValidationError):
+            BinsParam(value="invalid")
+
+
+class TestBinsSequenceParam(TestCase):
+    def test_init_with_valid_integers(self):
+        BinsSequenceParam(value=[10, 20, 30])
+
+    def test_init_with_valid_literals(self):
+        BinsSequenceParam(value=["auto", "sturges", "fd"])
+
+    def test_init_with_mixed_valid_values(self):
+        BinsSequenceParam(value=[10, "auto", 20])
+
+    def test_init_with_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            BinsSequenceParam(value=[-1, 10])
+        with self.assertRaises(ValidationError):
+            BinsSequenceParam(value=["invalid", "auto"])
+
+    def test_init_with_empty_sequence(self):
+        BinsSequenceParam(value=[])
+
+
+class TestBinsSequencesParam(TestCase):
+    def test_init_with_valid_integers(self):
+        BinsSequencesParam(value=[[10, 20], [30, 40]])
+
+    def test_init_with_valid_literals(self):
+        BinsSequencesParam(value=[["auto", "sturges"], ["fd", "sqrt"]])
+
+    def test_init_with_mixed_valid_values(self):
+        BinsSequencesParam(value=[[10, "auto"], ["fd", 20]])
+
+    def test_init_with_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            BinsSequencesParam(value=[[-1, 10], [20, 30]])
+        with self.assertRaises(ValidationError):
+            BinsSequencesParam(value=[["invalid", "auto"], ["fd"]])
+
+    def test_init_with_empty_sequences(self):
+        BinsSequencesParam(value=[[], []])
 
 
 if __name__ == "__main__":
