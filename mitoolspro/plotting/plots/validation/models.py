@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Generic, Literal, Optional, TypeAlias, TypeVar, Union
 
 import numpy as np
-from matplotlib.colors import Colormap, Normalize
 from matplotlib.markers import MarkerStyle
 from numpy import integer, ndarray
 from pandas import Series
@@ -23,7 +22,11 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
     NORMALIZATIONS,
     NumericSequences,
 )
-from mitoolspro.plotting.plots.validation.functions import coerce_to_list, is_color
+from mitoolspro.plotting.plots.validation.functions import (
+    coerce_to_list,
+    is_color,
+    normalize_rgb_tuple,
+)
 
 T = TypeVar("T")
 NumericType: TypeAlias = float | int
@@ -84,6 +87,8 @@ class ColorParam(Param[ColorType]):
 
         if isinstance(values, (np.ndarray, Series)):
             values = values.tolist()
+
+        values = normalize_rgb_tuple(values)
 
         if not is_color(values):
             raise ArgumentValidationError(f"Invalid color format: {values!r}")

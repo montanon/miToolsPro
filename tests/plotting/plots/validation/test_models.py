@@ -10,6 +10,7 @@ from mitoolspro.plotting.plots.validation.models import (
     BoolParam,
     BoolSequenceParam,
     BoolSequencesParam,
+    ColorParam,
     DictParam,
     DictSequenceParam,
     DictSequencesParam,
@@ -1190,7 +1191,7 @@ class TestNumericTupleSequenceParam(TestCase):
 
     def test_init_with_nested_sequences(self):
         with self.assertRaises(ValidationError):
-            NumericTupleSequenceParam(value=[[(1, 2)], [(3, 4)]])
+            NumericTupleSequenceParam(value=[[[[[(1, 2)]]]]])
 
     def test_init_with_dict_initialization(self):
         param = NumericTupleSequenceParam.model_validate(
@@ -1540,6 +1541,260 @@ class TestNumericTupleSequencesParam(TestCase):
                 [(5e-100, 6e-100), (7e-100, 8e-100)],
             ],
         )
+
+
+class TestColorParam(TestCase):
+    def test_init_with_valid_hex_string(self):
+        param = ColorParam(value="#FF0000")
+        self.assertEqual(param.value, "#FF0000")
+
+    def test_init_with_valid_named_color(self):
+        param = ColorParam(value="red")
+        self.assertEqual(param.value, "red")
+
+    def test_init_with_valid_rgb_tuple(self):
+        param = ColorParam(value=(255, 0, 0))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_tuple(self):
+        param = ColorParam(value=(255, 0, 0, 0.5))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_rgb_list(self):
+        param = ColorParam(value=[255, 0, 0])
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_list(self):
+        param = ColorParam(value=[255, 0, 0, 0.5])
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_single_float(self):
+        param = ColorParam(value=0.5)
+        self.assertEqual(param.value, 0.5)
+
+    def test_init_with_valid_none(self):
+        param = ColorParam(value=None)
+        self.assertIsNone(param.value)
+
+    def test_init_with_valid_numpy_array(self):
+        param = ColorParam(value=np.array([255, 0, 0]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_pandas_series(self):
+        param = ColorParam(value=pd.Series([255, 0, 0]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgb_numpy_array(self):
+        param = ColorParam(value=np.array([255, 0, 0], dtype=np.uint8))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_numpy_array(self):
+        param = ColorParam(value=np.array([255, 0, 0, 0.5]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_rgb_pandas_series(self):
+        param = ColorParam(value=pd.Series([255, 0, 0]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_pandas_series(self):
+        param = ColorParam(value=pd.Series([255, 0, 0, 0.5]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_long_hex(self):
+        param = ColorParam(value="#FF0000")
+        self.assertEqual(param.value, "#FF0000")
+
+    def test_init_with_valid_hex_with_alpha(self):
+        param = ColorParam(value="#FF000080")
+        self.assertEqual(param.value, "#FF000080")
+
+    def test_init_with_valid_rgb_float_tuple(self):
+        param = ColorParam(value=(1.0, 0.0, 0.0))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_float_tuple(self):
+        param = ColorParam(value=(1.0, 0.0, 0.0, 0.5))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_rgb_float_list(self):
+        param = ColorParam(value=[1.0, 0.0, 0.0])
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_float_list(self):
+        param = ColorParam(value=[1.0, 0.0, 0.0, 0.5])
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_rgb_numpy_float_array(self):
+        param = ColorParam(value=np.array([1.0, 0.0, 0.0]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_numpy_float_array(self):
+        param = ColorParam(value=np.array([1.0, 0.0, 0.0, 0.5]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_valid_rgb_pandas_float_series(self):
+        param = ColorParam(value=pd.Series([1.0, 0.0, 0.0]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0))
+
+    def test_init_with_valid_rgba_pandas_float_series(self):
+        param = ColorParam(value=pd.Series([1.0, 0.0, 0.0, 0.5]))
+        self.assertEqual(param.value, (1.0, 0.0, 0.0, 0.5))
+
+    def test_init_with_invalid_rgb_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="rgb(256, 0, 0)")
+
+    def test_init_with_invalid_hex_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="#FF000")
+
+    def test_init_with_invalid_named_color(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="notacolor")
+
+    def test_init_with_invalid_rgb_tuple(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=(256, 0, 0))
+
+    def test_init_with_invalid_rgba_tuple(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=(255, 0, 0, 1.1))
+
+    def test_init_with_invalid_rgb_list(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=[256, 0, 0])
+
+    def test_init_with_invalid_rgba_list(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=[255, 0, 0, 1.1])
+
+    def test_init_with_invalid_single_int(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=256)
+
+    def test_init_with_invalid_single_float(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=1.1)
+
+    def test_init_with_invalid_numpy_array_shape(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=np.array([255, 0]))
+
+    def test_init_with_invalid_pandas_series_shape(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=pd.Series([255, 0]))
+
+    def test_init_with_invalid_rgb_numpy_array_values(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=np.array([256, 0, 0]))
+
+    def test_init_with_invalid_rgba_numpy_array_values(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=np.array([255, 0, 0, 256]))
+
+    def test_init_with_invalid_rgb_pandas_series_values(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=pd.Series([256, 0, 0]))
+
+    def test_init_with_invalid_rgba_pandas_series_values(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=pd.Series([255, 0, 0, 256]))
+
+    def test_init_with_invalid_hex_length(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="#FF000")
+
+    def test_init_with_invalid_hex_characters(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="#FF000G")
+
+    def test_init_with_invalid_hsl_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="hsl(361, 100%, 50%)")
+
+    def test_init_with_invalid_hsla_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="hsla(0, 101%, 50%, 0.5)")
+
+    def test_init_with_invalid_rgb_percent_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="rgb(101%, 0%, 0%)")
+
+    def test_init_with_invalid_rgba_percent_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="rgba(100%, 0%, 0%, 1.1)")
+
+    def test_init_with_invalid_rgb_float_tuple(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=(1.1, 0.0, 0.0))
+
+    def test_init_with_invalid_rgba_float_tuple(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=(1.0, 0.0, 0.0, 1.1))
+
+    def test_init_with_invalid_rgb_float_list(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=[1.1, 0.0, 0.0])
+
+    def test_init_with_invalid_rgba_float_list(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=[1.0, 0.0, 0.0, 1.1])
+
+    def test_init_with_invalid_rgb_numpy_float_array(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=np.array([1.1, 0.0, 0.0]))
+
+    def test_init_with_invalid_rgba_numpy_float_array(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=np.array([1.0, 0.0, 0.0, 1.1]))
+
+    def test_init_with_invalid_rgb_pandas_float_series(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=pd.Series([1.1, 0.0, 0.0]))
+
+    def test_init_with_invalid_rgba_pandas_float_series(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=pd.Series([1.0, 0.0, 0.0, 1.1]))
+
+    def test_init_with_invalid_type(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value={"key": "value"})
+
+    def test_init_with_invalid_empty_string(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value="")
+
+    def test_init_with_invalid_empty_list(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=[])
+
+    def test_init_with_invalid_empty_tuple(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=())
+
+    def test_init_with_invalid_empty_numpy_array(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=np.array([]))
+
+    def test_init_with_invalid_empty_pandas_series(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=pd.Series([]))
+
+    def test_init_with_invalid_dict_initialization(self):
+        with self.assertRaises(ValidationError):
+            ColorParam.model_validate({"value": "notacolor"})
+
+    def test_init_with_valid_very_small_numbers(self):
+        param = ColorParam(value=(1e-100, 0, 0))
+        self.assertEqual(param.value, (1e-100, 0, 0))
+
+    def test_init_with_valid_inf_values(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=(float("inf"), 0, 0))
+
+    def test_init_with_valid_negative_inf_values(self):
+        with self.assertRaises(ValidationError):
+            ColorParam(value=(float("-inf"), 0, 0))
 
 
 if __name__ == "__main__":
