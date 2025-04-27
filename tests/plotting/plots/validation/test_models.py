@@ -16,6 +16,9 @@ from mitoolspro.plotting.plots.validation.models import (
     DictParam,
     DictSequenceParam,
     DictSequencesParam,
+    EdgeColorParam,
+    EdgeColorSequenceParam,
+    EdgeColorSequencesParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -526,8 +529,8 @@ class TestSpecializedSequenceParams(TestCase):
         self.assertEqual(param.value, ["a", "b", "c"])
         param = StrSequenceParam(value=["1", "2", "3"])
         self.assertEqual(param.value, ["1", "2", "3"])
-        param = StrSequenceParam(value=["", "", ""])
-        self.assertEqual(param.value, ["", "", ""])
+        param = StrSequenceParam(value=[""])
+        self.assertEqual(param.value, [""])
 
     def test_str_sequence_param_invalid_values(self):
         with self.assertRaises(ValidationError):
@@ -2327,6 +2330,49 @@ class TestColorSequencesParam(TestCase):
                 [(0.0275, 0.3137, 0.0353), (0.0392, 0.0431, 0.0471)],
             ],
         )
+
+
+class TestEdgeColorParams(TestCase):
+    def test_edgecolor_param_valid_values(self):
+        EdgeColorParam(value="face")
+        EdgeColorParam(value="#FF0000")
+        EdgeColorParam(value="red")
+        EdgeColorParam(value=(255, 0, 0))
+        EdgeColorParam(value=(255, 0, 0, 0.5))
+
+    def test_edgecolor_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            EdgeColorParam(value="invalid")
+        with self.assertRaises(ValidationError):
+            EdgeColorParam(value=(300, 0, 0))
+        with self.assertRaises(ValidationError):
+            EdgeColorParam(value="not_face")
+
+    def test_edgecolor_sequence_param_valid_values(self):
+        EdgeColorSequenceParam(value=["face", "#FF0000", "red", (255, 0, 0)])
+        EdgeColorSequenceParam(value=[(255, 0, 0, 0.5), "face", "#00FF00"])
+        EdgeColorSequenceParam(value=[])
+
+    def test_edgecolor_sequence_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            EdgeColorSequenceParam(value=["face", "invalid"])
+        with self.assertRaises(ValidationError):
+            EdgeColorSequenceParam(value=["not_face", "#FF0000"])
+
+    def test_edgecolor_sequences_param_valid_values(self):
+        EdgeColorSequencesParam(value=[["face", "#FF0000"], ["red", (255, 0, 0)]])
+        EdgeColorSequencesParam(value=[[(255, 0, 0, 0.5)], ["face", "#00FF00"]])
+        EdgeColorSequencesParam(value=[[], []])
+
+    def test_edgecolor_sequences_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            EdgeColorSequencesParam(value=[["face", "invalid"], ["#FF0000"]])
+        with self.assertRaises(ValidationError):
+            EdgeColorSequencesParam(value=[["not_face", "#FF0000"], ["red"]])
+
+    def test_edgecolor_sequences_param_mixed_valid_invalid(self):
+        with self.assertRaises(ValidationError):
+            EdgeColorSequencesParam(value=[["face", "#FF0000"], ["invalid", "red"]])
 
 
 if __name__ == "__main__":
