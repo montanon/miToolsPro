@@ -21,7 +21,7 @@ from mitoolspro.plotting.plots.validation.models import (
     EdgeColorSequencesParam,
     LiteralParam,
     LiteralSequenceParam,
-    # LiteralSequencesParam,
+    LiteralSequencesParam,
     MarkerParam,
     MarkerSequenceParam,
     MarkerSequencesParam,
@@ -2640,40 +2640,40 @@ class TestLiteralSequenceParam(TestCase):
             )
 
 
-# class TestLiteralSequencesParam(TestCase):
-#     def test_init_with_valid_sequences(self):
-#         LiteralSequencesParam.model_validate(
-#             {"value": [["option1"], ["option2"]], "options": ["option1", "option2"]}
-#         )
-#         LiteralSequencesParam.model_validate(
-#             {"value": [["option1", "option2"]], "options": ["option1", "option2"]}
-#         )
+class TestLiteralSequencesParam(TestCase):
+    def test_init_with_valid_sequences(self):
+        LiteralSequencesParam.model_validate(
+            {"value": [["option1"], ["option2"]], "options": ["option1", "option2"]}
+        )
+        LiteralSequencesParam.model_validate(
+            {"value": [["option1", "option2"]], "options": ["option1", "option2"]}
+        )
 
-#     def test_init_with_invalid_sequences(self):
-#         with self.assertRaises(ValidationError):
-#             LiteralSequencesParam.model_validate(
-#                 {"value": [["invalid"]], "options": ["option1", "option2"]}
-#             )
-#         with self.assertRaises(ValidationError):
-#             LiteralSequencesParam.model_validate(
-#                 {"value": [["option1"]], "options": []}
-#             )
+    def test_init_with_invalid_sequences(self):
+        with self.assertRaises(ValidationError):
+            LiteralSequencesParam.model_validate(
+                {"value": [["invalid"]], "options": ["option1", "option2"]}
+            )
+        with self.assertRaises(ValidationError):
+            LiteralSequencesParam.model_validate(
+                {"value": [["option1"]], "options": []}
+            )
 
-#     def test_init_with_missing_fields(self):
-#         with self.assertRaises(ValidationError):
-#             LiteralSequencesParam.model_validate({"value": [["option1"]]})
-#         with self.assertRaises(ValidationError):
-#             LiteralSequencesParam.model_validate({"options": ["option1"]})
+    def test_init_with_missing_fields(self):
+        with self.assertRaises(ValidationError):
+            LiteralSequencesParam.model_validate({"value": [["option1"]]})
+        with self.assertRaises(ValidationError):
+            LiteralSequencesParam.model_validate({"options": ["option1"]})
 
-#     def test_init_with_invalid_types(self):
-#         with self.assertRaises(ValidationError):
-#             LiteralSequencesParam.model_validate(
-#                 {"value": [[1]], "options": ["option1"]}
-#             )
-#         with self.assertRaises(ValidationError):
-#             LiteralSequencesParam.model_validate(
-#                 {"value": [["option1"]], "options": "option1"}
-#             )
+    def test_init_with_invalid_types(self):
+        with self.assertRaises(ValidationError):
+            LiteralSequencesParam.model_validate(
+                {"value": [[1]], "options": ["option1"]}
+            )
+        with self.assertRaises(ValidationError):
+            LiteralSequencesParam.model_validate(
+                {"value": [["option1"]], "options": "option1"}
+            )
 
 
 if __name__ == "__main__":

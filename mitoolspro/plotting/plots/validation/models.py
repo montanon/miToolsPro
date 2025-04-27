@@ -598,3 +598,55 @@ class LiteralSequenceParam(SequenceParam[str]):
                 )
 
         return {"value": input_value, "options": options}
+
+
+class LiteralSequencesParam(SequencesParam[str]):
+    options: Optional[Sequence[str]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_literal_sequences(cls, values: Any) -> dict:
+        if not isinstance(values, dict):
+            raise ArgumentValidationError(
+                "Expected dict input with 'value' and 'options' keys."
+            )
+
+        options = values.get("options")
+        input_value = values.get("value")
+
+        if (
+            options is None
+            or not isinstance(options, Sequence)
+            or isinstance(options, str)
+        ):
+            raise ArgumentValidationError(
+                "Literal options must be a non-empty sequence."
+            )
+
+        input_value = coerce_to_list(input_value)
+
+        if not isinstance(input_value, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence, got {type(input_value)}."
+            )
+
+        normalized_outer = []
+        for outer_idx, outer in enumerate(input_value):
+            outer = coerce_to_list(outer)
+
+            if not isinstance(outer, Sequence):
+                raise ArgumentValidationError(
+                    f"Expected a Sequence at outer index {outer_idx}, got {type(outer)}."
+                )
+
+            normalized_inner = []
+            for inner_idx, v in enumerate(outer):
+                if not is_literal(v, options):
+                    raise ArgumentValidationError(
+                        f"Invalid literal at [{outer_idx}, {inner_idx}]: {v!r}. Allowed options: {options}."
+                    )
+                normalized_inner.append(v)
+
+            normalized_outer.append(normalized_inner)
+
+        return {"value": normalized_outer, "options": options}
