@@ -40,6 +40,7 @@ ColorType = Union[
     float,
     None,
 ]
+EdgeColorType = Union[Literal["face"], ColorType]
 
 
 class Param[T](BaseModel):
@@ -364,6 +365,87 @@ class ColorSequencesParam(SequencesParam[ColorType]):
                         f"Invalid color format: {v!r} at index [{outer_idx}, {inner_idx}]"
                     )
 
+                normalized_inner.append(v)
+
+            normalized_outer.append(normalized_inner)
+
+        return {"value": normalized_outer}
+
+
+class EdgeColorParam(Param[EdgeColorType]):
+    value: EdgeColorType
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_edgecolor(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        value = validate_single_color(values, allow_face_literal=True)
+        return {"value": value}
+
+
+class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
+    value: Sequence[EdgeColorType]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_edgecolor_sequence(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        values = coerce_to_list(values)
+
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence of colors, got {type(values)}"
+            )
+
+        normalized = []
+        for idx, v in enumerate(values):
+            try:
+                v = validate_single_color(v, allow_face_literal=True)
+            except ArgumentValidationError:
+                raise ArgumentValidationError(
+                    f"Invalid color format: {v!r} at index {idx}"
+                )
+            normalized.append(v)
+
+        return {"value": normalized}
+
+
+class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
+    value: Sequence[Sequence[EdgeColorType]]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_edgecolor_sequences(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        values = coerce_to_list(values)
+
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence of Sequences, got {type(values)}"
+            )
+
+        normalized_outer = []
+        for outer_idx, outer in enumerate(values):
+            outer = coerce_to_list(outer)
+            if not isinstance(outer, Sequence):
+                raise ArgumentValidationError(
+                    f"Expected a Sequence inside outer list at index {outer_idx}, got {type(outer)}"
+                )
+
+            normalized_inner = []
+            for inner_idx, v in enumerate(outer):
+                try:
+                    v = validate_single_color(v, allow_face_literal=True)
+                except ArgumentValidationError:
+                    raise ArgumentValidationError(
+                        f"Invalid color format: {v!r} at index [{outer_idx}, {inner_idx}]"
+                    )
                 normalized_inner.append(v)
 
             normalized_outer.append(normalized_inner)
