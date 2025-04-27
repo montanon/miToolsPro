@@ -83,46 +83,40 @@ def is_color(value: Any) -> bool:
 
 
 def is_marker(value: Any) -> bool:
-    if isinstance(value, (str, int, Path, MarkerStyle, dict)):
+    if isinstance(value, (str, int, Path, MarkerStyle)):
         if isinstance(value, str):
             return value in MARKERS
         if isinstance(value, int):
             return is_value_in_range(value, 0, 11)
-        if isinstance(value, dict):
-            valid_keys = all(
-                key in ["marker", "fillstyle", "transform", "capstyle", "joinstyle"]
-                for key in value
-            )
-            valid_marker = value["marker"] in MARKERS if "marker" in value else True
-            valid_fillstyle = (
-                value["fillstyle"] in MARKERS_FILLSTYLES
-                if "fillstyle" in value
-                else True
-            )
-            valid_transform = (
-                isinstance(value["transform"], (str, Normalize))
-                if "transform" in value
-                else True
-            )
-            valid_capstyle = (
-                value["capstyle"] in ["butt", "round", "projecting"]
-                if "capstyle" in value
-                else True
-            )
-            valid_joinstyle = (
-                value["joinstyle"] in ["miter", "round", "bevel"]
-                if "joinstyle" in value
-                else True
-            )
-            return (
-                valid_keys
-                and valid_marker
-                and valid_fillstyle
-                and valid_transform
-                and valid_capstyle
-                and valid_joinstyle
-            )
-        return isinstance(value, (Path, MarkerStyle))
+        return True
+    elif isinstance(value, dict):
+        allowed_keys = {"marker", "fillstyle", "transform", "capstyle", "joinstyle"}
+        if not set(value.keys()).issubset(allowed_keys):
+            return False
+
+        if "marker" in value:
+            if value["marker"] not in MARKERS:
+                return False
+
+        if "fillstyle" in value:
+            if value["fillstyle"] not in MARKERS_FILLSTYLES:
+                return False
+
+        if "transform" in value:
+            if not isinstance(value["transform"], (str, Normalize)):
+                return False
+
+        if "capstyle" in value:
+            if value["capstyle"] not in {"butt", "round", "projecting"}:
+                return False
+
+        if "joinstyle" in value:
+            if value["joinstyle"] not in {"miter", "round", "bevel"}:
+                return False
+
+        return True
+
     elif value is None:
         return True
+
     return False
