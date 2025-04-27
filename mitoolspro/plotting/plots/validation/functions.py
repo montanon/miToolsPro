@@ -1,7 +1,9 @@
-import re
 from typing import Any
 
-from matplotlib.colors import get_named_colors_mapping
+from matplotlib.colors import (
+    get_named_colors_mapping,
+    is_color_like,
+)
 from numpy import ndarray
 from pandas import Series
 
@@ -24,29 +26,48 @@ def coerce_to_list(value: Any) -> Any:
     return value
 
 
-def is_color_tuple(value: Any) -> bool:
-    if not isinstance(value, (list, tuple)):
-        return False
+def normalize_rgb_tuple(value: Any) -> Any:
+    if not isinstance(value, (tuple, list)):
+        return value
+    if not all(isinstance(v, (int, float)) for v in value):
+        return value
     if len(value) not in {3, 4}:
-        return False
-    return all(isinstance(val, (int, float)) for val in value)
+        return value
+    elif len(value) == 3:
+        if all(isinstance(v, float) for v in value) and all(
+            0.0 <= v <= 1.0 for v in value
+        ):
+            return tuple(v for v in value)
+        if (
+            all(isinstance(v, (int, float)) for v in value)
+            and all(0 <= v <= 255 for v in value)
+            and max(value) > 10  # Custom threshold for [0, 1] float tuples
+        ):
+            return tuple(v / 255.0 for v in value)
+    elif len(value) == 4:
+        if all(isinstance(v, float) for v in value) and all(
+            0.0 <= v <= 1.0 for v in value
+        ):
+            return tuple(v for v in value)
+        if (
+            all(isinstance(v, (int, float)) for v in value[:3])
+            and all(0 <= v <= 255 for v in value[:3])
+            and max(value[:3]) > 10  # Custom threshold for [0, 1] float tuples
+            and 0.0 <= value[3] <= 1.0
+        ):
+            return tuple(v / 255.0 if n < 3 else v for n, v in enumerate(value))
+    return value
 
 
-def is_color_hex(value: Any) -> bool:
-    return isinstance(value, str) and re.match(
-        r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$", value
-    )
+def is_color_none(value: Any) -> bool:
+    return value is None or value == "none"
 
 
-def is_color_str(value: Any) -> bool:
-    return isinstance(value, str) and value in COLORS
+def is_color_numeric_scalar(value: Any) -> bool:
+    return isinstance(value, (int, float)) and 0.0 <= float(value) <= 1.0
 
 
 def is_color(value: Any) -> bool:
     return (
-        is_color_tuple(value)
-        or is_color_hex(value)
-        or is_color_str(value)
-        or isinstance(value, (int, float))
-        or value is None
+        is_color_like(value) or is_color_none(value) or is_color_numeric_scalar(value)
     )
