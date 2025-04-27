@@ -12,6 +12,7 @@ NumericType: TypeAlias = float | int
 COLORS = set(get_named_colors_mapping().keys())
 MARKERS = set(MarkerStyle.markers.keys()).union(set(MarkerStyle.filled_markers))
 MARKERS_FILLSTYLES = set(MarkerStyle.fillstyles)
+BINS = ["auto", "fd", "doane", "scott", "stone", "rice", "sturges", "sqrt"]
 
 
 def is_indexable(value: Any, index: Any) -> bool:
@@ -28,6 +29,15 @@ def is_value_in_range(value: Any, min_value: NumericType, max_value: NumericType
 
 def is_literal(value: Any, options: Sequence[Any]) -> bool:
     return (isinstance(value, str) and value in options) or value is None
+
+
+def is_bins(value: Any) -> bool:
+    if isinstance(value, (int, str)):
+        if isinstance(value, int):
+            return is_value_in_range(value, 0, 1_000_000)
+        if isinstance(value, str):
+            return value in BINS
+    return False
 
 
 def coerce_to_list(value: Any) -> Any:
