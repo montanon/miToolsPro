@@ -43,7 +43,7 @@ def normalize_rgb_tuple(value: Any) -> Any:
             and all(0 <= v <= 255 for v in value)
             and max(value) > 10  # Custom threshold for [0, 1] float tuples
         ):
-            return tuple(v / 255.0 for v in value)
+            return tuple(round(v / 255.0, 4) for v in value)
     elif len(value) == 4:
         if all(isinstance(v, float) for v in value) and all(
             0.0 <= v <= 1.0 for v in value
@@ -55,7 +55,9 @@ def normalize_rgb_tuple(value: Any) -> Any:
             and max(value[:3]) > 10  # Custom threshold for [0, 1] float tuples
             and 0.0 <= value[3] <= 1.0
         ):
-            return tuple(v / 255.0 if n < 3 else v for n, v in enumerate(value))
+            return tuple(
+                round(v / 255.0, 4) if n < 3 else v for n, v in enumerate(value)
+            )
     return value
 
 
