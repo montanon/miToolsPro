@@ -20,6 +20,7 @@ from mitoolspro.plotting.plots.validation.models import (
     EdgeColorSequenceParam,
     EdgeColorSequencesParam,
     MarkerParam,
+    MarkerSequenceParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -2499,6 +2500,42 @@ class TestMarkerParam(TestCase):
             MarkerParam.model_validate({"value": {"marker": "invalid"}})
         with self.assertRaises(ValidationError):
             MarkerParam.model_validate({"value": []})
+
+
+class TestMarkerSequenceParam(TestCase):
+    def test_init_with_valid_sequences(self):
+        MarkerSequenceParam(value=["o", "s", "D"])
+        MarkerSequenceParam(value=[0, 1, 2])
+        MarkerSequenceParam(value=[{"marker": "o"}, {"marker": "s"}])
+        MarkerSequenceParam(value=[None, "o", None])
+
+    def test_init_with_invalid_sequences(self):
+        with self.assertRaises(ValidationError):
+            MarkerSequenceParam(value=["invalid", "o"])
+        with self.assertRaises(ValidationError):
+            MarkerSequenceParam(value=[-1, 0])
+        with self.assertRaises(ValidationError):
+            MarkerSequenceParam(value=[{"marker": "invalid"}, "o"])
+
+    def test_init_with_empty_sequence(self):
+        MarkerSequenceParam(value=[])
+        MarkerSequenceParam(value=())
+
+    def test_init_with_single_marker(self):
+        MarkerSequenceParam(value=["o"])
+        MarkerSequenceParam(value=[0])
+        MarkerSequenceParam(value=[{"marker": "o"}])
+
+    def test_init_with_dict_initialization(self):
+        MarkerSequenceParam.model_validate({"value": ["o", "s"]})
+        MarkerSequenceParam.model_validate({"value": [0, 1]})
+        MarkerSequenceParam.model_validate({"value": [{"marker": "o"}]})
+
+    def test_init_with_invalid_dict_initialization(self):
+        with self.assertRaises(ValidationError):
+            MarkerSequenceParam.model_validate({"value": ["invalid"]})
+        with self.assertRaises(ValidationError):
+            MarkerSequenceParam.model_validate({"value": [{"marker": "invalid"}]})
 
 
 if __name__ == "__main__":
