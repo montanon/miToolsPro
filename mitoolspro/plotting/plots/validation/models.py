@@ -744,3 +744,54 @@ class ColormapParam(Param[ColormapType]):
             )
 
         return {"value": values}
+
+
+class ColormapSequenceParam(SequenceParam[ColormapType]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_colormap_sequence(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+
+        values = coerce_to_list(values)
+
+        normalized = []
+        for idx, value in enumerate(values):
+            if isinstance(value, Colormap):
+                normalized.append(value)
+            elif is_literal(value, CMAPS):
+                normalized.append(value)
+            else:
+                raise ArgumentValidationError(
+                    f"Invalid colormap at index {idx}: {value!r}. Allowed options: {CMAPS}."
+                )
+
+        return {"value": normalized}
+
+
+class ColormapSequencesParam(SequencesParam[ColormapType]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_colormap_sequences(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+
+        values = coerce_to_list(values)
+
+        normalized_outer = []
+        for outer_idx, outer in enumerate(values):
+            outer = coerce_to_list(outer)
+
+            normalized_inner = []
+            for inner_idx, value in enumerate(outer):
+                if isinstance(value, Colormap):
+                    normalized_inner.append(value)
+                elif is_literal(value, CMAPS):
+                    normalized_inner.append(value)
+                else:
+                    raise ArgumentValidationError(
+                        f"Invalid colormap at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {CMAPS}."
+                    )
+            normalized_outer.append(normalized_inner)
+
+        return {"value": normalized_outer}

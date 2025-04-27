@@ -11,6 +11,8 @@ from mitoolspro.plotting.plots.validation.models import (
     BoolSequenceParam,
     BoolSequencesParam,
     ColormapParam,
+    ColormapSequenceParam,
+    ColormapSequencesParam,
     ColorParam,
     ColorSequenceParam,
     ColorSequencesParam,
@@ -2770,6 +2772,54 @@ class TestColormapParam(TestCase):
     def test_init_with_none(self):
         with self.assertRaises(ValidationError):
             ColormapParam(value=None)
+
+
+class TestColormapSequenceParam(TestCase):
+    def test_init_with_valid_literals(self):
+        ColormapSequenceParam(value=["viridis", "plasma", "inferno"])
+
+    def test_init_with_valid_colormap_instances(self):
+        from matplotlib.colors import Colormap
+
+        ColormapSequenceParam(value=[Colormap("viridis"), Colormap("plasma")])
+
+    def test_init_with_mixed_valid_values(self):
+        from matplotlib.colors import Colormap
+
+        ColormapSequenceParam(value=["viridis", Colormap("plasma"), "inferno"])
+
+    def test_init_with_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            ColormapSequenceParam(value=["invalid", "viridis"])
+        with self.assertRaises(ValidationError):
+            ColormapSequenceParam(value=[123, "viridis"])
+
+    def test_init_with_empty_sequence(self):
+        ColormapSequenceParam(value=[])
+
+
+class TestColormapSequencesParam(TestCase):
+    def test_init_with_valid_literals(self):
+        ColormapSequencesParam(value=[["viridis", "plasma"], ["inferno", "magma"]])
+
+    def test_init_with_valid_colormap_instances(self):
+        from matplotlib.colors import Colormap
+
+        ColormapSequencesParam(value=[[Colormap("viridis")], [Colormap("plasma")]])
+
+    def test_init_with_mixed_valid_values(self):
+        from matplotlib.colors import Colormap
+
+        ColormapSequencesParam(value=[["viridis", Colormap("plasma")], ["inferno"]])
+
+    def test_init_with_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            ColormapSequencesParam(value=[["invalid", "viridis"], ["plasma"]])
+        with self.assertRaises(ValidationError):
+            ColormapSequencesParam(value=[[123, "viridis"], ["plasma"]])
+
+    def test_init_with_empty_sequences(self):
+        ColormapSequencesParam(value=[[], []])
 
 
 if __name__ == "__main__":
