@@ -76,26 +76,6 @@ class RangeParam(Param[NumericType]):
         return self
 
 
-class ColorParam(Param[ColorType]):
-    value: ColorType
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_color(cls, values: Any) -> dict:
-        if isinstance(values, dict):
-            values = values["value"]
-
-        if isinstance(values, (np.ndarray, Series)):
-            values = values.tolist()
-
-        values = normalize_rgb_tuple(values)
-
-        if not is_color(values):
-            raise ArgumentValidationError(f"Invalid color format: {values!r}")
-
-        return {"value": values}
-
-
 class StrParam(Param[str]):
     pass
 
@@ -289,3 +269,56 @@ class NumericTupleSequencesParam(SequencesParam[NumericTuple]):
                             f"Invalid tuple length {len(tup)} at outer {outer_idx}, inner {inner_idx}. Allowed sizes: {self.sizes}."
                         )
         return self
+
+
+class ColorParam(Param[ColorType]):
+    value: ColorType
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_color(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        if isinstance(values, (np.ndarray, Series)):
+            values = values.tolist()
+
+        values = normalize_rgb_tuple(values)
+
+        if not is_color(values):
+            raise ArgumentValidationError(f"Invalid color format: {values!r}")
+
+        return {"value": values}
+
+
+class ColorSequenceParam(SequenceParam[ColorType]):
+    value: Sequence[ColorType]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_color_sequence(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        values = coerce_to_list(values)
+
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence of colors, got {type(values)}"
+            )
+
+        normalized = []
+        for idx, v in enumerate(values):
+            if isinstance(v, (np.ndarray, Series)):
+                v = v.tolist()
+
+            v = normalize_rgb_tuple(v)
+
+            if not is_color(v):
+                raise ArgumentValidationError(
+                    f"Invalid color format at index {idx}: {v!r}"
+                )
+
+            normalized.append(v)
+
+        return {"value": normalized}
