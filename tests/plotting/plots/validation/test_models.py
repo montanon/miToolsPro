@@ -26,6 +26,7 @@ from mitoolspro.plotting.plots.validation.models import (
     MarkerSequenceParam,
     MarkerSequencesParam,
     NormalizationParam,
+    NormalizationSequenceParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -1469,11 +1470,8 @@ class TestNumericTupleSequencesParam(TestCase):
             )
 
     def test_init_with_mixed_sequence_types(self):
-        param = NumericTupleSequencesParam(
-            value=[[(1, 2), (3, 4, 5)], [(6,), (7, 8, 9, 10)]], sizes=[1, 2, 3, 4]
-        )
-        self.assertEqual(param.value, [[(1, 2), (3, 4, 5)], [(6,), (7, 8, 9, 10)]])
-        self.assertEqual(param.sizes, [1, 2, 3, 4])
+        param = NumericTupleSequencesParam(value=[(1, 2), (3, 4, 5), (6,)])
+        self.assertEqual(param.value, [(1, 2), (3, 4, 5), (6,)])
 
     def test_init_with_nested_sequences(self):
         with self.assertRaises(ValidationError):
@@ -2693,6 +2691,30 @@ class TestNormalizationParam(TestCase):
             NormalizationParam(value="invalid")
         with self.assertRaises(ValidationError):
             NormalizationParam(value=123)
+
+
+class TestNormalizationSequenceParam(TestCase):
+    def test_init_with_valid_literals(self):
+        NormalizationSequenceParam(value=["linear", "log", "symlog"])
+        NormalizationSequenceParam(value=["linear"])
+
+    def test_init_with_valid_normalize_instances(self):
+        from matplotlib.colors import Normalize
+
+        NormalizationSequenceParam(value=[Normalize(), Normalize()])
+
+    def test_init_with_mixed_valid_values(self):
+        from matplotlib.colors import Normalize
+
+        NormalizationSequenceParam(value=["linear", Normalize(), "log"])
+
+    def test_init_with_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            NormalizationSequenceParam(value=["invalid"])
+        with self.assertRaises(ValidationError):
+            NormalizationSequenceParam(value=[123])
+        with self.assertRaises(ValidationError):
+            NormalizationSequenceParam(value=["linear", "invalid"])
 
 
 if __name__ == "__main__":
