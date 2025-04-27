@@ -25,6 +25,7 @@ from mitoolspro.plotting.plots.validation.models import (
     MarkerParam,
     MarkerSequenceParam,
     MarkerSequencesParam,
+    NormalizationParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -2674,6 +2675,24 @@ class TestLiteralSequencesParam(TestCase):
             LiteralSequencesParam.model_validate(
                 {"value": [["option1"]], "options": "option1"}
             )
+
+
+class TestNormalizationParam(TestCase):
+    def test_init_with_valid_literals(self):
+        NormalizationParam(value="linear")
+        NormalizationParam(value="log")
+        NormalizationParam(value="symlog")
+
+    def test_init_with_valid_normalize_instance(self):
+        from matplotlib.colors import Normalize
+
+        NormalizationParam(value=Normalize())
+
+    def test_init_with_invalid_literals(self):
+        with self.assertRaises(ValidationError):
+            NormalizationParam(value="invalid")
+        with self.assertRaises(ValidationError):
+            NormalizationParam(value=123)
 
 
 if __name__ == "__main__":

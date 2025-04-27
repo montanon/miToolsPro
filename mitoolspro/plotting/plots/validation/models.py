@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Generic, Literal, Optional, TypeAlias, TypeVar, Union
 
 import numpy as np
+from matplotlib.colors import Normalize
 from matplotlib.markers import MarkerStyle
 from numpy import integer, ndarray
 from pandas import Series
@@ -43,6 +44,7 @@ ColorType = Union[
     None,
 ]
 EdgeColorType = Union[Literal["face"], ColorType]
+NormalizeType = Union[Normalize, str]
 
 
 class Param[T](BaseModel):
@@ -650,3 +652,23 @@ class LiteralSequencesParam(SequencesParam[str]):
             normalized_outer.append(normalized_inner)
 
         return {"value": normalized_outer, "options": options}
+
+
+class NormalizationParam(Param[NormalizeType]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_normalization(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            value = values.get("value")
+        else:
+            value = values
+
+        if isinstance(value, Normalize):
+            return {"value": value}
+
+        if not is_literal(value, NORMALIZATIONS):
+            raise ArgumentValidationError(
+                f"Invalid literal: {value!r}. Allowed options: {NORMALIZATIONS}."
+            )
+
+        return {"value": value}
