@@ -3,6 +3,7 @@ from typing import Any
 
 from matplotlib.colors import Normalize, get_named_colors_mapping, is_color_like
 from matplotlib.markers import MarkerStyle
+from matplotlib.transforms import Transform
 from numpy import ndarray
 from pandas import Series
 from typing_extensions import TypeAlias
@@ -103,7 +104,7 @@ def is_marker(value: Any) -> bool:
                 return False
 
         if "transform" in value:
-            if not isinstance(value["transform"], (str, Normalize)):
+            if not isinstance(value["transform"], (Transform, Normalize)):
                 return False
 
         if "capstyle" in value:

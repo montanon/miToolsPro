@@ -25,6 +25,7 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
     is_color,
+    is_marker,
     normalize_rgb_tuple,
 )
 
@@ -451,3 +452,18 @@ class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
             normalized_outer.append(normalized_inner)
 
         return {"value": normalized_outer}
+
+
+class MarkerParam(Param[Any]):
+    value: Any
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_marker(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value", values)
+
+        if not is_marker(values):
+            raise ArgumentValidationError(f"Invalid marker format: {values!r}")
+
+        return {"value": values}
