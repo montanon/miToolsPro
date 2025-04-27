@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.markers import MarkerStyle
 from numpy import integer, ndarray
 from pandas import Series
-from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from typing_extensions import TypeGuard
 
 from mitoolspro.exceptions import (
@@ -535,22 +535,23 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
 
 
 class LiteralParam(StrParam):
-    value: str
-    options: Sequence[str]
+    options: Sequence[str] = Field(..., description="Allowed options for the literal.")
 
     @model_validator(mode="before")
     @classmethod
     def validate_literal(cls, values: Any) -> dict:
-        if isinstance(values, dict):
-            options = values.get("options")
-            value = values.get("value")
-        else:
+        if not isinstance(values, dict):
             raise ArgumentValidationError(
                 "Expected dict input with 'value' and 'options' keys."
             )
 
-        if options is None:
-            raise ArgumentValidationError("Literal options must be provided.")
+        options = values.get("options")
+        value = values.get("value")
+
+        if options is None or not isinstance(options, Sequence) or not options:
+            raise ArgumentValidationError(
+                "Literal options must be a non-empty sequence."
+            )
 
         if not is_literal(value, options):
             raise ArgumentValidationError(
@@ -558,85 +559,3 @@ class LiteralParam(StrParam):
             )
 
         return {"value": value, "options": options}
-
-
-class LiteralSequenceParam(SequenceParam[LiteralParam]):
-    value: Sequence[LiteralParam]
-    options: Sequence[str]
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_literal_sequence(cls, values: Any) -> dict:
-        if isinstance(values, dict):
-            options = values.get("options")
-            input_values = values.get("value")
-        else:
-            raise ArgumentValidationError(
-                "Expected dict input with 'value' and 'options' keys."
-            )
-
-        if options is None:
-            raise ArgumentValidationError("Literal options must be provided.")
-
-        input_values = coerce_to_list(input_values)
-
-        if not isinstance(input_values, Sequence):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of literals, got {type(input_values)}"
-            )
-
-        normalized = []
-        for idx, v in enumerate(input_values):
-            if not is_literal(v, options):
-                raise ArgumentValidationError(
-                    f"Invalid literal at index {idx}: {v!r}. Allowed options: {options}."
-                )
-            normalized.append(v)
-
-        return {"value": normalized, "options": options}
-
-
-class LiteralSequencesParam(SequencesParam[LiteralParam]):
-    value: Sequence[Sequence[LiteralParam]]
-    options: Sequence[str]
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_literal_sequences(cls, values: Any) -> dict:
-        if isinstance(values, dict):
-            options = values.get("options")
-            input_values = values.get("value")
-        else:
-            raise ArgumentValidationError(
-                "Expected dict input with 'value' and 'options' keys."
-            )
-
-        if options is None:
-            raise ArgumentValidationError("Literal options must be provided.")
-
-        input_values = coerce_to_list(input_values)
-
-        if not isinstance(input_values, Sequence):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of Sequences of literals, got {type(input_values)}"
-            )
-
-        normalized_outer = []
-        for outer_idx, outer in enumerate(input_values):
-            outer = coerce_to_list(outer)
-            if not isinstance(outer, Sequence):
-                raise ArgumentValidationError(
-                    f"Expected a Sequence inside outer list at index {outer_idx}, got {type(outer)}"
-                )
-
-            normalized_inner = []
-            for inner_idx, v in enumerate(outer):
-                if not is_literal(v, options):
-                    raise ArgumentValidationError(
-                        f"Invalid literal at outer {outer_idx}, inner {inner_idx}: {v!r}. Allowed options: {options}."
-                    )
-                normalized_inner.append(v)
-
-            normalized_outer.append(normalized_inner)
-
-        return {"value": normalized_outer, "options": options}
