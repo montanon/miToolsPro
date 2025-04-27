@@ -23,17 +23,30 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
     NORMALIZATIONS,
     NumericSequences,
 )
-from mitoolspro.plotting.plots.validation.functions import coerce_to_list
+from mitoolspro.plotting.plots.validation.functions import coerce_to_list, is_color
 
 T = TypeVar("T")
 NumericType: TypeAlias = float | int
 NumericTuple: TypeAlias = tuple[NumericType, ...]
+ColorType = Union[
+    str,
+    tuple[NumericType, NumericType, NumericType],  # RGB
+    tuple[NumericType, NumericType, NumericType, NumericType],  # RGBA
+    list[NumericType],
+    int,
+    float,
+    None,
+]
 
 
 class Param[T](BaseModel):
     value: T
 
-    model_config = ConfigDict(extra="forbid", strict=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+        arbitrary_types_allowed=True,
+    )
 
 
 class RangeParam(Param[NumericType]):
@@ -58,6 +71,24 @@ class RangeParam(Param[NumericType]):
                     f"Value {self.value} is not in range ({self.min_value}, {self.max_value})"
                 )
         return self
+
+
+class ColorParam(Param[ColorType]):
+    value: ColorType
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_color(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        if isinstance(values, (np.ndarray, Series)):
+            values = values.tolist()
+
+        if not is_color(values):
+            raise ArgumentValidationError(f"Invalid color format: {values!r}")
+
+        return {"value": values}
 
 
 class StrParam(Param[str]):
@@ -253,7 +284,3 @@ class NumericTupleSequencesParam(SequencesParam[NumericTuple]):
                             f"Invalid tuple length {len(tup)} at outer {outer_idx}, inner {inner_idx}. Allowed sizes: {self.sizes}."
                         )
         return self
-
-
-if __name__ == "__main__":
-    seq = SequenceParam[tuple](value=[(1, 2, 3), (1, 2, 3)])
