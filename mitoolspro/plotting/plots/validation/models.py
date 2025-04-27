@@ -1,27 +1,18 @@
 from collections.abc import Sequence
-from typing import Annotated, Any, Generic, Literal, Optional, TypeAlias, TypeVar, Union
+from typing import Any, Literal, Optional, TypeAlias, TypeVar, Union
 
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
-from matplotlib.markers import MarkerStyle
-from numpy import integer, ndarray
 from pandas import Series
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
-from typing_extensions import TypeGuard
 
 from mitoolspro.exceptions import (
-    ArgumentStructureError,
-    ArgumentTypeError,
     ArgumentValidationError,
 )
 from mitoolspro.plotting.plots.matplotlib_typing import (
     BINS,
     CMAPS,
-    COLORS,
-    MARKERS,
-    MARKERS_FILLSTYLES,
     NORMALIZATIONS,
-    NumericSequences,
 )
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
