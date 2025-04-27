@@ -549,6 +549,9 @@ class LiteralParam(Param[str]):
                 "Expected dict input with 'value' and 'options' keys."
             )
 
+        if options is None:
+            raise ArgumentValidationError("Literal options must be provided.")
+
         if not is_literal(value, options):
             raise ArgumentValidationError(
                 f"Invalid literal: {value!r}. Allowed options: {options}."

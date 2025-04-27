@@ -19,6 +19,7 @@ from mitoolspro.plotting.plots.validation.models import (
     EdgeColorParam,
     EdgeColorSequenceParam,
     EdgeColorSequencesParam,
+    LiteralParam,
     MarkerParam,
     MarkerSequenceParam,
     MarkerSequencesParam,
@@ -2576,6 +2577,36 @@ class TestMarkerSequencesParam(TestCase):
             MarkerSequencesParam.model_validate({"value": [[-1]]})
         with self.assertRaises(ValidationError):
             MarkerSequencesParam.model_validate({"value": [[{"marker": "invalid"}]]})
+
+
+class TestLiteralParam(TestCase):
+    def test_init_with_valid_literals(self):
+        LiteralParam.model_validate(
+            {"value": "option1", "options": ["option1", "option2"]}
+        )
+        LiteralParam.model_validate(
+            {"value": "option2", "options": ["option1", "option2"]}
+        )
+
+    def test_init_with_invalid_literals(self):
+        with self.assertRaises(ValidationError):
+            LiteralParam.model_validate(
+                {"value": "invalid", "options": ["option1", "option2"]}
+            )
+        with self.assertRaises(ValidationError):
+            LiteralParam.model_validate({"value": "option1", "options": []})
+
+    def test_init_with_missing_fields(self):
+        with self.assertRaises(ValidationError):
+            LiteralParam.model_validate({"value": "option1"})
+        with self.assertRaises(ValidationError):
+            LiteralParam.model_validate({"options": ["option1"]})
+
+    def test_init_with_invalid_types(self):
+        with self.assertRaises(ValidationError):
+            LiteralParam.model_validate({"value": 1, "options": ["option1"]})
+        with self.assertRaises(ValidationError):
+            LiteralParam.model_validate({"value": "option1", "options": "option1"})
 
 
 if __name__ == "__main__":
