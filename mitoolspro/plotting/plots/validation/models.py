@@ -271,6 +271,23 @@ class NumericTupleSequencesParam(SequencesParam[NumericTuple]):
         return self
 
 
+def validate_single_color(
+    value: Any, allow_face_literal: bool = False
+) -> ColorType | Literal["face"]:
+    if isinstance(value, (np.ndarray, Series)):
+        value = value.tolist()
+
+    if allow_face_literal and value == "face":
+        return value
+
+    value = normalize_rgb_tuple(value)
+
+    if not is_color(value):
+        raise ArgumentValidationError(f"Invalid color format: {value!r}")
+
+    return value
+
+
 class ColorParam(Param[ColorType]):
     value: ColorType
 
@@ -279,14 +296,7 @@ class ColorParam(Param[ColorType]):
     def validate_color(cls, values: Any) -> dict:
         if isinstance(values, dict):
             values = values["value"]
-
-        if isinstance(values, (np.ndarray, Series)):
-            values = values.tolist()
-
-        values = normalize_rgb_tuple(values)
-
-        if not is_color(values):
-            raise ArgumentValidationError(f"Invalid color format: {values!r}")
+        values = validate_single_color(values)
 
         return {"value": values}
 
@@ -309,16 +319,12 @@ class ColorSequenceParam(SequenceParam[ColorType]):
 
         normalized = []
         for idx, v in enumerate(values):
-            if isinstance(v, (np.ndarray, Series)):
-                v = v.tolist()
-
-            v = normalize_rgb_tuple(v)
-
-            if not is_color(v):
+            try:
+                v = validate_single_color(v)
+            except ArgumentValidationError:
                 raise ArgumentValidationError(
-                    f"Invalid color format at index {idx}: {v!r}"
+                    f"Invalid color format: {v!r} at index {idx}"
                 )
-
             normalized.append(v)
 
         return {"value": normalized}
@@ -351,14 +357,11 @@ class ColorSequencesParam(SequencesParam[ColorType]):
 
             normalized_inner = []
             for inner_idx, v in enumerate(outer):
-                if isinstance(v, (np.ndarray, Series)):
-                    v = v.tolist()
-
-                v = normalize_rgb_tuple(v)
-
-                if not is_color(v):
+                try:
+                    v = validate_single_color(v)
+                except ArgumentValidationError:
                     raise ArgumentValidationError(
-                        f"Invalid color format at outer {outer_idx}, inner {inner_idx}: {v!r}"
+                        f"Invalid color format: {v!r} at index [{outer_idx}, {inner_idx}]"
                     )
 
                 normalized_inner.append(v)
