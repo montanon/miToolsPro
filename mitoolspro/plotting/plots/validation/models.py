@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Generic, Literal, Optional, TypeAlias, TypeVar, Union
 
 import numpy as np
-from matplotlib.colors import Normalize
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.markers import MarkerStyle
 from numpy import integer, ndarray
 from pandas import Series
@@ -45,6 +45,7 @@ ColorType = Union[
 ]
 EdgeColorType = Union[Literal["face"], ColorType]
 NormalizeType = Union[Normalize, str]
+ColormapType = Union[Colormap, str]
 
 
 class Param[T](BaseModel):
@@ -725,3 +726,21 @@ class NormalizationSequencesParam(SequencesParam[NormalizeType]):
             normalized_outer.append(normalized_inner)
 
         return {"value": normalized_outer}
+
+
+class ColormapParam(Param[ColormapType]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_colormap(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+
+        if isinstance(values, Colormap):
+            return {"value": values}
+
+        if not is_literal(values, CMAPS):
+            raise ArgumentValidationError(
+                f"Invalid colormap: {values!r}. Allowed options: {CMAPS}."
+            )
+
+        return {"value": values}

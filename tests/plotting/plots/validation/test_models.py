@@ -10,6 +10,7 @@ from mitoolspro.plotting.plots.validation.models import (
     BoolParam,
     BoolSequenceParam,
     BoolSequencesParam,
+    ColormapParam,
     ColorParam,
     ColorSequenceParam,
     ColorSequencesParam,
@@ -2747,6 +2748,28 @@ class TestNormalizationSequencesParam(TestCase):
     def test_init_with_empty_sequences(self):
         NormalizationSequencesParam(value=[])
         NormalizationSequencesParam(value=[[]])
+
+
+class TestColormapParam(TestCase):
+    def test_init_with_valid_literals(self):
+        ColormapParam(value="viridis")
+        ColormapParam(value="plasma")
+        ColormapParam(value="inferno")
+
+    def test_init_with_valid_colormap_instance(self):
+        from matplotlib.colors import Colormap
+
+        ColormapParam(value=Colormap("viridis"))
+
+    def test_init_with_invalid_literals(self):
+        with self.assertRaises(ValidationError):
+            ColormapParam(value="invalid")
+        with self.assertRaises(ValidationError):
+            ColormapParam(value=123)
+
+    def test_init_with_none(self):
+        with self.assertRaises(ValidationError):
+            ColormapParam(value=None)
 
 
 if __name__ == "__main__":
