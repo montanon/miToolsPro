@@ -12,6 +12,7 @@ from mitoolspro.plotting.plots.validation.models import (
     BoolSequencesParam,
     ColorParam,
     ColorSequenceParam,
+    ColorSequencesParam,
     DictParam,
     DictSequenceParam,
     DictSequencesParam,
@@ -2005,6 +2006,327 @@ class TestColorSequenceParam(TestCase):
     def test_init_with_negative_inf_values(self):
         with self.assertRaises(ValidationError):
             ColorSequenceParam(value=[(float("-inf"), 0, 0), (0, 255, 0), (0, 0, 255)])
+
+
+class TestColorSequencesParam(TestCase):
+    def test_init_with_valid_hex_strings(self):
+        param = ColorSequencesParam(
+            value=[["#FF0000", "#00FF00"], ["#0000FF", "#FFFF00"]]
+        )
+        self.assertEqual(param.value, [["#FF0000", "#00FF00"], ["#0000FF", "#FFFF00"]])
+
+    def test_init_with_valid_named_colors(self):
+        param = ColorSequencesParam(value=[["red", "green"], ["blue", "yellow"]])
+        self.assertEqual(param.value, [["red", "green"], ["blue", "yellow"]])
+
+    def test_init_with_valid_rgb_tuples(self):
+        param = ColorSequencesParam(
+            value=[[(255, 0, 0), (0, 255, 0)], [(0, 0, 255), (255, 255, 0)]]
+        )
+        self.assertEqual(
+            param.value,
+            [[(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]],
+        )
+
+    def test_init_with_valid_rgba_tuples(self):
+        param = ColorSequencesParam(
+            value=[
+                [(255, 0, 0, 0.5), (0, 255, 0, 0.5)],
+                [(0, 0, 255, 0.5), (255, 255, 0, 0.5)],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [
+                [(1.0, 0.0, 0.0, 0.5), (0.0, 1.0, 0.0, 0.5)],
+                [(0.0, 0.0, 1.0, 0.5), (1.0, 1.0, 0.0, 0.5)],
+            ],
+        )
+
+    def test_init_with_valid_rgb_lists(self):
+        param = ColorSequencesParam(
+            value=[[[255, 0, 0], [0, 255, 0]], [[0, 0, 255], [255, 255, 0]]]
+        )
+        self.assertEqual(
+            param.value,
+            [[(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]],
+        )
+
+    def test_init_with_valid_rgba_lists(self):
+        param = ColorSequencesParam(
+            value=[
+                [[255, 0, 0, 0.5], [0, 255, 0, 0.5]],
+                [[0, 0, 255, 0.5], [255, 255, 0, 0.5]],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [
+                [(1.0, 0.0, 0.0, 0.5), (0.0, 1.0, 0.0, 0.5)],
+                [(0.0, 0.0, 1.0, 0.5), (1.0, 1.0, 0.0, 0.5)],
+            ],
+        )
+
+    def test_init_with_valid_float_tuples(self):
+        param = ColorSequencesParam(
+            value=[
+                [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)],
+                [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [[(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]],
+        )
+
+    def test_init_with_valid_float_lists(self):
+        param = ColorSequencesParam(
+            value=[
+                [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+                [[0.0, 0.0, 1.0], [1.0, 1.0, 0.0]],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [[(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]],
+        )
+
+    def test_init_with_valid_numpy_arrays(self):
+        param = ColorSequencesParam(
+            value=[
+                [np.array([255, 0, 0]), np.array([0, 255, 0])],
+                [np.array([0, 0, 255]), np.array([255, 255, 0])],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [[(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]],
+        )
+
+    def test_init_with_valid_pandas_series(self):
+        param = ColorSequencesParam(
+            value=[
+                [pd.Series([255, 0, 0]), pd.Series([0, 255, 0])],
+                [pd.Series([0, 0, 255]), pd.Series([255, 255, 0])],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [[(1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]],
+        )
+
+    def test_init_with_mixed_valid_colors(self):
+        param = ColorSequencesParam(
+            value=[
+                ["red", (255, 0, 0), "#FF0000", [1.0, 0.0, 0.0]],
+                ["blue", (0, 0, 255), "#0000FF", [0.0, 0.0, 1.0]],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [
+                ["red", (1.0, 0.0, 0.0), "#FF0000", (1.0, 0.0, 0.0)],
+                ["blue", (0.0, 0.0, 1.0), "#0000FF", (0.0, 0.0, 1.0)],
+            ],
+        )
+
+    def test_init_with_empty_outer_sequence(self):
+        param = ColorSequencesParam(value=[])
+        self.assertEqual(param.value, [])
+
+    def test_init_with_empty_inner_sequence(self):
+        param = ColorSequencesParam(value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_init_with_single_inner_sequence(self):
+        param = ColorSequencesParam(value=[["red"]])
+        self.assertEqual(param.value, [["red"]])
+
+    def test_init_with_very_large_sequence(self):
+        large_sequence = [["red"] * 1000, ["blue"] * 1000]
+        param = ColorSequencesParam(value=large_sequence)
+        self.assertEqual(param.value, large_sequence)
+
+    def test_init_with_uneven_lengths(self):
+        param = ColorSequencesParam(value=[["red"], ["blue", "green"]])
+        self.assertEqual(param.value, [["red"], ["blue", "green"]])
+
+    def test_init_with_invalid_hex_strings(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[["#FF000", "#00FF00"], ["#0000FF", "#FFFF00"]])
+
+    def test_init_with_invalid_named_colors(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[["notacolor", "green"], ["blue", "yellow"]])
+
+    def test_init_with_invalid_rgb_tuples(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[[(256, 0, 0), (0, 255, 0)], [(0, 0, 255), (255, 255, 0)]]
+            )
+
+    def test_init_with_invalid_rgba_tuples(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [(255, 0, 0, 1.1), (0, 255, 0, 0.5)],
+                    [(0, 0, 255, 0.5), (255, 255, 0, 0.5)],
+                ]
+            )
+
+    def test_init_with_invalid_rgb_lists(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[[[256, 0, 0], [0, 255, 0]], [[0, 0, 255], [255, 255, 0]]]
+            )
+
+    def test_init_with_invalid_rgba_lists(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [[255, 0, 0, 1.1], [0, 255, 0, 0.5]],
+                    [[0, 0, 255, 0.5], [255, 255, 0, 0.5]],
+                ]
+            )
+
+    def test_init_with_invalid_float_tuples(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [(1.1, 0.0, 0.0), (0.0, 1.0, 0.0)],
+                    [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)],
+                ]
+            )
+
+    def test_init_with_invalid_float_lists(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [[1.1, 0.0, 0.0], [0.0, 1.0, 0.0]],
+                    [[0.0, 0.0, 1.0], [1.0, 1.0, 0.0]],
+                ]
+            )
+
+    def test_init_with_invalid_numpy_array_shape(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [np.array([255, 0]), np.array([0, 255, 0])],
+                    [np.array([0, 0, 255]), np.array([255, 255, 0])],
+                ]
+            )
+
+    def test_init_with_invalid_pandas_series_shape(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [pd.Series([255, 0]), pd.Series([0, 255, 0])],
+                    [pd.Series([0, 0, 255]), pd.Series([255, 255, 0])],
+                ]
+            )
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=None)
+
+    def test_init_with_none_in_sequence(self):
+        param = ColorSequencesParam(
+            value=[["red", None, "blue"], ["green", None, "yellow"]]
+        )
+        self.assertEqual(
+            param.value, [["red", None, "blue"], ["green", None, "yellow"]]
+        )
+
+    def test_init_with_invalid_type(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[{"key": "value"}]])
+
+    def test_init_with_empty_string(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[""]])
+
+    def test_init_with_empty_list(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[[]]])
+
+    def test_init_with_empty_tuple(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[()]])
+
+    def test_init_with_empty_numpy_array(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[np.array([])]])
+
+    def test_init_with_empty_pandas_series(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[pd.Series([])]])
+
+    def test_init_with_dict_initialization(self):
+        param = ColorSequencesParam.model_validate(
+            {"value": [["red", "green"], ["blue", "yellow"]]}
+        )
+        self.assertEqual(param.value, [["red", "green"], ["blue", "yellow"]])
+
+    def test_init_with_invalid_dict_initialization(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam.model_validate({"value": [["notacolor"]]})
+
+    def test_init_with_very_small_numbers(self):
+        param = ColorSequencesParam(
+            value=[
+                [(1e-100, 0, 0), (0, 1e-100, 0)],
+                [(0, 0, 1e-100), (1e-100, 1e-100, 0)],
+            ]
+        )
+        self.assertEqual(
+            param.value,
+            [
+                [(1e-100, 0.0, 0.0), (0.0, 1e-100, 0.0)],
+                [(0.0, 0.0, 1e-100), (1e-100, 1e-100, 0.0)],
+            ],
+        )
+
+    def test_init_with_inf_values(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [(float("inf"), 0, 0), (0, 255, 0)],
+                    [(0, 0, 255), (255, 255, 0)],
+                ]
+            )
+
+    def test_init_with_negative_inf_values(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(
+                value=[
+                    [(float("-inf"), 0, 0), (0, 255, 0)],
+                    [(0, 0, 255), (255, 255, 0)],
+                ]
+            )
+
+    def test_init_with_non_sequence_outer(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value="not_a_sequence")
+
+    def test_init_with_non_sequence_inner(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[["red", "green"], "not_a_sequence"])
+
+    def test_init_with_very_deep_nesting(self):
+        with self.assertRaises(ValidationError):
+            ColorSequencesParam(value=[[[[["red"]]]]])
+
+    def test_init_with_mixed_numeric_types_in_tuples(self):
+        param = ColorSequencesParam(
+            value=[[(100, 2.0, 30), (40.0, 5, 6.0)], [(7, 80.0, 9), (10.0, 11, 12.0)]]
+        )
+        self.assertEqual(
+            param.value,
+            [
+                [(0.3922, 0.0078, 0.1176), (0.1569, 0.0196, 0.0235)],
+                [(0.0275, 0.3137, 0.0353), (0.0392, 0.0431, 0.0471)],
+            ],
+        )
 
 
 if __name__ == "__main__":
