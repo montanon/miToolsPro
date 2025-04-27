@@ -27,6 +27,7 @@ from mitoolspro.plotting.plots.validation.models import (
     MarkerSequencesParam,
     NormalizationParam,
     NormalizationSequenceParam,
+    NormalizationSequencesParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -1470,8 +1471,11 @@ class TestNumericTupleSequencesParam(TestCase):
             )
 
     def test_init_with_mixed_sequence_types(self):
-        param = NumericTupleSequencesParam(value=[(1, 2), (3, 4, 5), (6,)])
-        self.assertEqual(param.value, [(1, 2), (3, 4, 5), (6,)])
+        param = NumericTupleSequencesParam(
+            value=[[(1, 2), (3, 4, 5)], [(6,), (7, 8, 9, 10)]], sizes=[1, 2, 3, 4]
+        )
+        self.assertEqual(param.value, [[(1, 2), (3, 4, 5)], [(6,), (7, 8, 9, 10)]])
+        self.assertEqual(param.sizes, [1, 2, 3, 4])
 
     def test_init_with_nested_sequences(self):
         with self.assertRaises(ValidationError):
@@ -2715,6 +2719,34 @@ class TestNormalizationSequenceParam(TestCase):
             NormalizationSequenceParam(value=[123])
         with self.assertRaises(ValidationError):
             NormalizationSequenceParam(value=["linear", "invalid"])
+
+
+class TestNormalizationSequencesParam(TestCase):
+    def test_init_with_valid_literals(self):
+        NormalizationSequencesParam(value=[["linear", "log"], ["symlog"]])
+        NormalizationSequencesParam(value=[["linear"]])
+
+    def test_init_with_valid_normalize_instances(self):
+        from matplotlib.colors import Normalize
+
+        NormalizationSequencesParam(value=[[Normalize()], [Normalize()]])
+
+    def test_init_with_mixed_valid_values(self):
+        from matplotlib.colors import Normalize
+
+        NormalizationSequencesParam(value=[["linear", Normalize()], ["log"]])
+
+    def test_init_with_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            NormalizationSequencesParam(value=[["invalid"]])
+        with self.assertRaises(ValidationError):
+            NormalizationSequencesParam(value=[[123]])
+        with self.assertRaises(ValidationError):
+            NormalizationSequencesParam(value=[["linear", "invalid"]])
+
+    def test_init_with_empty_sequences(self):
+        NormalizationSequencesParam(value=[])
+        NormalizationSequencesParam(value=[[]])
 
 
 if __name__ == "__main__":

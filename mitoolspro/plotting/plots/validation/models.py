@@ -695,3 +695,33 @@ class NormalizationSequenceParam(SequenceParam[NormalizeType]):
                 )
 
         return {"value": normalized}
+
+
+class NormalizationSequencesParam(SequencesParam[NormalizeType]):
+    @model_validator(mode="before")
+    @classmethod
+    def validate_normalization_sequences(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values.get("value")
+        else:
+            values = values
+
+        values = coerce_to_list(values)
+
+        normalized_outer = []
+        for outer_idx, outer in enumerate(values):
+            outer = coerce_to_list(outer)
+
+            normalized_inner = []
+            for inner_idx, value in enumerate(outer):
+                if isinstance(value, Normalize):
+                    normalized_inner.append(value)
+                elif is_literal(value, NORMALIZATIONS):
+                    normalized_inner.append(value)
+                else:
+                    raise ArgumentValidationError(
+                        f"Invalid normalization at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {NORMALIZATIONS}."
+                    )
+            normalized_outer.append(normalized_inner)
+
+        return {"value": normalized_outer}
