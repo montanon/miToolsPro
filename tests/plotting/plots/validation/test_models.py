@@ -21,6 +21,7 @@ from mitoolspro.plotting.plots.validation.models import (
     EdgeColorSequencesParam,
     MarkerParam,
     MarkerSequenceParam,
+    MarkerSequencesParam,
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
@@ -2536,6 +2537,45 @@ class TestMarkerSequenceParam(TestCase):
             MarkerSequenceParam.model_validate({"value": ["invalid"]})
         with self.assertRaises(ValidationError):
             MarkerSequenceParam.model_validate({"value": [{"marker": "invalid"}]})
+
+
+class TestMarkerSequencesParam(TestCase):
+    def test_init_with_valid_sequences(self):
+        MarkerSequencesParam(value=[["o", "s"], ["D", "p"]])
+        MarkerSequencesParam(value=[[0, 1], [2, 3]])
+        MarkerSequencesParam(value=[[{"marker": "o"}], [{"marker": "s"}]])
+        MarkerSequencesParam(value=[[None, "o"], ["s", None]])
+
+    def test_init_with_invalid_sequences(self):
+        with self.assertRaises(ValidationError):
+            MarkerSequencesParam(value=[["invalid", "o"], ["s", "D"]])
+        with self.assertRaises(ValidationError):
+            MarkerSequencesParam(value=[[-1, 0], [1, 2]])
+        with self.assertRaises(ValidationError):
+            MarkerSequencesParam(value=[[{"marker": "invalid"}], [{"marker": "o"}]])
+
+    def test_init_with_empty_sequences(self):
+        MarkerSequencesParam(value=[])
+        MarkerSequencesParam(value=[[]])
+        MarkerSequencesParam(value=[[], []])
+
+    def test_init_with_single_sequence(self):
+        MarkerSequencesParam(value=[["o"]])
+        MarkerSequencesParam(value=[[0]])
+        MarkerSequencesParam(value=[[{"marker": "o"}]])
+
+    def test_init_with_dict_initialization(self):
+        MarkerSequencesParam.model_validate({"value": [["o", "s"], ["D", "p"]]})
+        MarkerSequencesParam.model_validate({"value": [[0, 1], [2, 3]]})
+        MarkerSequencesParam.model_validate({"value": [[{"marker": "o"}]]})
+
+    def test_init_with_invalid_dict_initialization(self):
+        with self.assertRaises(ValidationError):
+            MarkerSequencesParam.model_validate({"value": [["invalid"]]})
+        with self.assertRaises(ValidationError):
+            MarkerSequencesParam.model_validate({"value": [[-1]]})
+        with self.assertRaises(ValidationError):
+            MarkerSequencesParam.model_validate({"value": [[{"marker": "invalid"}]]})
 
 
 if __name__ == "__main__":
