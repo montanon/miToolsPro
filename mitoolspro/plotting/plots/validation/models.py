@@ -4,7 +4,7 @@ from typing import Any, Literal, Optional, TypeAlias, TypeVar, Union
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
 from pandas import Series
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mitoolspro.exceptions import (
     ArgumentValidationError,
