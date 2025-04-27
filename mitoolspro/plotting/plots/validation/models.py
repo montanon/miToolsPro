@@ -494,3 +494,40 @@ class MarkerSequenceParam(SequenceParam[MarkerParam]):
             normalized.append(v)
 
         return {"value": normalized}
+
+
+class MarkerSequencesParam(SequencesParam[MarkerParam]):
+    value: Sequence[Sequence[MarkerParam]]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_marker_sequences(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        values = coerce_to_list(values)
+
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence of Sequences, got {type(values)}"
+            )
+
+        normalized_outer = []
+        for outer_idx, outer in enumerate(values):
+            outer = coerce_to_list(outer)
+            if not isinstance(outer, Sequence):
+                raise ArgumentValidationError(
+                    f"Expected a Sequence inside outer list at index {outer_idx}, got {type(outer)}"
+                )
+
+            normalized_inner = []
+            for inner_idx, v in enumerate(outer):
+                if not is_marker(v):
+                    raise ArgumentValidationError(
+                        f"Invalid marker format at outer {outer_idx}, inner {inner_idx}: {v!r}"
+                    )
+                normalized_inner.append(v)
+
+            normalized_outer.append(normalized_inner)
+
+        return {"value": normalized_outer}
