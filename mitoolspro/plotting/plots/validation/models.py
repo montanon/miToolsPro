@@ -467,3 +467,30 @@ class MarkerParam(Param[Any]):
             raise ArgumentValidationError(f"Invalid marker format: {values!r}")
 
         return {"value": values}
+
+
+class MarkerSequenceParam(SequenceParam[MarkerParam]):
+    value: Sequence[MarkerParam]
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_marker_sequence(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            values = values["value"]
+
+        values = coerce_to_list(values)
+
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(
+                f"Expected a Sequence of markers, got {type(values)}"
+            )
+
+        normalized = []
+        for idx, v in enumerate(values):
+            if not is_marker(v):
+                raise ArgumentValidationError(
+                    f"Invalid marker format at index {idx}: {v!r}"
+                )
+            normalized.append(v)
+
+        return {"value": normalized}
