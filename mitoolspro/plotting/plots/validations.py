@@ -43,6 +43,10 @@ def is_dict(value: Any) -> bool:
     return isinstance(value, dict)
 
 
+def is_numeric(value: Any) -> bool:
+    return isinstance(value, NUMERIC_TYPES)
+
+
 def is_sequence(value: Any) -> bool:
     return isinstance(value, SEQUENCE_TYPES)
 
@@ -51,38 +55,6 @@ def is_sequences(sequences: Any) -> bool:
     return is_sequence(sequences) and all(is_sequence(item) for item in sequences)
 
 
-def is_indexable(value: Any, index: Any) -> bool:
-    try:
-        value[index]
-        return True
-    except (TypeError, IndexError, KeyError):
-        return False
-
-
-# Numeric type checking
-def is_numeric(value: Any) -> bool:
-    return isinstance(value, NUMERIC_TYPES)
-
-
-def is_value_in_range(value: Any, min_value: NumericType, max_value: NumericType):
-    return (
-        isinstance(value, NUMERIC_TYPES) and min_value <= value and value <= max_value
-    )
-
-
-def is_numeric_tuple(value: Any, sizes: Union[Sequence[int], int] = None) -> bool:
-    if isinstance(sizes, int):
-        sizes = [sizes]
-    return (
-        isinstance(value, tuple)
-        and all(isinstance(item, NUMERIC_TYPES) for item in value)
-        and len(value) in sizes
-        if sizes
-        else True
-    )
-
-
-# Sequence type checking
 def is_numeric_sequence(sequence: Any) -> bool:
     return is_sequence(sequence) and all(
         isinstance(item, NUMERIC_TYPES) or item is None for item in sequence
@@ -92,24 +64,6 @@ def is_numeric_sequence(sequence: Any) -> bool:
 def is_numeric_sequences(sequences: Any) -> bool:
     return is_sequence(sequences) and all(
         is_numeric_sequence(item) for item in sequences
-    )
-
-
-def is_numeric_tuple_sequence(
-    sequence: Sequence[Any], sizes: Sequence[int] = None
-) -> bool:
-    return (
-        is_sequence(sequence)
-        and not isinstance(sequence, tuple)
-        and all(is_numeric_tuple(val, sizes) for val in sequence)
-    )
-
-
-def is_numeric_tuple_sequences(
-    sequences: Sequence[Sequence[Any]], sizes: Sequence[int] = None
-) -> bool:
-    return is_sequence(sequences) and all(
-        is_numeric_tuple_sequence(seq, sizes) for seq in sequences
     )
 
 
@@ -133,6 +87,50 @@ def is_dict_sequence(sequence: Sequence[Any]) -> bool:
 
 def is_dict_sequences(sequences: Sequence[Sequence[Any]]) -> bool:
     return is_sequences(sequences) and all(is_dict_sequence(seq) for seq in sequences)
+
+
+def is_indexable(value: Any, index: Any) -> bool:
+    try:
+        value[index]
+        return True
+    except (TypeError, IndexError, KeyError):
+        return False
+
+
+def is_value_in_range(value: Any, min_value: NumericType, max_value: NumericType):
+    return (
+        isinstance(value, NUMERIC_TYPES) and min_value <= value and value <= max_value
+    )
+
+
+def is_numeric_tuple(value: Any, sizes: Union[Sequence[int], int] = None) -> bool:
+    if isinstance(sizes, int):
+        sizes = [sizes]
+    return (
+        isinstance(value, tuple)
+        and all(isinstance(item, NUMERIC_TYPES) for item in value)
+        and len(value) in sizes
+        if sizes
+        else True
+    )
+
+
+def is_numeric_tuple_sequence(
+    sequence: Sequence[Any], sizes: Sequence[int] = None
+) -> bool:
+    return (
+        is_sequence(sequence)
+        and not isinstance(sequence, tuple)
+        and all(is_numeric_tuple(val, sizes) for val in sequence)
+    )
+
+
+def is_numeric_tuple_sequences(
+    sequences: Sequence[Sequence[Any]], sizes: Sequence[int] = None
+) -> bool:
+    return is_sequence(sequences) and all(
+        is_numeric_tuple_sequence(seq, sizes) for seq in sequences
+    )
 
 
 # Color type checking
@@ -176,10 +174,6 @@ def is_color_sequences(sequences: Any) -> bool:
     return is_sequence(sequences) and all(is_color_sequence(item) for item in sequences)
 
 
-def is_facecolor(value: Any) -> bool:
-    return is_color(value)
-
-
 def is_edgecolor(value: Any) -> bool:
     return value in ["face", "none", None] or is_color(value)
 
@@ -192,6 +186,10 @@ def is_edgecolor_sequences(sequences: Sequence[Sequence[Any]]) -> bool:
     return is_sequence(sequences) and all(
         is_edgecolor_sequence(seq) for seq in sequences
     )
+
+
+def is_facecolor(value: Any) -> bool:
+    return is_color(value)
 
 
 # Marker type checking
@@ -251,7 +249,6 @@ def is_marker_sequences(sequences: Sequence[Sequence[Any]]) -> bool:
     )
 
 
-# Other type checking
 def is_literal(value: Any, options: Sequence[Any]) -> bool:
     return (isinstance(value, str) and value in options) or value is None
 
