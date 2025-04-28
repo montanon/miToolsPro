@@ -612,52 +612,75 @@ class Setter(ABC):
     #         f"Invalid {param_name}, must be a normalization, sequence of normalizations, or sequences of normalizations."
     #     )
 
-    # def set_str_sequences(
-    #     self, sequences: Union[StrSequences, StrSequence], param_name: str
-    # ):
-    #     if self.multi_data:
-    #         if is_str_sequences(sequences):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             validate_subsequences_length(sequences, [1, self.data_size], param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequences"
-    #             return self
-    #         elif is_str_sequence(sequences):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_str(sequences):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     else:
-    #         if is_str_sequence(sequences):
-    #             validate_sequence_length(sequences, self.data_size, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_str(sequences):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a string, sequence of strings, or sequences of strings."
-    #     )
+    def set_str_sequences(
+        self, sequences: Union[StrSequences, StrSequence, str], param_name: str
+    ):
+        if self.multi_data:
+            try:
+                sequences = StrSequencesParam(sequences).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequences"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = StrSequenceParam(sequences).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = StrParam(sequences).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequences = StrSequenceParam(sequences).value
+                validate_sequence_length(sequences, self.data_size, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = StrParam(sequences).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a string, sequence of strings, or sequences of strings."
+        )
 
-    # def set_str_sequence(self, sequence: Union[StrSequence, str], param_name: str):
-    #     if self.multi_data and is_str_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_str(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a string or sequence of strings."
-    #     )
+    def set_str_sequence(self, sequence: Union[StrSequence, str], param_name: str):
+        if self.multi_data:
+            try:
+                sequence = StrSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = StrParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a string or sequence of strings."
+        )
 
     # def set_numeric_tuple_sequences(
     #     self,
