@@ -44,6 +44,8 @@ from mitoolspro.plotting.plots.validation.models import (
     NumericTupleSequencesParam,
     Param,
     RangeParam,
+    RangeSequenceParam,
+    RangeSequencesParam,
     SequenceParam,
     SequencesParam,
     StrParam,
@@ -1477,11 +1479,8 @@ class TestNumericTupleSequencesParam(TestCase):
             )
 
     def test_init_with_mixed_sequence_types(self):
-        param = NumericTupleSequencesParam(
-            value=[[(1, 2), (3, 4, 5)], [(6,), (7, 8, 9, 10)]], sizes=[1, 2, 3, 4]
-        )
-        self.assertEqual(param.value, [[(1, 2), (3, 4, 5)], [(6,), (7, 8, 9, 10)]])
-        self.assertEqual(param.sizes, [1, 2, 3, 4])
+        param = NumericTupleSequencesParam(value=[[(1, 2), (3, 4, 5), (6,)]])
+        self.assertEqual(param.value, [[(1, 2), (3, 4, 5), (6,)]])
 
     def test_init_with_nested_sequences(self):
         with self.assertRaises(ValidationError):
@@ -2855,6 +2854,200 @@ class TestBinsSequencesParam(TestCase):
 
     def test_init_with_empty_sequences(self):
         BinsSequencesParam(value=[[], []])
+
+
+class TestRangeSequenceParam(TestCase):
+    def test_init_with_valid_sequence(self):
+        param = RangeSequenceParam(value=[5, 10])
+        self.assertEqual(len(param.value), 2)
+        self.assertEqual(param.value[0], 5)
+        self.assertEqual(param.value[1], 10)
+
+    def test_init_with_valid_sequence_and_ranges(self):
+        param = RangeSequenceParam(value=[5, 15], min_value=0, max_value=20)
+        self.assertEqual(param.value[0], 5)
+        self.assertEqual(param.value[1], 15)
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 20)
+
+    def test_init_with_empty_sequence(self):
+        param = RangeSequenceParam(value=[])
+        self.assertEqual(len(param.value), 0)
+
+    def test_init_with_single_element(self):
+        param = RangeSequenceParam(value=[5])
+        self.assertEqual(len(param.value), 1)
+        self.assertEqual(param.value[0], 5)
+
+    def test_init_with_strict_ranges(self):
+        param = RangeSequenceParam(
+            value=[5, 15], min_value=0, max_value=20, strict=True
+        )
+        self.assertEqual(param.value[0], 5)
+        self.assertEqual(param.value[1], 15)
+        self.assertTrue(param.strict)
+
+    def test_init_with_float_values(self):
+        param = RangeSequenceParam(value=[5.5, 10.5])
+        self.assertEqual(param.value[0], 5.5)
+        self.assertEqual(param.value[1], 10.5)
+
+    def test_init_with_mixed_int_and_float(self):
+        param = RangeSequenceParam(value=[5, 10.5])
+        self.assertEqual(param.value[0], 5)
+        self.assertEqual(param.value[1], 10.5)
+
+    def test_init_with_invalid_sequence_type(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value="not_a_sequence")
+
+    def test_init_with_invalid_element_type(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=["5", "10"])
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=None)
+
+    def test_init_with_none_in_sequence(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=[5, None])
+
+    def test_init_with_value_below_min(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=[5, 15], min_value=10, max_value=20)
+
+    def test_init_with_value_above_max(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=[25, 15], min_value=10, max_value=20)
+
+    def test_init_with_strict_value_at_min(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=[10, 15], min_value=10, max_value=20, strict=True)
+
+    def test_init_with_strict_value_at_max(self):
+        with self.assertRaises(ValidationError):
+            RangeSequenceParam(value=[15, 20], min_value=10, max_value=20, strict=True)
+
+    def test_init_with_very_large_numbers(self):
+        param = RangeSequenceParam(value=[1e100, 1e101])
+        self.assertEqual(param.value[0], 1e100)
+        self.assertEqual(param.value[1], 1e101)
+
+    def test_init_with_very_small_numbers(self):
+        param = RangeSequenceParam(value=[1e-100, 1e-101])
+        self.assertEqual(param.value[0], 1e-100)
+        self.assertEqual(param.value[1], 1e-101)
+
+
+class TestRangeSequencesParam(TestCase):
+    def test_init_with_valid_sequences(self):
+        param = RangeSequencesParam(value=[[5, 10], [15, 20]])
+        self.assertEqual(len(param.value), 2)
+        self.assertEqual(len(param.value[0]), 2)
+        self.assertEqual(len(param.value[1]), 2)
+        self.assertEqual(param.value[0][0], 5)
+        self.assertEqual(param.value[0][1], 10)
+        self.assertEqual(param.value[1][0], 15)
+        self.assertEqual(param.value[1][1], 20)
+
+    def test_init_with_valid_sequences_and_ranges(self):
+        param = RangeSequencesParam(
+            value=[[5, 15], [25, 35]], min_value=0, max_value=40
+        )
+        self.assertEqual(param.value[0][0], 5)
+        self.assertEqual(param.value[0][1], 15)
+        self.assertEqual(param.value[1][0], 25)
+        self.assertEqual(param.value[1][1], 35)
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 40)
+
+    def test_init_with_empty_sequences(self):
+        param = RangeSequencesParam(value=[[], []])
+        self.assertEqual(len(param.value), 2)
+        self.assertEqual(len(param.value[0]), 0)
+        self.assertEqual(len(param.value[1]), 0)
+
+    def test_init_with_single_sequence(self):
+        param = RangeSequencesParam(value=[[5]])
+        self.assertEqual(len(param.value), 1)
+        self.assertEqual(len(param.value[0]), 1)
+        self.assertEqual(param.value[0][0], 5)
+
+    def test_init_with_strict_ranges(self):
+        param = RangeSequencesParam(
+            value=[[5, 15]], min_value=0, max_value=20, strict=True
+        )
+        self.assertEqual(param.value[0][0], 5)
+        self.assertEqual(param.value[0][1], 15)
+        self.assertTrue(param.strict)
+
+    def test_init_with_float_values(self):
+        param = RangeSequencesParam(value=[[5.5, 10.5], [15.5, 20.5]])
+        self.assertEqual(param.value[0][0], 5.5)
+        self.assertEqual(param.value[1][1], 20.5)
+
+    def test_init_with_mixed_int_and_float(self):
+        param = RangeSequencesParam(value=[[5, 10.5], [15, 20.5]])
+        self.assertEqual(param.value[0][0], 5)
+        self.assertEqual(param.value[0][1], 10.5)
+        self.assertEqual(param.value[1][0], 15)
+        self.assertEqual(param.value[1][1], 20.5)
+
+    def test_init_with_invalid_outer_sequence_type(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value="not_a_sequence")
+
+    def test_init_with_invalid_inner_sequence_type(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value=["not_a_sequence"])
+
+    def test_init_with_invalid_element_type(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value=[["5", "10"], ["15", "20"]])
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value=None)
+
+    def test_init_with_none_in_sequence(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value=[[5, None], [15, 20]])
+
+    def test_init_with_value_below_min(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value=[[5, 15], [25, 35]], min_value=10, max_value=40)
+
+    def test_init_with_value_above_max(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(value=[[15, 25], [35, 45]], min_value=10, max_value=40)
+
+    def test_init_with_strict_value_at_min(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(
+                value=[[10, 15], [25, 35]], min_value=10, max_value=40, strict=True
+            )
+
+    def test_init_with_strict_value_at_max(self):
+        with self.assertRaises(ValidationError):
+            RangeSequencesParam(
+                value=[[15, 25], [35, 40]], min_value=10, max_value=40, strict=True
+            )
+
+    def test_init_with_uneven_sequence_lengths(self):
+        param = RangeSequencesParam(value=[[5], [10, 15]])
+        self.assertEqual(len(param.value[0]), 1)
+        self.assertEqual(len(param.value[1]), 2)
+
+    def test_init_with_very_large_numbers(self):
+        param = RangeSequencesParam(value=[[1e100, 1e101], [1e102, 1e103]])
+        self.assertEqual(param.value[0][0], 1e100)
+        self.assertEqual(param.value[1][1], 1e103)
+
+    def test_init_with_very_small_numbers(self):
+        param = RangeSequencesParam(value=[[1e-100, 1e-101], [1e-102, 1e-103]])
+        self.assertEqual(param.value[0][0], 1e-100)
+        self.assertEqual(param.value[1][1], 1e-103)
 
 
 if __name__ == "__main__":

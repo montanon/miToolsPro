@@ -1,8 +1,10 @@
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any, Literal, Optional, TypeAlias, TypeVar, Union
 
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
+from matplotlib.markers import MarkerStyle
 from pandas import Series
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -24,15 +26,24 @@ from mitoolspro.plotting.plots.validation.functions import (
 )
 
 T = TypeVar("T")
+BoolSequence = Sequence[bool]
+BoolSequences = Sequence[BoolSequence]
 BinsType: TypeAlias = int | str
 BinsSequence = Sequence[BinsType]
 BinsSequences = Sequence[BinsSequence]
+DictSequence = Sequence[dict]
+DictSequences = Sequence[DictSequence]
+MarkerType = MarkerStyle | Path | str | dict
+MarkerSequence = Sequence[MarkerType]
+MarkerSequences = Sequence[MarkerSequence]
+LiteralType = str
+LiteralSequence = Sequence[str]
+LiteralSequences = Sequence[LiteralSequence]
 NumericType: TypeAlias = float | int
 NumericSequence = Sequence[NumericType]
 NumericSequences = Sequence[NumericSequence]
-NumericTupleType: TypeAlias = tuple[NumericType, ...]
-NumericTupleSequence = Sequence[NumericTupleType]
-NumericTupleSequences = Sequence[NumericTupleSequence]
+StrSequence = Sequence[str]
+StrSequences = Sequence[StrSequence]
 ColorType = Union[
     str,
     tuple[NumericType, NumericType, NumericType],  # RGB
@@ -44,15 +55,18 @@ ColorType = Union[
 ]
 ColorSequence = Sequence[ColorType]
 ColorSequences = Sequence[ColorSequence]
-EdgeColorType = Union[Literal["face"], ColorType]
-EdgeColorSequence = Sequence[EdgeColorType]
-EdgeColorSequences = Sequence[EdgeColorSequence]
-NormalizeType = Union[Normalize, str]
-NormalizeSequence = Sequence[NormalizeType]
-NormalizeSequences = Sequence[NormalizeSequence]
 ColormapType = Union[Colormap, str]
 ColormapSequence = Sequence[ColormapType]
 ColormapSequences = Sequence[ColormapSequence]
+EdgeColorType = Union[Literal["face"], ColorType]
+EdgeColorSequence = Sequence[EdgeColorType]
+EdgeColorSequences = Sequence[EdgeColorSequence]
+NumericTupleType: TypeAlias = tuple[NumericType, ...]
+NumericTupleSequence = Sequence[NumericTupleType]
+NumericTupleSequences = Sequence[NumericTupleSequence]
+NormalizationType = Union[Normalize, str]
+NormalizationSequence = Sequence[NormalizationType]
+NormalizationSequences = Sequence[NormalizationSequence]
 
 
 class Param[T](BaseModel):
@@ -135,6 +149,44 @@ class DictSequenceParam(SequenceParam[dict]):
     pass
 
 
+class RangeSequenceParam(SequenceParam[NumericType]):
+    min_value: Optional[NumericType] = -np.inf
+    max_value: Optional[NumericType] = np.inf
+    strict: Optional[bool] = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_type(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            min_value = values.get("min_value", -np.inf)
+            max_value = values.get("max_value", np.inf)
+            strict = values.get("strict", False)
+            values = values["value"]
+
+            return {
+                "value": values,
+                "min_value": min_value,
+                "max_value": max_value,
+                "strict": strict,
+            }
+        return values
+
+    @model_validator(mode="after")
+    def validate_range_sequence(self) -> "RangeSequenceParam":
+        for idx, value in enumerate(self.value):
+            if not self.strict:
+                if not (self.min_value <= value <= self.max_value):
+                    raise ArgumentValidationError(
+                        f"Value {value} at index {idx} is not in range [{self.min_value}, {self.max_value}]"
+                    )
+            else:
+                if not (self.min_value < value < self.max_value):
+                    raise ArgumentValidationError(
+                        f"Value {value} at index {idx} is not in range ({self.min_value}, {self.max_value})"
+                    )
+        return self
+
+
 class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
     value: Sequence[Sequence[T]]
 
@@ -179,6 +231,62 @@ class BoolSequencesParam(SequencesParam[bool]):
 
 class DictSequencesParam(SequencesParam[dict]):
     pass
+
+
+class RangeSequencesParam(SequencesParam[NumericType]):
+    min_value: Optional[NumericType] = -np.inf
+    max_value: Optional[NumericType] = np.inf
+    strict: Optional[bool] = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def standardize_input(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            min_value = values.get("min_value", -np.inf)
+            max_value = values.get("max_value", np.inf)
+            strict = values.get("strict", False)
+            values = values["value"]
+        else:
+            values = values
+            min_value = -np.inf
+            max_value = np.inf
+            strict = False
+
+        values = coerce_to_list(values)
+        if not isinstance(values, Sequence):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
+
+        normalized = []
+        for value in values:
+            value = coerce_to_list(value)
+            if not isinstance(value, Sequence):
+                raise ArgumentValidationError(f"Expected a Sequence, got {type(value)}")
+            normalized.append(value)
+
+        return {
+            "value": normalized,
+            "min_value": min_value,
+            "max_value": max_value,
+            "strict": strict,
+        }
+
+    @model_validator(mode="after")
+    def validate_range_sequences(self) -> "RangeSequencesParam":
+        for outer_idx, inner_sequence_param in enumerate(self.value):
+            for inner_idx, value in enumerate(inner_sequence_param):
+                if not self.strict:
+                    if not (self.min_value <= value <= self.max_value):
+                        raise ArgumentValidationError(
+                            f"Value {value} at index [{outer_idx}, {inner_idx}] is not "
+                            + f"in range [{self.min_value}, {self.max_value}]"
+                        )
+                else:
+                    if not (self.min_value < value < self.max_value):
+                        raise ArgumentValidationError(
+                            f"Value {value} at index [{outer_idx}, {inner_idx}] is not "
+                            + f"in range ({self.min_value}, {self.max_value})"
+                        )
+        return self
 
 
 class NumericTupleParam(Param[NumericTupleType]):
@@ -662,7 +770,7 @@ class LiteralSequencesParam(SequencesParam[str]):
         return {"value": normalized_outer, "options": options}
 
 
-class NormalizationParam(Param[NormalizeType]):
+class NormalizationParam(Param[NormalizationType]):
     @model_validator(mode="before")
     @classmethod
     def validate_normalization(cls, values: Any) -> dict:
@@ -682,7 +790,7 @@ class NormalizationParam(Param[NormalizeType]):
         return {"value": value}
 
 
-class NormalizationSequenceParam(SequenceParam[NormalizeType]):
+class NormalizationSequenceParam(SequenceParam[NormalizationType]):
     @model_validator(mode="before")
     @classmethod
     def validate_normalization_sequence(cls, values: Any) -> dict:
@@ -705,7 +813,7 @@ class NormalizationSequenceParam(SequenceParam[NormalizeType]):
         return {"value": normalized}
 
 
-class NormalizationSequencesParam(SequencesParam[NormalizeType]):
+class NormalizationSequencesParam(SequencesParam[NormalizationType]):
     @model_validator(mode="before")
     @classmethod
     def validate_normalization_sequences(cls, values: Any) -> dict:
