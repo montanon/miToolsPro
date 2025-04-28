@@ -2,73 +2,79 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Literal, Optional, Sequence, Union
 
 import numpy as np
+from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentStructureError
-from mitoolspro.plotting.plots.matplotlib_typing import (
-    Bins,
-    BinsSequence,
-    Cmap,
-    CmapSequence,
-    Color,
-    ColorSequence,
-    ColorSequences,
-    DictSequence,
-    EdgeColor,
-    EdgeColorSequence,
-    EdgeColorSequences,
-    LiteralSequence,
-    LiteralSequences,
-    Marker,
-    MarkerSequence,
-    MarkerSequences,
-    Norm,
-    NormSequence,
-    NumericSequence,
-    NumericSequences,
-    NumericTuple,
-    NumericTupleSequence,
-    NumericTupleSequences,
-    NumericType,
-    StrSequence,
-    StrSequences,
-)
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
+    BinsSequence,
     BinsSequenceParam,
+    BinsSequences,
     BinsSequencesParam,
+    BinsType,
     BoolParam,
+    BoolSequence,
     BoolSequenceParam,
+    BoolSequences,
     BoolSequencesParam,
     ColormapParam,
+    ColormapSequence,
     ColormapSequenceParam,
+    ColormapSequences,
     ColormapSequencesParam,
+    ColormapType,
     ColorParam,
+    ColorSequence,
     ColorSequenceParam,
+    ColorSequences,
     ColorSequencesParam,
+    ColorType,
     DictParam,
+    DictSequence,
     DictSequenceParam,
+    DictSequences,
     DictSequencesParam,
     EdgeColorParam,
+    EdgeColorSequence,
     EdgeColorSequenceParam,
+    EdgeColorSequences,
     EdgeColorSequencesParam,
+    EdgeColorType,
     LiteralParam,
+    LiteralSequence,
     LiteralSequenceParam,
+    LiteralSequences,
     LiteralSequencesParam,
+    LiteralType,
     MarkerParam,
+    MarkerSequence,
     MarkerSequenceParam,
+    MarkerSequences,
     MarkerSequencesParam,
+    MarkerType,
     NormalizationParam,
+    NormalizationSequence,
     NormalizationSequenceParam,
+    NormalizationSequences,
     NormalizationSequencesParam,
+    NormalizationType,
     NumericParam,
+    NumericSequence,
     NumericSequenceParam,
+    NumericSequences,
     NumericSequencesParam,
     NumericTupleParam,
+    NumericTupleSequence,
     NumericTupleSequenceParam,
+    NumericTupleSequences,
     NumericTupleSequencesParam,
+    NumericTupleType,
+    NumericType,
     RangeParam,
     StrParam,
+    StrSequence,
     StrSequenceParam,
+    StrSequences,
     StrSequencesParam,
 )
 from mitoolspro.plotting.plots.validations import (
@@ -134,46 +140,68 @@ class Setter(ABC):
 
     def set_color_sequences(
         self,
-        colors: Union[ColorSequences, ColorSequence, Color],
+        colors: Union[
+            ColorSequences,
+            ColorSequence,
+            ColorType,
+        ],
         param_name: str,
     ) -> Any:
         if self.multi_data:
-            if is_color_sequences(colors):
-                validate_sequence_length(colors, self.n_sequences, param_name)
-                validate_subsequences_length(colors, [1, self.data_size], param_name)
-                setattr(self, param_name, colors)
+            try:
+                validated = ColorSequencesParam.model_validate(colors).value
+                validate_sequence_length(validated, self.n_sequences, param_name)
+                validate_subsequences_length(validated, [1, self.data_size], param_name)
+                setattr(self, param_name, validated)
                 self.multi_params_structure[param_name] = "sequences"
                 return self
-            elif is_color_sequence(colors):
-                validate_sequence_length(colors, self.n_sequences, param_name)
-                setattr(self, param_name, colors)
+            except ValidationError:
+                pass
+            try:
+                validated = ColorSequenceParam.model_validate(colors).value
+                validate_sequence_length(validated, self.n_sequences, param_name)
+                setattr(self, param_name, validated)
                 self.multi_params_structure[param_name] = "sequence"
                 return self
-            elif is_color(colors):
-                setattr(self, param_name, colors)
+            except ValidationError:
+                pass
+            try:
+                validated = ColorParam.model_validate(colors).value
+                setattr(self, param_name, validated)
                 self.multi_params_structure[param_name] = "value"
                 return self
+            except ValidationError:
+                pass
         else:
-            if is_color_sequence(colors):
-                validate_sequence_length(colors, self.data_size, param_name)
-                setattr(self, param_name, colors)
+            try:
+                validated = ColorSequenceParam.model_validate(colors).value
+                validate_sequence_length(validated, self.data_size, param_name)
+                setattr(self, param_name, validated)
                 self.multi_params_structure[param_name] = "sequence"
                 return self
-            elif is_color(colors):
-                setattr(self, param_name, colors)
+            except ValidationError:
+                pass
+            try:
+                validated = ColorParam.model_validate(colors).value
+                setattr(self, param_name, validated)
                 self.multi_params_structure[param_name] = "value"
                 return self
+            except ValidationError:
+                pass
+
         raise ArgumentStructureError(
             f"Invalid {param_name}, must be a color, sequence of colors, or sequences of colors."
         )
 
-    def set_color_sequence(self, colors: Union[ColorSequence, Color], param_name: str):
-        if self.multi_data and is_color_sequence(colors):
+    def set_color_sequence(
+        self, colors: Union[ColorSequence, ColorType], param_name: str
+    ):
+        if self.multi_data and ColorSequenceParam.model_validate(colors):
             validate_sequence_length(colors, self.n_sequences, param_name)
             setattr(self, param_name, colors)
             self.multi_params_structure[param_name] = "sequence"
             return self
-        elif is_color(colors):
+        elif ColorParam.model_validate(colors):
             setattr(self, param_name, colors)
             self.multi_params_structure[param_name] = "value"
             return self
@@ -197,9 +225,6 @@ class Setter(ABC):
                     for seq in sequences
                 ]
                 validate_subsequences_length(sequences, self.data_size, param_name)
-                validate_sequences_values_in_range(
-                    sequences, min_value, max_value, param_name
-                )
                 setattr(self, param_name, np.asarray(sequences))
                 self.multi_params_structure[param_name] = "sequences"
                 return self
