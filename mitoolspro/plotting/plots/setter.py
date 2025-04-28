@@ -196,15 +196,22 @@ class Setter(ABC):
     def set_color_sequence(
         self, colors: Union[ColorSequence, ColorType], param_name: str
     ):
-        if self.multi_data and ColorSequenceParam.model_validate(colors):
-            validate_sequence_length(colors, self.n_sequences, param_name)
-            setattr(self, param_name, colors)
-            self.multi_params_structure[param_name] = "sequence"
-            return self
-        elif ColorParam.model_validate(colors):
-            setattr(self, param_name, colors)
+        if self.multi_data:
+            try:
+                validated = ColorSequenceParam.model_validate(colors).value
+                validate_sequence_length(validated, self.n_sequences, param_name)
+                setattr(self, param_name, validated)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        try:
+            validated = ColorParam.model_validate(colors).value
+            setattr(self, param_name, validated)
             self.multi_params_structure[param_name] = "value"
             return self
+        except ValidationError:
+            pass
         raise ArgumentStructureError(
             f"Invalid {param_name}, must be a color or sequence of colors."
         )
