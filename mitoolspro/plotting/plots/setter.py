@@ -508,56 +508,79 @@ class Setter(ABC):
             f"Invalid {param_name}, must be a marker or sequence of markers."
         )
 
-    # def set_edgecolor_sequences(
-    #     self,
-    #     sequences: Union[EdgeColorSequences, EdgeColorSequence, EdgeColor],
-    #     param_name: str,
-    # ):
-    #     if self.multi_data:
-    #         if is_edgecolor_sequences(sequences):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             validate_subsequences_length(sequences, [1, self.data_size], param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequences"
-    #             return self
-    #         elif is_edgecolor_sequence(sequences):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_edgecolor(sequences):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     else:
-    #         if is_edgecolor_sequence(sequences):
-    #             validate_sequence_length(sequences, self.data_size, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_edgecolor(sequences):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be an edgecolor, sequence of edgecolors, or sequences of edgecolors."
-    #     )
+    def set_edgecolor_sequences(
+        self,
+        sequences: Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType],
+        param_name: str,
+    ):
+        if self.multi_data:
+            try:
+                sequences = EdgeColorSequencesParam(sequences).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequences"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = EdgeColorSequenceParam(sequences).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = EdgeColorParam(sequences).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequences = EdgeColorSequenceParam(sequences).value
+                validate_sequence_length(sequences, self.data_size, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = EdgeColorParam(sequences).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be an edgecolor, sequence of edgecolors, or sequences of edgecolors."
+        )
 
-    # def set_edgecolor_sequence(
-    #     self, sequence: Union[EdgeColorSequence, EdgeColor], param_name: str
-    # ):
-    #     if self.multi_data and is_edgecolor_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_edgecolor(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be an edgecolor or sequence of edgecolors."
-    #     )
+    def set_edgecolor_sequence(
+        self, sequence: Union[EdgeColorSequence, EdgeColorType], param_name: str
+    ):
+        if self.multi_data:
+            try:
+                sequence = EdgeColorSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = EdgeColorParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be an edgecolor or sequence of edgecolors."
+        )
 
     # def set_colormap_sequence(
     #     self, sequence: Union[CmapSequence, Cmap], param_name: str
