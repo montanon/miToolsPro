@@ -356,60 +356,83 @@ class Setter(ABC):
             f"Invalid {param_name}, must be a numeric value or sequence of numbers."
         )
 
-    # def set_literal_sequences(
-    #     self,
-    #     sequences: Union[LiteralSequences, LiteralSequence, Literal["options"]],
-    #     options: Sequence[str],
-    #     param_name: str,
-    # ):
-    #     if self.multi_data:
-    #         if is_literal_sequences(sequences, options):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             validate_subsequences_length(sequences, [1, self.data_size], param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequences"
-    #             return self
-    #         elif is_literal_sequence(sequences, options):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_literal(sequences, options):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     else:
-    #         if is_literal_sequence(sequences, options):
-    #             validate_sequence_length(sequences, self.data_size, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_literal(sequences, options):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a literal or sequence of literals."
-    #     )
+    def set_literal_sequences(
+        self,
+        sequences: Union[LiteralSequences, LiteralSequence, LiteralType],
+        options: Sequence[str],
+        param_name: str,
+    ):
+        if self.multi_data:
+            try:
+                sequences = LiteralSequencesParam(sequences, options=options).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequences"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = LiteralSequenceParam(sequences, options=options).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = LiteralParam(sequences, options=options).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequences = LiteralSequenceParam(sequences, options=options).value
+                validate_sequence_length(sequences, self.data_size, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = LiteralParam(sequences, options=options).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a literal or sequence of literals."
+        )
 
-    # def set_literal_sequence(
-    #     self,
-    #     sequence: Union[LiteralSequence, Literal["options"]],
-    #     options: Sequence[str],
-    #     param_name: str,
-    # ):
-    #     if self.multi_data and is_literal_sequence(sequence, options):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_literal(sequence, options):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a literal or sequence of literals."
-    #     )
+    def set_literal_sequence(
+        self,
+        sequence: Union[LiteralSequence, LiteralType],
+        options: Sequence[str],
+        param_name: str,
+    ):
+        if self.multi_data:
+            try:
+                sequence = LiteralSequenceParam(sequence, options=options).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = LiteralParam(sequence, options=options).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a literal or sequence of literals."
+        )
 
     # def set_marker_sequences(
     #     self,
