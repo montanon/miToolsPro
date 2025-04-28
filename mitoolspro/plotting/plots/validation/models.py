@@ -24,8 +24,15 @@ from mitoolspro.plotting.plots.validation.functions import (
 )
 
 T = TypeVar("T")
+BinsType: TypeAlias = int | str
+BinsSequence = Sequence[BinsType]
+BinsSequences = Sequence[BinsSequence]
 NumericType: TypeAlias = float | int
-NumericTuple: TypeAlias = tuple[NumericType, ...]
+NumericSequence = Sequence[NumericType]
+NumericSequences = Sequence[NumericSequence]
+NumericTupleType: TypeAlias = tuple[NumericType, ...]
+NumericTupleSequence = Sequence[NumericTupleType]
+NumericTupleSequences = Sequence[NumericTupleSequence]
 ColorType = Union[
     str,
     tuple[NumericType, NumericType, NumericType],  # RGB
@@ -35,9 +42,17 @@ ColorType = Union[
     float,
     None,
 ]
+ColorSequence = Sequence[ColorType]
+ColorSequences = Sequence[ColorSequence]
 EdgeColorType = Union[Literal["face"], ColorType]
+EdgeColorSequence = Sequence[EdgeColorType]
+EdgeColorSequences = Sequence[EdgeColorSequence]
 NormalizeType = Union[Normalize, str]
+NormalizeSequence = Sequence[NormalizeType]
+NormalizeSequences = Sequence[NormalizeSequence]
 ColormapType = Union[Colormap, str]
+ColormapSequence = Sequence[ColormapType]
+ColormapSequences = Sequence[ColormapSequence]
 
 
 class Param[T](BaseModel):
@@ -166,7 +181,7 @@ class DictSequencesParam(SequencesParam[dict]):
     pass
 
 
-class NumericTupleParam(Param[NumericTuple]):
+class NumericTupleParam(Param[NumericTupleType]):
     sizes: Optional[Sequence[int] | int] = None
 
     @model_validator(mode="after")
@@ -185,7 +200,7 @@ class NumericTupleParam(Param[NumericTuple]):
         return self
 
 
-class NumericTupleSequenceParam(SequenceParam[NumericTuple]):
+class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
     sizes: Optional[Sequence[int] | int] = None
 
     @model_validator(mode="before")
@@ -223,7 +238,7 @@ class NumericTupleSequenceParam(SequenceParam[NumericTuple]):
         return self
 
 
-class NumericTupleSequencesParam(SequencesParam[NumericTuple]):
+class NumericTupleSequencesParam(SequencesParam[NumericTupleType]):
     sizes: Optional[Sequence[int] | int] = None
 
     @model_validator(mode="before")
@@ -300,7 +315,7 @@ class ColorParam(Param[ColorType]):
 
 
 class ColorSequenceParam(SequenceParam[ColorType]):
-    value: Sequence[ColorType]
+    value: ColorSequence
 
     @model_validator(mode="before")
     @classmethod
@@ -329,7 +344,7 @@ class ColorSequenceParam(SequenceParam[ColorType]):
 
 
 class ColorSequencesParam(SequencesParam[ColorType]):
-    value: Sequence[Sequence[ColorType]]
+    value: ColorSequences
 
     @model_validator(mode="before")
     @classmethod
@@ -383,7 +398,7 @@ class EdgeColorParam(Param[EdgeColorType]):
 
 
 class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
-    value: Sequence[EdgeColorType]
+    value: EdgeColorSequence
 
     @model_validator(mode="before")
     @classmethod
@@ -412,7 +427,7 @@ class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
 
 
 class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
-    value: Sequence[Sequence[EdgeColorType]]
+    value: EdgeColorSequences
 
     @model_validator(mode="before")
     @classmethod
@@ -789,7 +804,7 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
         return {"value": normalized_outer}
 
 
-class BinsParam(Param[int | str]):
+class BinsParam(Param[BinsType]):
     @model_validator(mode="before")
     @classmethod
     def validate_bins(cls, values: Any) -> dict:
@@ -804,7 +819,7 @@ class BinsParam(Param[int | str]):
         return {"value": values}
 
 
-class BinsSequenceParam(SequenceParam[int | str]):
+class BinsSequenceParam(SequenceParam[BinsType]):
     @model_validator(mode="before")
     @classmethod
     def validate_bins_sequence(cls, values: Any) -> dict:
@@ -825,7 +840,7 @@ class BinsSequenceParam(SequenceParam[int | str]):
         return {"value": normalized}
 
 
-class BinsSequencesParam(SequencesParam[int | str]):
+class BinsSequencesParam(SequencesParam[BinsType]):
     @model_validator(mode="before")
     @classmethod
     def validate_bins_sequences(cls, values: Any) -> dict:
