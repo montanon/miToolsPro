@@ -128,7 +128,7 @@ class SequenceParam[T](Param[Sequence[T]]):
         if isinstance(values, dict):
             values = values["value"]
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected Sequence, got {type(values)}")
         return {"value": values}
 
@@ -194,21 +194,17 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
     @classmethod
     def standardize_input(cls, values: Any) -> dict:
         if isinstance(values, dict):
-            input_value = values["value"]
-        else:
-            input_value = values
+            values = values["value"]
 
-        input_value = coerce_to_list(input_value)
+        values = coerce_to_list(values)
 
-        if not isinstance(input_value, Sequence):
-            raise ArgumentValidationError(
-                f"Expected a Sequence, got {type(input_value)}"
-            )
+        if not isinstance(values, Sequence) or isinstance(values, str):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
         normalized = []
-        for value in input_value:
+        for value in values:
             value = coerce_to_list(value)
-            if not isinstance(value, Sequence):
+            if not isinstance(value, Sequence) or isinstance(value, str):
                 raise ArgumentValidationError(
                     f"Expected a Sequence inside outer list, got {type(value)}"
                 )
@@ -253,13 +249,13 @@ class RangeSequencesParam(SequencesParam[NumericType]):
             strict = False
 
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
         normalized = []
         for value in values:
             value = coerce_to_list(value)
-            if not isinstance(value, Sequence):
+            if not isinstance(value, Sequence) or isinstance(value, str):
                 raise ArgumentValidationError(f"Expected a Sequence, got {type(value)}")
             normalized.append(value)
 
@@ -318,7 +314,7 @@ class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
             sizes = values.get("sizes", None)
             values = values["value"]
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
         for idx, v in enumerate(values):
@@ -353,22 +349,19 @@ class NumericTupleSequencesParam(SequencesParam[NumericTupleType]):
     @classmethod
     def standardize_input(cls, values: Any) -> dict:
         if isinstance(values, dict):
-            input_value = values["value"]
             sizes = values.get("sizes", None)
+            values = values["value"]
         else:
-            input_value = values
             sizes = None
 
-        input_value = coerce_to_list(input_value)
-        if not isinstance(input_value, Sequence):
-            raise ArgumentValidationError(
-                f"Expected a Sequence, got {type(input_value)}"
-            )
+        values = coerce_to_list(values)
+        if not isinstance(values, Sequence) or isinstance(values, str):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
         normalized = []
-        for value in input_value:
+        for value in values:
             value = coerce_to_list(value)
-            if not isinstance(value, Sequence):
+            if not isinstance(value, Sequence) or isinstance(value, str):
                 raise ArgumentValidationError(f"Expected a Sequence, got {type(value)}")
             normalized.append(value)
 
@@ -433,7 +426,7 @@ class ColorSequenceParam(SequenceParam[ColorType]):
 
         values = coerce_to_list(values)
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
                 f"Expected a Sequence of colors, got {type(values)}"
             )
@@ -462,7 +455,7 @@ class ColorSequencesParam(SequencesParam[ColorType]):
 
         values = coerce_to_list(values)
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
                 f"Expected a Sequence of Sequences, got {type(values)}"
             )
@@ -516,7 +509,7 @@ class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
 
         values = coerce_to_list(values)
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
                 f"Expected a Sequence of colors, got {type(values)}"
             )
@@ -545,7 +538,7 @@ class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
 
         values = coerce_to_list(values)
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
                 f"Expected a Sequence of Sequences, got {type(values)}"
             )
@@ -589,7 +582,7 @@ class MarkerParam(Param[Any]):
 
 
 class MarkerSequenceParam(SequenceParam[MarkerParam]):
-    value: Sequence[MarkerParam]
+    value: Sequence[MarkerType]
 
     @model_validator(mode="before")
     @classmethod
@@ -599,7 +592,7 @@ class MarkerSequenceParam(SequenceParam[MarkerParam]):
 
         values = coerce_to_list(values)
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
                 f"Expected a Sequence of markers, got {type(values)}"
             )
@@ -616,7 +609,7 @@ class MarkerSequenceParam(SequenceParam[MarkerParam]):
 
 
 class MarkerSequencesParam(SequencesParam[MarkerParam]):
-    value: Sequence[Sequence[MarkerParam]]
+    value: Sequence[Sequence[MarkerType]]
 
     @model_validator(mode="before")
     @classmethod
@@ -626,7 +619,7 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
 
         values = coerce_to_list(values)
 
-        if not isinstance(values, Sequence):
+        if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
                 f"Expected a Sequence of Sequences, got {type(values)}"
             )
@@ -691,7 +684,7 @@ class LiteralSequenceParam(SequenceParam[str]):
             )
 
         options = values.get("options")
-        input_value = values.get("value")
+        values = values.get("value")
 
         if (
             options is None
@@ -702,20 +695,18 @@ class LiteralSequenceParam(SequenceParam[str]):
                 "Literal options must be a non-empty sequence of strings."
             )
 
-        input_value = coerce_to_list(input_value)
+        values = coerce_to_list(values)
 
-        if not isinstance(input_value, Sequence):
-            raise ArgumentValidationError(
-                f"Expected a Sequence, got {type(input_value)}."
-            )
+        if not isinstance(values, Sequence) or isinstance(values, str):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}.")
 
-        for idx, v in enumerate(input_value):
+        for idx, v in enumerate(values):
             if not is_literal(v, options):
                 raise ArgumentValidationError(
                     f"Invalid literal at index {idx}: {v!r}. Allowed options: {options}."
                 )
 
-        return {"value": input_value, "options": options}
+        return {"value": values, "options": options}
 
 
 class LiteralSequencesParam(SequencesParam[str]):
@@ -730,7 +721,7 @@ class LiteralSequencesParam(SequencesParam[str]):
             )
 
         options = values.get("options")
-        input_value = values.get("value")
+        values = values.get("value")
 
         if (
             options is None
@@ -741,15 +732,13 @@ class LiteralSequencesParam(SequencesParam[str]):
                 "Literal options must be a non-empty sequence."
             )
 
-        input_value = coerce_to_list(input_value)
+        values = coerce_to_list(values)
 
-        if not isinstance(input_value, Sequence):
-            raise ArgumentValidationError(
-                f"Expected a Sequence, got {type(input_value)}."
-            )
+        if not isinstance(values, Sequence) or isinstance(values, str):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}.")
 
         normalized_outer = []
-        for outer_idx, outer in enumerate(input_value):
+        for outer_idx, outer in enumerate(values):
             outer = coerce_to_list(outer)
 
             if not isinstance(outer, Sequence):
@@ -775,19 +764,17 @@ class NormalizationParam(Param[NormalizationType]):
     @classmethod
     def validate_normalization(cls, values: Any) -> dict:
         if isinstance(values, dict):
-            value = values.get("value")
-        else:
-            value = values
+            values = values.get("value")
 
-        if isinstance(value, Normalize):
-            return {"value": value}
+        if isinstance(values, Normalize):
+            return {"value": values}
 
-        if not is_literal(value, NORMALIZATIONS):
+        if not is_literal(values, NORMALIZATIONS):
             raise ArgumentValidationError(
-                f"Invalid literal: {value!r}. Allowed options: {NORMALIZATIONS}."
+                f"Invalid literal: {values!r}. Allowed options: {NORMALIZATIONS}."
             )
 
-        return {"value": value}
+        return {"value": values}
 
 
 class NormalizationSequenceParam(SequenceParam[NormalizationType]):
@@ -819,8 +806,6 @@ class NormalizationSequencesParam(SequencesParam[NormalizationType]):
     def validate_normalization_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
             values = values.get("value")
-        else:
-            values = values
 
         values = coerce_to_list(values)
 
