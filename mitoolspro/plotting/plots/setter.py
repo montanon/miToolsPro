@@ -107,7 +107,7 @@ class Setter(ABC):
     ) -> Any:
         if self.multi_data:
             try:
-                validated = ColorSequencesParam(colors).value
+                validated = ColorSequencesParam(value=colors).value
                 validate_sequence_length(validated, self.n_sequences, param_name)
                 validate_subsequences_length(validated, [1, self.data_size], param_name)
                 setattr(self, param_name, validated)
@@ -115,7 +115,7 @@ class Setter(ABC):
             except ValidationError:
                 pass
         try:
-            validated = ColorSequenceParam(colors).value
+            validated = ColorSequenceParam(value=colors).value
             validate_sequence_length(
                 validated,
                 self.n_sequences if self.multi_data else self.data_size,
@@ -126,7 +126,7 @@ class Setter(ABC):
         except ValidationError:
             pass
         try:
-            validated = ColorParam(colors).value
+            validated = ColorParam(value=colors).value
             setattr(self, param_name, validated)
             return self
         except ValidationError:
@@ -145,7 +145,6 @@ class Setter(ABC):
         param_name: str,
         min_value: NumericType = None,
         max_value: NumericType = None,
-        single_value: bool = True,
     ):
         has_range = min_value is not None or max_value is not None
         if has_range:
@@ -156,10 +155,10 @@ class Setter(ABC):
         if self.multi_data:
             try:
                 sequences = (
-                    NumericSequencesParam(sequences)
+                    NumericSequencesParam(value=sequences)
                     if no_range
                     else RangeSequencesParam(
-                        sequences, min_value=min_value, max_value=max_value
+                        value=sequences, min_value=min_value, max_value=max_value
                     )
                 ).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
@@ -170,10 +169,10 @@ class Setter(ABC):
                 pass
         try:
             sequences = (
-                NumericSequenceParam(sequences)
+                NumericSequenceParam(value=sequences)
                 if no_range
                 else RangeSequenceParam(
-                    sequences, min_value=min_value, max_value=max_value
+                    value=sequences, min_value=min_value, max_value=max_value
                 )
             ).value
             validate_sequence_length(
@@ -187,20 +186,19 @@ class Setter(ABC):
             pass
         try:
             sequences = (
-                NumericParam(sequences)
+                NumericParam(value=sequences)
                 if no_range
-                else RangeParam(sequences, min_value=min_value, max_value=max_value)
+                else RangeParam(
+                    value=sequences, min_value=min_value, max_value=max_value
+                )
             ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
             pass
-
-        if single_value:
-            msg = f"Invalid {param_name}, must be a numeric value, numeric sequences, or sequence of numeric sequences."
-        else:
-            msg = f"Invalid {param_name}, must be a numeric sequences, or sequence of numeric sequences."
-        raise ArgumentStructureError(msg)
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a numeric value, numeric sequences, or sequence of numeric sequences."
+        )
 
     def set_literal_sequences(
         self,
@@ -210,7 +208,9 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = LiteralSequencesParam(sequences, options=options).value
+                sequences = LiteralSequencesParam(
+                    value=sequences, options=options
+                ).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
@@ -218,7 +218,7 @@ class Setter(ABC):
             except ValidationError:
                 pass
         try:
-            sequences = LiteralSequenceParam(sequences, options=options).value
+            sequences = LiteralSequenceParam(value=sequences, options=options).value
             validate_sequence_length(
                 sequences,
                 self.n_sequences if self.multi_data else self.data_size,
@@ -229,7 +229,7 @@ class Setter(ABC):
         except ValidationError:
             pass
         try:
-            sequences = LiteralParam(sequences, options=options).value
+            sequences = LiteralParam(value=sequences, options=options).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -245,7 +245,7 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = MarkerSequencesParam(sequences).value
+                sequences = MarkerSequencesParam(value=sequences).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
@@ -253,7 +253,7 @@ class Setter(ABC):
             except ValidationError:
                 pass
         try:
-            sequences = MarkerSequenceParam(sequences).value
+            sequences = MarkerSequenceParam(value=sequences).value
             validate_sequence_length(
                 sequences,
                 self.n_sequences if self.multi_data else self.data_size,
@@ -264,7 +264,7 @@ class Setter(ABC):
         except ValidationError:
             pass
         try:
-            sequences = MarkerParam(sequences).value
+            sequences = MarkerParam(value=sequences).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -280,7 +280,7 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = EdgeColorSequencesParam(sequences).value
+                sequences = EdgeColorSequencesParam(value=sequences).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
@@ -288,7 +288,7 @@ class Setter(ABC):
             except ValidationError:
                 pass
         try:
-            sequences = EdgeColorSequenceParam(sequences).value
+            sequences = EdgeColorSequenceParam(value=sequences).value
             validate_sequence_length(
                 sequences,
                 self.n_sequences if self.multi_data else self.data_size,
@@ -299,7 +299,7 @@ class Setter(ABC):
         except ValidationError:
             pass
         try:
-            sequences = EdgeColorParam(sequences).value
+            sequences = EdgeColorParam(value=sequences).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -313,7 +313,7 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = StrSequencesParam(sequences).value
+                sequences = StrSequencesParam(value=sequences).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
@@ -321,7 +321,7 @@ class Setter(ABC):
             except ValidationError:
                 pass
         try:
-            sequences = StrSequenceParam(sequences).value
+            sequences = StrSequenceParam(value=sequences).value
             validate_sequence_length(
                 sequences,
                 self.n_sequences if self.multi_data else self.data_size,
@@ -332,7 +332,7 @@ class Setter(ABC):
         except ValidationError:
             pass
         try:
-            sequences = StrParam(sequences).value
+            sequences = StrParam(value=sequences).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -349,7 +349,9 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = NumericTupleSequencesParam(sequences, sizes=sizes).value
+                sequences = NumericTupleSequencesParam(
+                    value=sequences, sizes=sizes
+                ).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
@@ -357,7 +359,7 @@ class Setter(ABC):
             except ValidationError:
                 pass
         try:
-            sequences = NumericTupleSequenceParam(sequences, sizes=sizes).value
+            sequences = NumericTupleSequenceParam(value=sequences, sizes=sizes).value
             validate_sequence_length(
                 sequences,
                 self.n_sequences if self.multi_data else self.data_size,
@@ -368,7 +370,7 @@ class Setter(ABC):
         except ValidationError:
             pass
         try:
-            sequences = NumericTupleParam(sequences, sizes=sizes).value
+            sequences = NumericTupleParam(value=sequences, sizes=sizes).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -382,7 +384,7 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequence = ColormapSequenceParam(sequence).value
+                sequence = ColormapSequenceParam(value=sequence).value
                 validate_sequence_length(sequence, self.n_sequences, param_name)
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "sequence"
@@ -391,7 +393,7 @@ class Setter(ABC):
                 pass
         else:
             try:
-                sequence = ColormapParam(sequence).value
+                sequence = ColormapParam(value=sequence).value
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "value"
                 return self
@@ -406,7 +408,7 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequence = NormalizationSequenceParam(sequence).value
+                sequence = NormalizationSequenceParam(value=sequence).value
                 validate_sequence_length(sequence, self.n_sequences, param_name)
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "sequence"
@@ -415,7 +417,7 @@ class Setter(ABC):
                 pass
         else:
             try:
-                sequence = NormalizationParam(sequence).value
+                sequence = NormalizationParam(value=sequence).value
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "value"
                 return self
@@ -430,7 +432,7 @@ class Setter(ABC):
     ):
         if self.multi_data:
             try:
-                sequence = BinsSequenceParam(sequence).value
+                sequence = BinsSequenceParam(value=sequence).value
                 validate_sequence_length(sequence, self.n_sequences, param_name)
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "sequence"
@@ -439,7 +441,7 @@ class Setter(ABC):
                 pass
         else:
             try:
-                sequence = BinsParam(sequence).value
+                sequence = BinsParam(value=sequence).value
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "value"
                 return self
@@ -452,7 +454,7 @@ class Setter(ABC):
     def set_bool_sequence(self, sequence: Union[BoolSequence, bool], param_name: str):
         if self.multi_data:
             try:
-                sequence = BoolSequenceParam(sequence).value
+                sequence = BoolSequenceParam(value=sequence).value
                 validate_sequence_length(sequence, self.n_sequences, param_name)
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "sequence"
@@ -461,7 +463,7 @@ class Setter(ABC):
                 pass
         else:
             try:
-                sequence = BoolParam(sequence).value
+                sequence = BoolParam(value=sequence).value
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "value"
                 return self
@@ -474,7 +476,7 @@ class Setter(ABC):
     def set_dict_sequence(self, sequence: Union[DictSequence, dict], param_name: str):
         if self.multi_data:
             try:
-                sequence = DictSequenceParam(sequence).value
+                sequence = DictSequenceParam(value=sequence).value
                 validate_sequence_length(sequence, self.n_sequences, param_name)
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "sequence"
@@ -483,7 +485,7 @@ class Setter(ABC):
                 pass
         else:
             try:
-                sequence = DictParam(sequence).value
+                sequence = DictParam(value=sequence).value
                 setattr(self, param_name, sequence)
                 self.multi_params_structure[param_name] = "value"
                 return self
