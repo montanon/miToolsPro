@@ -1,14 +1,21 @@
 from pathlib import Path
 from typing import Any, Sequence
 
+import numpy as np
 from matplotlib.colors import Normalize, get_named_colors_mapping, is_color_like
 from matplotlib.markers import MarkerStyle
 from matplotlib.transforms import Transform
 from numpy import ndarray
 from pandas import Series
-from typing_extensions import TypeAlias
 
-NumericType: TypeAlias = float | int
+from mitoolspro.exceptions import ArgumentValidationError
+from mitoolspro.plotting.plots.validation.types import (
+    ColorType,
+    EdgeColorType,
+    NumericType,
+    SizesType,
+)
+
 COLORS = set(get_named_colors_mapping().keys())
 MARKERS = set(MarkerStyle.markers.keys()).union(set(MarkerStyle.filled_markers))
 MARKERS_FILLSTYLES = set(MarkerStyle.fillstyles)
@@ -135,3 +142,193 @@ def is_marker(value: Any) -> bool:
         return True
 
     return False
+
+
+def validate_range(
+    value: NumericType,
+    max_value: NumericType = np.inf,
+    min_value: NumericType = -np.inf,
+    strict: bool = False,
+) -> None:
+    if not strict:
+        if not (min_value <= value <= max_value):
+            raise ArgumentValidationError(
+                f"Value {value} is not in range [{min_value}, {max_value}]"
+            )
+    else:
+        if not (min_value < value < max_value):
+            raise ArgumentValidationError(
+                f"Value {value} is not in range ({min_value}, {max_value})"
+            )
+
+
+def validate_sequence_range(
+    value: Sequence,
+    min_value: NumericType = -np.inf,
+    max_value: NumericType = np.inf,
+    strict: bool = False,
+) -> None:
+    for idx, value in enumerate(value):
+        if not strict:
+            if not (min_value <= value <= max_value):
+                raise ArgumentValidationError(
+                    f"Value {value} at index {idx} is not in range [{min_value}, {max_value}]"
+                )
+        else:
+            if not (min_value < value < max_value):
+                raise ArgumentValidationError(
+                    f"Value {value} at index {idx} is not in range ({min_value}, {max_value})"
+                )
+
+
+def validate_sequences_range(
+    values: Sequence,
+    min_value: NumericType = -np.inf,
+    max_value: NumericType = np.inf,
+    strict: bool = False,
+) -> None:
+    for outer_idx, inner_sequence_param in enumerate(values):
+        for inner_idx, value in enumerate(inner_sequence_param):
+            if not strict:
+                if not (min_value <= value <= max_value):
+                    raise ArgumentValidationError(
+                        f"Value {value} at index [{outer_idx}, {inner_idx}] is not "
+                        + f"in range [{min_value}, {max_value}]"
+                    )
+            else:
+                if not (min_value < value < max_value):
+                    raise ArgumentValidationError(
+                        f"Value {value} at index [{outer_idx}, {inner_idx}] is not "
+                        + f"in range ({min_value}, {max_value})"
+                    )
+
+
+def validate_sequence(value: Any) -> None:
+    if not isinstance(value, Sequence) or isinstance(value, str):
+        raise ArgumentValidationError(f"Expected Sequence, got {type(value)}")
+
+
+def validate_numeric(value: Any) -> None:
+    if not isinstance(value, (int, float)):
+        raise ArgumentValidationError(f"Expected numeric {value=}, got {type(value)}")
+
+
+def validate_sequence_sizes(values: Sequence, sizes: SizesType) -> SizesType | None:
+    if sizes is not None:
+        sizes = sizes if isinstance(sizes, Sequence) else [sizes]
+        if len(values) not in sizes:
+            raise ArgumentValidationError(
+                f"Expected Sequence of sizes: {sizes}, got size: {len(values)} instead"
+            )
+    return sizes
+
+
+def validate_sequences_sizes(
+    values: Sequence, sub_sizes: SizesType
+) -> SizesType | None:
+    if sub_sizes is not None:
+        sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
+        for idx, value in enumerate(values):
+            if len(value) not in sub_sizes:
+                raise ArgumentValidationError(
+                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
+                )
+    return sub_sizes
+
+
+def standardize_sequences(values: Sequence[Any]) -> list[list]:
+    standardized = []
+    for idx, value in enumerate(values):
+        value = coerce_to_list(value)
+        if not isinstance(value, Sequence) or isinstance(value, str):
+            raise ArgumentValidationError(
+                f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
+            )
+        standardized.append(value)
+    return standardized
+
+
+def validate_tuple_sizes(value: Any, tuple_sizes: SizesType) -> SizesType | None:
+    if tuple_sizes is not None:
+        if not isinstance(tuple_sizes, Sequence):
+            tuple_sizes = [tuple_sizes]
+        if not all(size > 0 for size in tuple_sizes):
+            raise ArgumentValidationError(
+                f"All tuple_sizes must be positive, got {tuple_sizes}."
+            )
+        if len(value) not in tuple_sizes:
+            raise ArgumentValidationError(
+                f"Invalid tuple length {len(value)}. Allowed sizes: {tuple_sizes}."
+            )
+    return tuple_sizes
+
+
+def validate_tuple_sequence_sizes(
+    values: Sequence, tuple_sizes: SizesType
+) -> SizesType | None:
+    if tuple_sizes is not None:
+        if not isinstance(tuple_sizes, Sequence):
+            tuple_sizes = [tuple_sizes]
+        if not all(size > 0 for size in tuple_sizes):
+            raise ArgumentValidationError(
+                f"All sizes must be positive, got {tuple_sizes}."
+            )
+        for idx, value in enumerate(values):
+            if len(value) not in tuple_sizes:
+                raise ArgumentValidationError(
+                    f"Invalid tuple length {len(value)} at index {idx}. Allowed sizes: {tuple_sizes}."
+                )
+    return tuple_sizes
+
+
+def validate_tuple_sequence(values: Sequence) -> None:
+    for idx, v in enumerate(values):
+        if not isinstance(v, tuple):
+            raise ArgumentValidationError(
+                f"Expected each element to be a tuple, got {type(v)} at index {idx}"
+            )
+
+
+def validate_tuple_sequences(values: Sequence) -> None:
+    for outer_idx, inner_sequence in enumerate(values):
+        for inner_idx, value in enumerate(inner_sequence):
+            if not isinstance(value, tuple):
+                raise ArgumentValidationError(
+                    f"Expected each element to be a tuple, got {type(value)} at index [{outer_idx}, {inner_idx}]"
+                )
+
+
+def validate_tuple_sequences_sizes(
+    values: Sequence, tuple_sizes: SizesType
+) -> SizesType | None:
+    if tuple_sizes is not None:
+        if not isinstance(tuple_sizes, Sequence):
+            tuple_sizes = [tuple_sizes]
+        if not all(size > 0 for size in tuple_sizes):
+            raise ArgumentValidationError(
+                f"All sizes must be positive, got {tuple_sizes}."
+            )
+        for outer_idx, inner_sequence in enumerate(values):
+            for inner_idx, value in enumerate(inner_sequence):
+                if len(value) not in tuple_sizes:
+                    raise ArgumentValidationError(
+                        f"Invalid tuple length {len(value)} at index [{outer_idx}, {inner_idx}]. Allowed sizes: {tuple_sizes}."
+                    )
+    return tuple_sizes
+
+
+def validate_single_color(
+    value: Any, allow_face_literal: bool = False
+) -> ColorType | EdgeColorType:
+    if isinstance(value, (np.ndarray, Series)):
+        value = value.tolist()
+
+    if allow_face_literal and value == "face":
+        return value
+
+    value = normalize_rgb_tuple(value)
+
+    if not is_color(value):
+        raise ArgumentValidationError(f"Invalid color format: {value!r}")
+
+    return value

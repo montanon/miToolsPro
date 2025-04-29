@@ -17,10 +17,22 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
     is_bins,
-    is_color,
     is_literal,
     is_marker,
-    normalize_rgb_tuple,
+    standardize_sequences,
+    validate_numeric,
+    validate_range,
+    validate_sequence,
+    validate_sequence_range,
+    validate_sequence_sizes,
+    validate_sequences_range,
+    validate_sequences_sizes,
+    validate_single_color,
+    validate_tuple_sequence,
+    validate_tuple_sequence_sizes,
+    validate_tuple_sequences,
+    validate_tuple_sequences_sizes,
+    validate_tuple_sizes,
 )
 from mitoolspro.plotting.plots.validation.types import (
     BinsType,
@@ -61,20 +73,8 @@ class RangeParam(Param[NumericType]):
 
     @model_validator(mode="after")
     def validate_range(self) -> "RangeParam":
-        if not isinstance(self.value, (int, float)):
-            raise ArgumentValidationError(
-                f"Expected numeric {self.value=}, got {type(self.value)}"
-            )
-        if not self.strict:
-            if not (self.min_value <= self.value <= self.max_value):
-                raise ArgumentValidationError(
-                    f"Value {self.value} is not in range [{self.min_value}, {self.max_value}]"
-                )
-        else:
-            if not (self.min_value < self.value < self.max_value):
-                raise ArgumentValidationError(
-                    f"Value {self.value} is not in range ({self.min_value}, {self.max_value})"
-                )
+        validate_numeric(self.value)
+        validate_range(self.value, self.max_value, self.min_value, self.strict)
         return self
 
 
@@ -107,14 +107,8 @@ class SequenceParam[T](Param[Sequence[T]]):
         else:
             sizes = None
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(f"Expected Sequence, got {type(values)}")
-        if sizes is not None:
-            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
-            if len(values) not in sizes:
-                raise ArgumentValidationError(
-                    f"Expected Sequence of sizes: {sizes}, got size: {len(values)} instead"
-                )
+        validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes)
         return {"value": values, "sizes": sizes}
 
 
@@ -159,17 +153,7 @@ class RangeSequenceParam(SequenceParam[NumericType]):
 
     @model_validator(mode="after")
     def validate_range_sequence(self) -> "RangeSequenceParam":
-        for idx, value in enumerate(self.value):
-            if not self.strict:
-                if not (self.min_value <= value <= self.max_value):
-                    raise ArgumentValidationError(
-                        f"Value {value} at index {idx} is not in range [{self.min_value}, {self.max_value}]"
-                    )
-            else:
-                if not (self.min_value < value < self.max_value):
-                    raise ArgumentValidationError(
-                        f"Value {value} at index {idx} is not in range ({self.min_value}, {self.max_value})"
-                    )
+        validate_sequence_range(self.value, self.min_value, self.max_value, self.strict)
         return self
 
 
@@ -187,33 +171,13 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
             values = values["value"]
 
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
+        validate_sequence(values)
 
-        if sizes is not None:
-            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
-            if len(values) not in sizes:
-                raise ArgumentValidationError(
-                    f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
-                )
+        sizes = validate_sequence_sizes(values, sizes)
+        values = standardize_sequences(values)
+        sub_sizes = validate_sequences_sizes(values, sub_sizes)
 
-        if sub_sizes is not None:
-            sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
-
-        normalized = []
-        for idx, value in enumerate(values):
-            value = coerce_to_list(value)
-            if not isinstance(value, Sequence) or isinstance(value, str):
-                raise ArgumentValidationError(
-                    f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
-                )
-            if sub_sizes is not None and len(value) not in sub_sizes:
-                raise ArgumentValidationError(
-                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
-                )
-            normalized.append(value)
-
-        return {"value": normalized, "sizes": sizes, "sub_sizes": sub_sizes}
+        return {"value": values, "sizes": sizes, "sub_sizes": sub_sizes}
 
 
 class NumericSequencesParam(SequencesParam[NumericType]):
@@ -255,34 +219,13 @@ class RangeSequencesParam(SequencesParam[NumericType]):
             strict = False
 
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
-
-        if sizes is not None:
-            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
-            if len(values) not in sizes:
-                raise ArgumentValidationError(
-                    f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
-                )
-
-        if sub_sizes is not None:
-            sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
-
-        normalized = []
-        for idx, value in enumerate(values):
-            value = coerce_to_list(value)
-            if not isinstance(value, Sequence) or isinstance(value, str):
-                raise ArgumentValidationError(
-                    f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
-                )
-            if sub_sizes is not None and len(value) not in sub_sizes:
-                raise ArgumentValidationError(
-                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
-                )
-            normalized.append(value)
+        validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes)
+        values = standardize_sequences(values)
+        sub_sizes = validate_sequences_sizes(values, sub_sizes)
 
         return {
-            "value": normalized,
+            "value": values,
             "sizes": sizes,
             "sub_sizes": sub_sizes,
             "min_value": min_value,
@@ -292,20 +235,9 @@ class RangeSequencesParam(SequencesParam[NumericType]):
 
     @model_validator(mode="after")
     def validate_range_sequences(self) -> "RangeSequencesParam":
-        for outer_idx, inner_sequence_param in enumerate(self.value):
-            for inner_idx, value in enumerate(inner_sequence_param):
-                if not self.strict:
-                    if not (self.min_value <= value <= self.max_value):
-                        raise ArgumentValidationError(
-                            f"Value {value} at index [{outer_idx}, {inner_idx}] is not "
-                            + f"in range [{self.min_value}, {self.max_value}]"
-                        )
-                else:
-                    if not (self.min_value < value < self.max_value):
-                        raise ArgumentValidationError(
-                            f"Value {value} at index [{outer_idx}, {inner_idx}] is not "
-                            + f"in range ({self.min_value}, {self.max_value})"
-                        )
+        validate_sequences_range(
+            self.value, self.min_value, self.max_value, self.strict
+        )
         return self
 
 
@@ -314,17 +246,7 @@ class NumericTupleParam(Param[NumericTupleType]):
 
     @model_validator(mode="after")
     def validate_numeric_tuple(self) -> "NumericTupleParam":
-        if self.tuple_sizes is not None:
-            if not isinstance(self.tuple_sizes, Sequence):
-                self.tuple_sizes = [self.tuple_sizes]
-            if not all(size > 0 for size in self.tuple_sizes):
-                raise ArgumentValidationError(
-                    f"All tuple_sizes must be positive, got {self.tuple_sizes}."
-                )
-            if len(self.value) not in self.tuple_sizes:
-                raise ArgumentValidationError(
-                    f"Invalid tuple length {len(self.value)}. Allowed sizes: {self.tuple_sizes}."
-                )
+        self.tuple_sizes = validate_tuple_sizes(self.value, self.tuple_sizes)
         return self
 
 
@@ -343,36 +265,14 @@ class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
             tuple_sizes = None
 
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
-
-        for idx, v in enumerate(values):
-            if not isinstance(v, tuple):
-                raise ArgumentValidationError(
-                    f"Expected each element to be a tuple, got {type(v)} at index {idx}"
-                )
-        if sizes is not None:
-            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
-            if len(values) not in sizes:
-                raise ArgumentValidationError(
-                    f"Expected Sequence of sizes: {sizes}, got size: {len(values)} instead"
-                )
+        validate_sequence(values)
+        validate_tuple_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes)
         return {"value": values, "sizes": sizes, "tuple_sizes": tuple_sizes}
 
     @model_validator(mode="after")
     def validate_numeric_tuple_sequence(self) -> "NumericTupleSequenceParam":
-        if self.tuple_sizes is not None:
-            if not isinstance(self.tuple_sizes, Sequence):
-                self.tuple_sizes = [self.tuple_sizes]
-            if not all(size > 0 for size in self.tuple_sizes):
-                raise ArgumentValidationError(
-                    f"All sizes must be positive, got {self.tuple_sizes}."
-                )
-            for idx, tup in enumerate(self.value):
-                if len(tup) not in self.tuple_sizes:
-                    raise ArgumentValidationError(
-                        f"Invalid tuple length {len(tup)} at index {idx}. Allowed sizes: {self.tuple_sizes}."
-                    )
+        self.tuple_sizes = validate_tuple_sequence_sizes(self.value, self.tuple_sizes)
         return self
 
 
@@ -393,34 +293,14 @@ class NumericTupleSequencesParam(SequencesParam[NumericTupleType]):
             tuple_sizes = None
 
         values = coerce_to_list(values)
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
-
-        if sizes is not None:
-            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
-            if len(values) not in sizes:
-                raise ArgumentValidationError(
-                    f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
-                )
-
-        if sub_sizes is not None:
-            sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
-
-        normalized = []
-        for idx, value in enumerate(values):
-            value = coerce_to_list(value)
-            if not isinstance(value, Sequence) or isinstance(value, str):
-                raise ArgumentValidationError(
-                    f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
-                )
-            if sub_sizes is not None and len(value) not in sub_sizes:
-                raise ArgumentValidationError(
-                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
-                )
-            normalized.append(value)
+        validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes)
+        values = standardize_sequences(values)
+        validate_tuple_sequences(values)
+        sub_sizes = validate_sequences_sizes(values, sub_sizes)
 
         return {
-            "value": normalized,
+            "value": values,
             "sizes": sizes,
             "sub_sizes": sub_sizes,
             "tuple_sizes": tuple_sizes,
@@ -428,37 +308,8 @@ class NumericTupleSequencesParam(SequencesParam[NumericTupleType]):
 
     @model_validator(mode="after")
     def validate_numeric_tuple_sequences(self) -> "NumericTupleSequencesParam":
-        if self.tuple_sizes is not None:
-            if not isinstance(self.tuple_sizes, Sequence):
-                self.tuple_sizes = [self.tuple_sizes]
-            if not all(size > 0 for size in self.tuple_sizes):
-                raise ArgumentValidationError(
-                    f"All sizes must be positive, got {self.tuple_sizes}."
-                )
-            for outer_idx, inner_sequence_param in enumerate(self.value):
-                for inner_idx, tup in enumerate(inner_sequence_param):
-                    if len(tup) not in self.tuple_sizes:
-                        raise ArgumentValidationError(
-                            f"Invalid tuple length {len(tup)} at outer {outer_idx}, inner {inner_idx}. Allowed tuple_sizes: {self.tuple_sizes}."
-                        )
+        self.tuple_sizes = validate_tuple_sequences_sizes(self.value, self.tuple_sizes)
         return self
-
-
-def validate_single_color(
-    value: Any, allow_face_literal: bool = False
-) -> ColorType | Literal["face"]:
-    if isinstance(value, (np.ndarray, Series)):
-        value = value.tolist()
-
-    if allow_face_literal and value == "face":
-        return value
-
-    value = normalize_rgb_tuple(value)
-
-    if not is_color(value):
-        raise ArgumentValidationError(f"Invalid color format: {value!r}")
-
-    return value
 
 
 class ColorParam(Param[ColorType]):
@@ -484,11 +335,7 @@ class ColorSequenceParam(SequenceParam[ColorType]):
             values = values["value"]
 
         values = coerce_to_list(values)
-
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of colors, got {type(values)}"
-            )
+        validate_sequence(values)
 
         normalized = []
         for idx, v in enumerate(values):
@@ -567,11 +414,7 @@ class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
             values = values["value"]
 
         values = coerce_to_list(values)
-
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of colors, got {type(values)}"
-            )
+        validate_sequence(values)
 
         normalized = []
         for idx, v in enumerate(values):
@@ -596,11 +439,7 @@ class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
             values = values["value"]
 
         values = coerce_to_list(values)
-
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of Sequences, got {type(values)}"
-            )
+        validate_sequence(values)
 
         normalized_outer = []
         for outer_idx, outer in enumerate(values):
@@ -650,11 +489,7 @@ class MarkerSequenceParam(SequenceParam[MarkerParam]):
             values = values["value"]
 
         values = coerce_to_list(values)
-
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of markers, got {type(values)}"
-            )
+        validate_sequence(values)
 
         normalized = []
         for idx, v in enumerate(values):
@@ -677,11 +512,7 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
             values = values["value"]
 
         values = coerce_to_list(values)
-
-        if not isinstance(values, Sequence) or isinstance(values, str):
-            raise ArgumentValidationError(
-                f"Expected a Sequence of Sequences, got {type(values)}"
-            )
+        validate_sequence(values)
 
         normalized_outer = []
         for outer_idx, outer in enumerate(values):
@@ -844,6 +675,7 @@ class NormalizationSequenceParam(SequenceParam[NormalizationType]):
             values = values.get("value")
 
         values = coerce_to_list(values)
+        validate_sequence(values)
 
         normalized = []
         for idx, value in enumerate(values):
@@ -867,6 +699,7 @@ class NormalizationSequencesParam(SequencesParam[NormalizationType]):
             values = values.get("value")
 
         values = coerce_to_list(values)
+        validate_sequence(values)
 
         normalized_outer = []
         for outer_idx, outer in enumerate(values):
@@ -913,6 +746,7 @@ class ColormapSequenceParam(SequenceParam[ColormapType]):
             values = values.get("value")
 
         values = coerce_to_list(values)
+        validate_sequence(values)
 
         normalized = []
         for idx, value in enumerate(values):
@@ -936,6 +770,7 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
             values = values.get("value")
 
         values = coerce_to_list(values)
+        validate_sequence(values)
 
         normalized_outer = []
         for outer_idx, outer in enumerate(values):
@@ -979,7 +814,7 @@ class BinsSequenceParam(SequenceParam[BinsType]):
             values = values.get("value")
 
         values = coerce_to_list(values)
-
+        validate_sequence(values)
         normalized = []
         for idx, value in enumerate(values):
             if is_bins(value):
@@ -1000,6 +835,7 @@ class BinsSequencesParam(SequencesParam[BinsType]):
             values = values.get("value")
 
         values = coerce_to_list(values)
+        validate_sequence(values)
 
         normalized_outer = []
         for outer_idx, outer in enumerate(values):

@@ -798,7 +798,7 @@ class TestSequencesParam(TestCase):
         with self.assertRaises(ValidationError) as context:
             SequencesParam[int](value=[[1, 2], [3, 4]], sizes=3)
         self.assertIn(
-            "Expected outer Sequence must be of sizes: [3], got size: 2",
+            "Expected Sequence of sizes: [3], got size: 2",
             str(context.exception),
         )
 
