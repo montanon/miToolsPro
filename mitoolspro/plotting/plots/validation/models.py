@@ -164,24 +164,24 @@ class RangeSequenceParam(SequenceParam[NumericType]):
     min_value: Optional[NumericType] = -np.inf
     max_value: Optional[NumericType] = np.inf
     strict: Optional[bool] = False
-    sizes: Optional[SizesType]
 
     @model_validator(mode="before")
     @classmethod
     def validate_type(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
             min_value = values.get("min_value", -np.inf)
             max_value = values.get("max_value", np.inf)
             strict = values.get("strict", False)
             values = values["value"]
 
-            return {
-                "value": values,
-                "min_value": min_value,
-                "max_value": max_value,
-                "strict": strict,
-            }
-        return values
+        return {
+            "value": values,
+            "sizes": sizes,
+            "min_value": min_value,
+            "max_value": max_value,
+            "strict": strict,
+        }
 
     @model_validator(mode="after")
     def validate_range_sequence(self) -> "RangeSequenceParam":
