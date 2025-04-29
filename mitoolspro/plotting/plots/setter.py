@@ -113,68 +113,33 @@ class Setter(ABC):
                 validate_sequence_length(validated, self.n_sequences, param_name)
                 validate_subsequences_length(validated, [1, self.data_size], param_name)
                 setattr(self, param_name, validated)
-                self.multi_params_structure[param_name] = "sequences"
-                return self
-            except ValidationError:
-                pass
-            try:
-                validated = ColorSequenceParam(colors).value
-                validate_sequence_length(validated, self.n_sequences, param_name)
-                setattr(self, param_name, validated)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                validated = ColorParam(colors).value
-                setattr(self, param_name, validated)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                validated = ColorSequenceParam(colors).value
-                validate_sequence_length(validated, self.data_size, param_name)
-                setattr(self, param_name, validated)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                validated = ColorParam(colors).value
-                setattr(self, param_name, validated)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a color, sequence of colors, or sequences of colors."
-        )
-
-    def set_color_sequence(
-        self, colors: Union[ColorSequence, ColorType], param_name: str
-    ):
-        if self.multi_data:
-            try:
-                validated = ColorSequenceParam(colors).value
-                validate_sequence_length(validated, self.n_sequences, param_name)
-                setattr(self, param_name, validated)
-                self.multi_params_structure[param_name] = "sequence"
                 return self
             except ValidationError:
                 pass
         try:
-            validated = ColorParam(colors).value
+            validated = ColorSequenceParam(colors).value
+            validate_sequence_length(
+                validated,
+                self.n_sequences if self.multi_data else self.data_size,
+                param_name,
+            )
             setattr(self, param_name, validated)
-            self.multi_params_structure[param_name] = "value"
             return self
         except ValidationError:
             pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a color or sequence of colors."
-        )
+        try:
+            validated = ColorParam(colors).value
+            setattr(self, param_name, validated)
+            return self
+        except ValidationError:
+            pass
+
+        if self.multi_data:
+            msg = f"Invalid {param_name}, must be a color, sequence of colors, or sequences of colors."
+        else:
+            msg = f"Invalid {param_name}, must be a color or sequence of colors."
+
+        raise ArgumentStructureError(msg)
 
     def set_numeric_sequences(
         self,
