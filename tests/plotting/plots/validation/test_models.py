@@ -524,6 +524,52 @@ class TestSequenceParam(TestCase):
         self.assertEqual(param.value[0].x, 1)
         self.assertEqual(param.value[1].x, 2)
 
+    def test_init_with_valid_sizes_single_int(self):
+        param = SequenceParam[int](value=[1, 2, 3], sizes=3)
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [3])
+
+    def test_init_with_valid_sizes_sequence(self):
+        param = SequenceParam[int](value=[1, 2, 3], sizes=[2, 3, 4])
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [2, 3, 4])
+
+    def test_init_with_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequenceParam[int](value=[1, 2, 3], sizes=4)
+        self.assertIn(
+            "Expected Sequence of sizes: [4], got size: 3 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_invalid_size_sequence(self):
+        with self.assertRaises(ValidationError) as context:
+            SequenceParam[int](value=[1, 2, 3], sizes=[4, 5, 6])
+        self.assertIn(
+            "Expected Sequence of sizes: [4, 5, 6], got size: 3 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_none_sizes(self):
+        param = SequenceParam[int](value=[1, 2, 3], sizes=None)
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertIsNone(param.sizes)
+
+    def test_init_with_empty_sequence_and_size(self):
+        param = SequenceParam[int](value=[], sizes=0)
+        self.assertEqual(param.value, [])
+        self.assertEqual(param.sizes, [0])
+
+    def test_init_with_dict_initialization_and_sizes(self):
+        param = SequenceParam[int].model_validate({"value": [1, 2, 3], "sizes": 3})
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [3])
+
+    def test_init_with_multiple_valid_sizes(self):
+        param = SequenceParam[int](value=[1, 2], sizes=[2, 3])
+        self.assertEqual(param.value, [1, 2])
+        self.assertEqual(param.sizes, [2, 3])
+
 
 class TestSpecializedSequenceParams(TestCase):
     def test_numeric_sequence_param_valid_values(self):

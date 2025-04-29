@@ -121,16 +121,26 @@ class DictParam(Param[dict]):
 
 class SequenceParam[T](Param[Sequence[T]]):
     value: Sequence[T]
+    sizes: Optional[Sequence[int] | int] = None
 
     @model_validator(mode="before")
     @classmethod
     def validate_type(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
             values = values["value"]
+        else:
+            sizes = None
         values = coerce_to_list(values)
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected Sequence, got {type(values)}")
-        return {"value": values}
+        if sizes is not None:
+            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
+            if len(values) not in sizes:
+                raise ArgumentValidationError(
+                    f"Expected Sequence of sizes: {sizes}, got size: {len(values)} instead"
+                )
+        return {"value": values, "sizes": sizes}
 
 
 class NumericSequenceParam(SequenceParam[NumericType]):
