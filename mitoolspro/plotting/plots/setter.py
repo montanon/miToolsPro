@@ -7,67 +7,69 @@ from pydantic import ValidationError
 from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
-    BinsSequence,
     BinsSequenceParam,
-    BinsType,
     BoolParam,
-    BoolSequence,
     BoolSequenceParam,
     ColormapParam,
-    ColormapSequence,
     ColormapSequenceParam,
-    ColormapType,
     ColorParam,
-    ColorSequence,
     ColorSequenceParam,
-    ColorSequences,
     ColorSequencesParam,
-    ColorType,
     DictParam,
-    DictSequence,
     DictSequenceParam,
     EdgeColorParam,
-    EdgeColorSequence,
     EdgeColorSequenceParam,
-    EdgeColorSequences,
     EdgeColorSequencesParam,
-    EdgeColorType,
     LiteralParam,
-    LiteralSequence,
     LiteralSequenceParam,
-    LiteralSequences,
     LiteralSequencesParam,
-    LiteralType,
     MarkerParam,
-    MarkerSequence,
     MarkerSequenceParam,
-    MarkerSequences,
     MarkerSequencesParam,
-    MarkerType,
     NormalizationParam,
-    NormalizationSequence,
     NormalizationSequenceParam,
-    NormalizationType,
     NumericParam,
-    NumericSequence,
     NumericSequenceParam,
-    NumericSequences,
     NumericSequencesParam,
     NumericTupleParam,
-    NumericTupleSequence,
     NumericTupleSequenceParam,
-    NumericTupleSequences,
     NumericTupleSequencesParam,
-    NumericTupleType,
-    NumericType,
     RangeParam,
     RangeSequenceParam,
     RangeSequencesParam,
     StrParam,
-    StrSequence,
     StrSequenceParam,
-    StrSequences,
     StrSequencesParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
+    BinsSequence,
+    BinsType,
+    BoolSequence,
+    ColormapSequence,
+    ColormapType,
+    ColorSequence,
+    ColorSequences,
+    ColorType,
+    DictSequence,
+    EdgeColorSequence,
+    EdgeColorSequences,
+    EdgeColorType,
+    LiteralSequence,
+    LiteralSequences,
+    LiteralType,
+    MarkerSequence,
+    MarkerSequences,
+    MarkerType,
+    NormalizationSequence,
+    NormalizationType,
+    NumericSequence,
+    NumericSequences,
+    NumericTupleSequence,
+    NumericTupleSequences,
+    NumericTupleType,
+    NumericType,
+    StrSequence,
+    StrSequences,
 )
 from mitoolspro.plotting.plots.validations import (
     validate_sequence_length,
@@ -107,20 +109,20 @@ class SetterMixIn(ABC):
     ) -> Any:
         if self.multi_data:
             try:
-                validated = ColorSequencesParam(value=colors).value
-                validate_sequence_length(validated, self.n_sequences, param_name)
-                validate_subsequences_length(validated, [1, self.data_size], param_name)
+                validated = ColorSequencesParam(
+                    value=colors,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                ).value
                 setattr(self, param_name, validated)
                 return self
             except ValidationError:
                 pass
         try:
-            validated = ColorSequenceParam(value=colors).value
-            validate_sequence_length(
-                validated,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
+            validated = ColorSequenceParam(
+                value=colors,
+                sizes=self.n_sequences if self.multi_data else self.data_size,
+            ).value
             setattr(self, param_name, validated)
             return self
         except ValidationError:
@@ -155,31 +157,38 @@ class SetterMixIn(ABC):
         if self.multi_data:
             try:
                 sequences = (
-                    NumericSequencesParam(value=sequences)
+                    NumericSequencesParam(
+                        value=sequences,
+                        sizes=self.n_sequences,
+                        sub_sizes=[1, self.data_size],
+                    )
                     if no_range
                     else RangeSequencesParam(
-                        value=sequences, min_value=min_value, max_value=max_value
+                        value=sequences,
+                        sizes=self.n_sequences,
+                        sub_sizes=[1, self.data_size],
+                        min_value=min_value,
+                        max_value=max_value,
                     )
                 ).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
                 return self
             except ValidationError:
                 pass
         try:
             sequences = (
-                NumericSequenceParam(value=sequences)
+                NumericSequenceParam(
+                    value=sequences,
+                    sizes=self.n_sequences if self.multi_data else self.data_size,
+                )
                 if no_range
                 else RangeSequenceParam(
-                    value=sequences, min_value=min_value, max_value=max_value
+                    value=sequences,
+                    sizes=self.n_sequences if self.multi_data else self.data_size,
+                    min_value=min_value,
+                    max_value=max_value,
                 )
             ).value
-            validate_sequence_length(
-                sequences,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -209,21 +218,21 @@ class SetterMixIn(ABC):
         if self.multi_data:
             try:
                 sequences = LiteralSequencesParam(
-                    value=sequences, options=options
+                    value=sequences,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                    options=options,
                 ).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
                 return self
             except ValidationError:
                 pass
         try:
-            sequences = LiteralSequenceParam(value=sequences, options=options).value
-            validate_sequence_length(
-                sequences,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
+            sequences = LiteralSequenceParam(
+                value=sequences,
+                sizes=self.n_sequences if self.multi_data else self.data_size,
+                options=options,
+            ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -245,20 +254,20 @@ class SetterMixIn(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = MarkerSequencesParam(value=sequences).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                sequences = MarkerSequencesParam(
+                    value=sequences,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                ).value
                 setattr(self, param_name, sequences)
                 return self
             except ValidationError:
                 pass
         try:
-            sequences = MarkerSequenceParam(value=sequences).value
-            validate_sequence_length(
-                sequences,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
+            sequences = MarkerSequenceParam(
+                value=sequences,
+                sizes=self.n_sequences if self.multi_data else self.data_size,
+            ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -280,20 +289,20 @@ class SetterMixIn(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = EdgeColorSequencesParam(value=sequences).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                sequences = EdgeColorSequencesParam(
+                    value=sequences,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                ).value
                 setattr(self, param_name, sequences)
                 return self
             except ValidationError:
                 pass
         try:
-            sequences = EdgeColorSequenceParam(value=sequences).value
-            validate_sequence_length(
-                sequences,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
+            sequences = EdgeColorSequenceParam(
+                value=sequences,
+                sizes=self.n_sequences if self.multi_data else self.data_size,
+            ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -313,20 +322,20 @@ class SetterMixIn(ABC):
     ):
         if self.multi_data:
             try:
-                sequences = StrSequencesParam(value=sequences).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                sequences = StrSequencesParam(
+                    value=sequences,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                ).value
                 setattr(self, param_name, sequences)
                 return self
             except ValidationError:
                 pass
         try:
-            sequences = StrSequenceParam(value=sequences).value
-            validate_sequence_length(
-                sequences,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
+            sequences = StrSequenceParam(
+                value=sequences,
+                sizes=self.n_sequences if self.multi_data else self.data_size,
+            ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -344,33 +353,35 @@ class SetterMixIn(ABC):
     def set_numeric_tuple_sequences(
         self,
         sequences: Union[NumericTupleSequences, NumericTupleSequence, NumericTupleType],
-        sizes: Union[Sequence[int], int],
+        tuple_sizes: Union[Sequence[int], int],
         param_name: str,
     ):
         if self.multi_data:
             try:
                 sequences = NumericTupleSequencesParam(
-                    value=sequences, sizes=sizes
+                    value=sequences,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                    tuple_sizes=tuple_sizes,
                 ).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
                 return self
             except ValidationError:
                 pass
         try:
-            sequences = NumericTupleSequenceParam(value=sequences, sizes=sizes).value
-            validate_sequence_length(
-                sequences,
-                self.n_sequences if self.multi_data else self.data_size,
-                param_name,
-            )
+            sequences = NumericTupleSequenceParam(
+                value=sequences,
+                sizes=self.n_sequences if self.multi_data else self.data_size,
+                tuple_sizes=tuple_sizes,
+            ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
             pass
         try:
-            sequences = NumericTupleParam(value=sequences, sizes=sizes).value
+            sequences = NumericTupleParam(
+                value=sequences, tuple_sizes=tuple_sizes
+            ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError:
@@ -384,10 +395,12 @@ class SetterMixIn(ABC):
     ):
         if self.multi_data:
             try:
-                sequence = ColormapSequenceParam(value=sequence).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
+                sequence = ColormapSequenceParam(
+                    value=sequence,
+                    sizes=self.n_sequences,
+                    sub_sizes=[1, self.data_size],
+                ).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
                 return self
             except ValidationError:
                 pass
@@ -395,7 +408,6 @@ class SetterMixIn(ABC):
             try:
                 sequence = ColormapParam(value=sequence).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
                 return self
             except ValidationError:
                 pass
@@ -408,10 +420,10 @@ class SetterMixIn(ABC):
     ):
         if self.multi_data:
             try:
-                sequence = NormalizationSequenceParam(value=sequence).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
+                sequence = NormalizationSequenceParam(
+                    value=sequence, sizes=self.n_sequences
+                ).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
                 return self
             except ValidationError:
                 pass
@@ -419,7 +431,6 @@ class SetterMixIn(ABC):
             try:
                 sequence = NormalizationParam(value=sequence).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
                 return self
             except ValidationError:
                 pass
@@ -432,10 +443,10 @@ class SetterMixIn(ABC):
     ):
         if self.multi_data:
             try:
-                sequence = BinsSequenceParam(value=sequence).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
+                sequence = BinsSequenceParam(
+                    value=sequence, sizes=self.n_sequences
+                ).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
                 return self
             except ValidationError:
                 pass
@@ -443,7 +454,6 @@ class SetterMixIn(ABC):
             try:
                 sequence = BinsParam(value=sequence).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
                 return self
             except ValidationError:
                 pass
@@ -454,10 +464,10 @@ class SetterMixIn(ABC):
     def set_bool_sequence(self, sequence: Union[BoolSequence, bool], param_name: str):
         if self.multi_data:
             try:
-                sequence = BoolSequenceParam(value=sequence).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
+                sequence = BoolSequenceParam(
+                    value=sequence, sizes=self.n_sequences
+                ).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
                 return self
             except ValidationError:
                 pass
@@ -465,7 +475,6 @@ class SetterMixIn(ABC):
             try:
                 sequence = BoolParam(value=sequence).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
                 return self
             except ValidationError:
                 pass
@@ -476,10 +485,10 @@ class SetterMixIn(ABC):
     def set_dict_sequence(self, sequence: Union[DictSequence, dict], param_name: str):
         if self.multi_data:
             try:
-                sequence = DictSequenceParam(value=sequence).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
+                sequence = DictSequenceParam(
+                    value=sequence, sizes=self.n_sequences
+                ).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
                 return self
             except ValidationError:
                 pass
@@ -487,7 +496,6 @@ class SetterMixIn(ABC):
             try:
                 sequence = DictParam(value=sequence).value
                 setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
                 return self
             except ValidationError:
                 pass

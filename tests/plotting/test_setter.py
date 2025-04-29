@@ -4,51 +4,54 @@ from unittest import TestCase
 import numpy as np
 from matplotlib.colors import Normalize
 from matplotlib.markers import MarkerStyle
+from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentStructureError, ArgumentValueError
 from mitoolspro.plotting.plots.setter import SetterMixIn
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
-    BinsSequence,
-    BinsType,
     BoolParam,
-    BoolSequence,
     ColormapParam,
-    ColormapSequence,
-    ColormapType,
     ColorParam,
-    ColorSequence,
-    ColorSequences,
-    ColorType,
     DictParam,
-    DictSequence,
     EdgeColorParam,
-    EdgeColorSequence,
-    EdgeColorSequences,
-    EdgeColorType,
     LiteralParam,
-    LiteralSequence,
-    LiteralSequences,
-    LiteralType,
     MarkerParam,
-    MarkerSequence,
-    MarkerSequences,
-    MarkerType,
     NormalizationParam,
-    NormalizationSequence,
-    NormalizationType,
     NumericParam,
-    NumericSequence,
-    NumericSequences,
     NumericTupleParam,
-    NumericTupleSequence,
-    NumericTupleSequences,
-    NumericTupleType,
-    NumericType,
     RangeParam,
     RangeSequenceParam,
     RangeSequencesParam,
     StrParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
+    BinsSequence,
+    BinsType,
+    BoolSequence,
+    ColormapSequence,
+    ColormapType,
+    ColorSequence,
+    ColorSequences,
+    ColorType,
+    DictSequence,
+    EdgeColorSequence,
+    EdgeColorSequences,
+    EdgeColorType,
+    LiteralSequence,
+    LiteralSequences,
+    LiteralType,
+    MarkerSequence,
+    MarkerSequences,
+    MarkerType,
+    NormalizationSequence,
+    NormalizationType,
+    NumericSequence,
+    NumericSequences,
+    NumericTupleSequence,
+    NumericTupleSequences,
+    NumericTupleType,
+    NumericType,
     StrSequence,
     StrSequences,
 )
@@ -104,9 +107,7 @@ class TestSetter(TestCase):
         with self.assertRaises(ArgumentStructureError):
             self.setter.set_color_sequences(["invalid_color"], "color")
         with self.assertRaises(ArgumentStructureError):
-            self.multi_setter.set_color_sequences(
-                [["red", "blue"], ["blue", "red"]], "color"
-            )
+            self.multi_setter.set_color_sequences([["red", "blue"], "blue"], "color")
 
     def test_set_color_sequence_single_color(self):
         self.setter.set_color_sequences("red", "color")

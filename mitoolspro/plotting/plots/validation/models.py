@@ -370,7 +370,7 @@ class ColorSequencesParam(SequencesParam[ColorType]):
         for outer_idx, outer in enumerate(values):
             outer = coerce_to_list(outer)
 
-            if not isinstance(outer, Sequence):
+            if not isinstance(outer, Sequence) or isinstance(outer, str):
                 raise ArgumentValidationError(
                     f"Expected a Sequence inside outer list at index {outer_idx}, got {type(outer)}"
                 )
