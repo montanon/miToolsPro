@@ -206,16 +206,14 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
         if sizes is not None:
-            sizes = sizes if isinstance(sizes, Sequence) else list(sizes)
+            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
             if len(values) not in sizes:
                 raise ArgumentValidationError(
                     f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
                 )
 
         if sub_sizes is not None:
-            sub_sizes = (
-                sub_sizes if isinstance(sub_sizes, Sequence) else list(sub_sizes)
-            )
+            sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
 
         normalized = []
         for idx, value in enumerate(values):
@@ -230,7 +228,7 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
                 )
             normalized.append(value)
 
-        return {"value": normalized}
+        return {"value": normalized, "sizes": sizes, "sub_sizes": sub_sizes}
 
 
 class NumericSequencesParam(SequencesParam[NumericType]):

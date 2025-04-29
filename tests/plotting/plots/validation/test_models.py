@@ -8,6 +8,7 @@ from matplotlib.colors import Colormap, Normalize
 from matplotlib.markers import MarkerStyle
 from pydantic import ValidationError
 
+from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
     BinsSequenceParam,
@@ -720,6 +721,77 @@ class TestSequencesParam(TestCase):
     def test_init_with_very_deep_nesting(self):
         param = SequencesParam[list](value=[[[[1]]], [[[2]]]])
         self.assertEqual(param.value, [[[[1]]], [[[2]]]])
+
+    def test_init_with_valid_sizes_single_int(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], sizes=2)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+
+    def test_init_with_valid_sizes_sequence(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], sizes=[2, 3])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2, 3])
+
+    def test_init_with_valid_sub_sizes_single_int(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], sub_sizes=2)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sub_sizes, [2])
+
+    def test_init_with_valid_sub_sizes_sequence(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], sub_sizes=[2, 3])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sub_sizes, [2, 3])
+
+    def test_init_with_valid_sizes_and_sub_sizes(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], sizes=2, sub_sizes=2)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2])
+
+    def test_init_with_invalid_outer_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int](value=[[1, 2], [3, 4]], sizes=3)
+        self.assertIn(
+            "Expected outer Sequence must be of sizes: [3], got size: 2",
+            str(context.exception),
+        )
+
+    def test_init_with_invalid_sub_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int](value=[[1, 2, 3], [4, 5, 6]], sub_sizes=2)
+        self.assertIn(
+            "Expected sub Sequences of sizes: [2] got size: 3 at index=0",
+            str(context.exception),
+        )
+
+    def test_init_with_mixed_valid_sub_sizes(self):
+        param = SequencesParam[int](value=[[1], [1, 2], [1, 2, 3]], sub_sizes=[1, 2, 3])
+        self.assertEqual(param.value, [[1], [1, 2], [1, 2, 3]])
+        self.assertEqual(param.sub_sizes, [1, 2, 3])
+
+    def test_init_with_none_sizes(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], sizes=None, sub_sizes=None)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertIsNone(param.sizes)
+        self.assertIsNone(param.sub_sizes)
+
+    def test_init_with_empty_sequences_and_sizes(self):
+        param = SequencesParam[int](value=[], sizes=0)
+        self.assertEqual(param.value, [])
+        self.assertEqual(param.sizes, [0])
+
+    def test_init_with_empty_sub_sequences_and_sub_sizes(self):
+        param = SequencesParam[int](value=[[], []], sub_sizes=0)
+        self.assertEqual(param.value, [[], []])
+        self.assertEqual(param.sub_sizes, [0])
+
+    def test_init_with_dict_initialization_and_sizes(self):
+        param = SequencesParam[int].model_validate(
+            {"value": [[1, 2], [3, 4]], "sizes": 2, "sub_sizes": 2}
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2])
 
 
 class TestSpecializedSequencesParams(TestCase):
