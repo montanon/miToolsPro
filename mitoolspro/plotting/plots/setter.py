@@ -682,60 +682,83 @@ class Setter(ABC):
             f"Invalid {param_name}, must be a string or sequence of strings."
         )
 
-    # def set_numeric_tuple_sequences(
-    #     self,
-    #     sequences: Union[NumericTupleSequences, NumericTupleSequence, NumericTuple],
-    #     sizes: Sequence[int],
-    #     param_name: str,
-    # ):
-    #     if self.multi_data:
-    #         if is_numeric_tuple_sequences(sequences, sizes):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             validate_subsequences_length(sequences, [1, self.data_size], param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequences"
-    #             return self
-    #         elif is_numeric_tuple_sequence(sequences, sizes):
-    #             validate_sequence_length(sequences, self.n_sequences, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_numeric_tuple(sequences, sizes):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     else:
-    #         if is_numeric_tuple_sequence(sequences, sizes):
-    #             validate_sequence_length(sequences, self.data_size, param_name)
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "sequence"
-    #             return self
-    #         elif is_numeric_tuple(sequences, sizes):
-    #             setattr(self, param_name, sequences)
-    #             self.multi_params_structure[param_name] = "value"
-    #             return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
-    #     )
+    def set_numeric_tuple_sequences(
+        self,
+        sequences: Union[NumericTupleSequences, NumericTupleSequence, NumericTupleType],
+        sizes: Union[Sequence[int], int],
+        param_name: str,
+    ):
+        if self.multi_data:
+            try:
+                sequences = NumericTupleSequencesParam(sequences, sizes=sizes).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                validate_subsequences_length(sequences, [1, self.data_size], param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequences"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = NumericTupleSequenceParam(sequences, sizes=sizes).value
+                validate_sequence_length(sequences, self.n_sequences, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = NumericTupleParam(sequences, sizes=sizes).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequences = NumericTupleSequenceParam(sequences, sizes=sizes).value
+                validate_sequence_length(sequences, self.data_size, param_name)
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+            try:
+                sequences = NumericTupleParam(sequences, sizes=sizes).value
+                setattr(self, param_name, sequences)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
+        )
 
-    # def set_numeric_tuple_sequence(
-    #     self,
-    #     sequence: Union[NumericTupleSequence, NumericTuple],
-    #     sizes: Sequence[int],
-    #     param_name: str,
-    # ):
-    #     if self.multi_data and is_numeric_tuple_sequence(sequence, sizes):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_numeric_tuple(sequence, sizes):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
-    #     )
+    def set_numeric_tuple_sequence(
+        self,
+        sequence: Union[NumericTupleSequence, NumericTupleType],
+        sizes: Union[Sequence[int], int],
+        param_name: str,
+    ):
+        if self.multi_data:
+            try:
+                sequence = NumericTupleSequenceParam(sequence, sizes=sizes).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = NumericTupleParam(sequence, sizes=sizes).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
+        )
 
     # def set_bins_sequence(self, sequence: Union[BinsSequence, Bins], param_name: str):
     #     if self.multi_data and is_bins_sequence(sequence):
