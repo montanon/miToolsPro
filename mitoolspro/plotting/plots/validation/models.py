@@ -67,6 +67,7 @@ NumericTupleSequences = Sequence[NumericTupleSequence]
 NormalizationType = Union[Normalize, str]
 NormalizationSequence = Sequence[NormalizationType]
 NormalizationSequences = Sequence[NormalizationSequence]
+SizesType = Union[Sequence[int], int]
 
 
 class Param[T](BaseModel):
@@ -121,7 +122,7 @@ class DictParam(Param[dict]):
 
 class SequenceParam[T](Param[Sequence[T]]):
     value: Sequence[T]
-    sizes: Optional[Sequence[int] | int] = None
+    sizes: Optional[SizesType] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -163,6 +164,7 @@ class RangeSequenceParam(SequenceParam[NumericType]):
     min_value: Optional[NumericType] = -np.inf
     max_value: Optional[NumericType] = np.inf
     strict: Optional[bool] = False
+    sizes: Optional[SizesType]
 
     @model_validator(mode="before")
     @classmethod
@@ -199,8 +201,8 @@ class RangeSequenceParam(SequenceParam[NumericType]):
 
 class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
     value: Sequence[Sequence[T]]
-    sizes: Optional[Sequence[int] | int] = None
-    sub_sizes: Optional[Sequence[int] | int] = None
+    sizes: Optional[SizesType] = None
+    sub_sizes: Optional[SizesType] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -211,7 +213,6 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
             values = values["value"]
 
         values = coerce_to_list(values)
-
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
@@ -266,12 +267,15 @@ class RangeSequencesParam(SequencesParam[NumericType]):
     @classmethod
     def standardize_input(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             min_value = values.get("min_value", -np.inf)
             max_value = values.get("max_value", np.inf)
             strict = values.get("strict", False)
             values = values["value"]
         else:
-            values = values
+            sizes = None
+            sub_sizes = None
             min_value = -np.inf
             max_value = np.inf
             strict = False
@@ -280,15 +284,33 @@ class RangeSequencesParam(SequencesParam[NumericType]):
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
+        if sizes is not None:
+            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
+            if len(values) not in sizes:
+                raise ArgumentValidationError(
+                    f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
+                )
+
+        if sub_sizes is not None:
+            sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
+
         normalized = []
-        for value in values:
+        for idx, value in enumerate(values):
             value = coerce_to_list(value)
             if not isinstance(value, Sequence) or isinstance(value, str):
-                raise ArgumentValidationError(f"Expected a Sequence, got {type(value)}")
+                raise ArgumentValidationError(
+                    f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
+                )
+            if sub_sizes is not None and len(value) not in sub_sizes:
+                raise ArgumentValidationError(
+                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
+                )
             normalized.append(value)
 
         return {
             "value": normalized,
+            "sizes": sizes,
+            "sub_sizes": sub_sizes,
             "min_value": min_value,
             "max_value": max_value,
             "strict": strict,
@@ -314,34 +336,39 @@ class RangeSequencesParam(SequencesParam[NumericType]):
 
 
 class NumericTupleParam(Param[NumericTupleType]):
-    sizes: Optional[Sequence[int] | int] = None
+    tuple_sizes: Optional[SizesType] = None
 
     @model_validator(mode="after")
     def validate_numeric_tuple(self) -> "NumericTupleParam":
-        if self.sizes is not None:
-            if not isinstance(self.sizes, Sequence):
-                self.sizes = [self.sizes]
-            if not all(size > 0 for size in self.sizes):
+        if self.tuple_sizes is not None:
+            if not isinstance(self.tuple_sizes, Sequence):
+                self.tuple_sizes = [self.tuple_sizes]
+            if not all(size > 0 for size in self.tuple_sizes):
                 raise ArgumentValidationError(
-                    f"All sizes must be positive, got {self.sizes}."
+                    f"All tuple_sizes must be positive, got {self.tuple_sizes}."
                 )
-            if len(self.value) not in self.sizes:
+            if len(self.value) not in self.tuple_sizes:
                 raise ArgumentValidationError(
-                    f"Invalid tuple length {len(self.value)}. Allowed sizes: {self.sizes}."
+                    f"Invalid tuple length {len(self.value)}. Allowed sizes: {self.tuple_sizes}."
                 )
         return self
 
 
 class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
-    sizes: Optional[Sequence[int] | int] = None
+    tuple_sizes: Optional[SizesType] = None
 
     @model_validator(mode="before")
     @classmethod
     def validate_type(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            tuple_sizes = values.get("tuple_sizes", None)
             values = values["value"]
+        else:
+            sizes = None
+            tuple_sizes = None
 
+        values = coerce_to_list(values)
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
@@ -350,65 +377,95 @@ class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
                 raise ArgumentValidationError(
                     f"Expected each element to be a tuple, got {type(v)} at index {idx}"
                 )
-
-        return {"value": values, "sizes": sizes}
+        if sizes is not None:
+            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
+            if len(values) not in sizes:
+                raise ArgumentValidationError(
+                    f"Expected Sequence of sizes: {sizes}, got size: {len(values)} instead"
+                )
+        return {"value": values, "sizes": sizes, "tuple_sizes": tuple_sizes}
 
     @model_validator(mode="after")
     def validate_numeric_tuple_sequence(self) -> "NumericTupleSequenceParam":
-        if self.sizes is not None:
-            if not isinstance(self.sizes, Sequence):
-                self.sizes = [self.sizes]
-            if not all(size > 0 for size in self.sizes):
+        if self.tuple_sizes is not None:
+            if not isinstance(self.tuple_sizes, Sequence):
+                self.tuple_sizes = [self.tuple_sizes]
+            if not all(size > 0 for size in self.tuple_sizes):
                 raise ArgumentValidationError(
-                    f"All sizes must be positive, got {self.sizes}."
+                    f"All sizes must be positive, got {self.tuple_sizes}."
                 )
             for idx, tup in enumerate(self.value):
-                if len(tup) not in self.sizes:
+                if len(tup) not in self.tuple_sizes:
                     raise ArgumentValidationError(
-                        f"Invalid tuple length {len(tup)} at index {idx}. Allowed sizes: {self.sizes}."
+                        f"Invalid tuple length {len(tup)} at index {idx}. Allowed sizes: {self.tuple_sizes}."
                     )
         return self
 
 
 class NumericTupleSequencesParam(SequencesParam[NumericTupleType]):
-    sizes: Optional[Sequence[int] | int] = None
+    tuple_sizes: Optional[SizesType] = None
 
     @model_validator(mode="before")
     @classmethod
     def standardize_input(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
+            tuple_sizes = values.get("tuple_sizes", None)
             values = values["value"]
         else:
             sizes = None
+            sub_sizes = None
+            tuple_sizes = None
 
         values = coerce_to_list(values)
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
+        if sizes is not None:
+            sizes = sizes if isinstance(sizes, Sequence) else [sizes]
+            if len(values) not in sizes:
+                raise ArgumentValidationError(
+                    f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
+                )
+
+        if sub_sizes is not None:
+            sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
+
         normalized = []
-        for value in values:
+        for idx, value in enumerate(values):
             value = coerce_to_list(value)
             if not isinstance(value, Sequence) or isinstance(value, str):
-                raise ArgumentValidationError(f"Expected a Sequence, got {type(value)}")
+                raise ArgumentValidationError(
+                    f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
+                )
+            if sub_sizes is not None and len(value) not in sub_sizes:
+                raise ArgumentValidationError(
+                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
+                )
             normalized.append(value)
 
-        return {"value": normalized, "sizes": sizes}
+        return {
+            "value": normalized,
+            "sizes": sizes,
+            "sub_sizes": sub_sizes,
+            "tuple_sizes": tuple_sizes,
+        }
 
     @model_validator(mode="after")
     def validate_numeric_tuple_sequences(self) -> "NumericTupleSequencesParam":
-        if self.sizes is not None:
-            if not isinstance(self.sizes, Sequence):
-                self.sizes = [self.sizes]
-            if not all(size > 0 for size in self.sizes):
+        if self.tuple_sizes is not None:
+            if not isinstance(self.tuple_sizes, Sequence):
+                self.tuple_sizes = [self.tuple_sizes]
+            if not all(size > 0 for size in self.tuple_sizes):
                 raise ArgumentValidationError(
-                    f"All sizes must be positive, got {self.sizes}."
+                    f"All sizes must be positive, got {self.tuple_sizes}."
                 )
             for outer_idx, inner_sequence_param in enumerate(self.value):
                 for inner_idx, tup in enumerate(inner_sequence_param):
-                    if len(tup) not in self.sizes:
+                    if len(tup) not in self.tuple_sizes:
                         raise ArgumentValidationError(
-                            f"Invalid tuple length {len(tup)} at outer {outer_idx}, inner {inner_idx}. Allowed sizes: {self.sizes}."
+                            f"Invalid tuple length {len(tup)} at outer {outer_idx}, inner {inner_idx}. Allowed tuple_sizes: {self.tuple_sizes}."
                         )
         return self
 
