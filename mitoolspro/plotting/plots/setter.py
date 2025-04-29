@@ -582,36 +582,6 @@ class Setter(ABC):
             f"Invalid {param_name}, must be an edgecolor or sequence of edgecolors."
         )
 
-    # def set_colormap_sequence(
-    #     self, sequence: Union[CmapSequence, Cmap], param_name: str
-    # ):
-    #     if self.multi_data and is_colormap_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_colormap(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a colormap, sequence of colormaps, or sequences of colormaps."
-    #     )
-
-    # def set_norm_sequence(self, sequence: Union[NormSequence, Norm], param_name: str):
-    #     if self.multi_data and is_normalization_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_normalization(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a normalization, sequence of normalizations, or sequences of normalizations."
-    #     )
-
     def set_str_sequences(
         self, sequences: Union[StrSequences, StrSequence, str], param_name: str
     ):
@@ -760,44 +730,118 @@ class Setter(ABC):
             f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
         )
 
-    # def set_bins_sequence(self, sequence: Union[BinsSequence, Bins], param_name: str):
-    #     if self.multi_data and is_bins_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_bins(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a bin, sequence of bins, or sequences of bins."
-    #     )
+    def set_colormap_sequence(
+        self, sequence: Union[ColormapSequence, ColormapType], param_name: str
+    ):
+        if self.multi_data:
+            try:
+                sequence = ColormapSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = ColormapParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a colormap, sequence of colormaps, or sequences of colormaps."
+        )
 
-    # def set_bool_sequence(self, sequence: Union[Sequence[bool], bool], param_name: str):
-    #     if self.multi_data and is_bool_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_bool(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a boolean or sequence of booleans."
-    #     )
+    def set_norm_sequence(
+        self, sequence: Union[NormalizationSequence, NormalizationType], param_name: str
+    ):
+        if self.multi_data:
+            try:
+                sequence = NormalizationSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = NormalizationParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a normalization, sequence of normalizations, or sequences of normalizations."
+        )
 
-    # def set_dict_sequence(self, sequence: Union[DictSequence, Dict], param_name: str):
-    #     if self.multi_data and is_dict_sequence(sequence):
-    #         validate_sequence_length(sequence, self.n_sequences, param_name)
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "sequence"
-    #         return self
-    #     elif is_dict(sequence):
-    #         setattr(self, param_name, sequence)
-    #         self.multi_params_structure[param_name] = "value"
-    #         return self
-    #     raise ArgumentStructureError(
-    #         f"Invalid {param_name}, must be a dictionary or sequence of dictionaries."
-    #     )
+    def set_bins_sequence(
+        self, sequence: Union[BinsSequence, BinsType], param_name: str
+    ):
+        if self.multi_data:
+            try:
+                sequence = BinsSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = BinsParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a bin, sequence of bins, or sequences of bins."
+        )
+
+    def set_bool_sequence(self, sequence: Union[BoolSequence, bool], param_name: str):
+        if self.multi_data:
+            try:
+                sequence = BoolSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = BoolParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a boolean or sequence of booleans."
+        )
+
+    def set_dict_sequence(self, sequence: Union[DictSequence, dict], param_name: str):
+        if self.multi_data:
+            try:
+                sequence = DictSequenceParam(sequence).value
+                validate_sequence_length(sequence, self.n_sequences, param_name)
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "sequence"
+                return self
+            except ValidationError:
+                pass
+        else:
+            try:
+                sequence = DictParam(sequence).value
+                setattr(self, param_name, sequence)
+                self.multi_params_structure[param_name] = "value"
+                return self
+            except ValidationError:
+                pass
+        raise ArgumentStructureError(
+            f"Invalid {param_name}, must be a dictionary or sequence of dictionaries."
+        )
