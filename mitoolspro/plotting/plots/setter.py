@@ -251,67 +251,28 @@ class Setter(ABC):
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequences"
                 return self
             except ValidationError:
                 pass
-            try:
-                sequences = MarkerSequenceParam(sequences).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                sequences = MarkerParam(sequences).value
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                sequences = MarkerSequenceParam(sequences).value
-                validate_sequence_length(sequences, self.data_size, param_name)
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                sequences = MarkerParam(sequences).value
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
+        try:
+            sequences = MarkerSequenceParam(sequences).value
+            validate_sequence_length(
+                sequences,
+                self.n_sequences if self.multi_data else self.data_size,
+                param_name,
+            )
+            setattr(self, param_name, sequences)
+            return self
+        except ValidationError:
+            pass
+        try:
+            sequences = MarkerParam(sequences).value
+            setattr(self, param_name, sequences)
+            return self
+        except ValidationError:
+            pass
         raise ArgumentStructureError(
             f"Invalid {param_name}, must be a marker, sequence of markers, or sequences of markers."
-        )
-
-    def set_marker_sequence(
-        self, sequence: Union[MarkerSequence, MarkerType], param_name: str
-    ):
-        if self.multi_data:
-            try:
-                sequence = MarkerSequenceParam(sequence).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
-                setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                sequence = MarkerParam(sequence).value
-                setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a marker or sequence of markers."
         )
 
     def set_edgecolor_sequences(
