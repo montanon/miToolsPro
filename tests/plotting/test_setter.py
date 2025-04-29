@@ -6,7 +6,7 @@ from matplotlib.colors import Normalize
 from matplotlib.markers import MarkerStyle
 
 from mitoolspro.exceptions import ArgumentStructureError, ArgumentValueError
-from mitoolspro.plotting.plots.setter import Setter
+from mitoolspro.plotting.plots.setter import SetterMixIn
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
     BinsSequence,
@@ -54,7 +54,7 @@ from mitoolspro.plotting.plots.validation.models import (
 )
 
 
-class DummySetter(Setter):
+class DummySetter(SetterMixIn):
     def __init__(self, data_size=4, n_sequences=1):
         self._data_size = data_size
         self._n_sequences = n_sequences

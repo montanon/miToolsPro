@@ -75,7 +75,7 @@ from mitoolspro.plotting.plots.validations import (
 )
 
 
-class Setter(ABC):
+class SetterMixIn(ABC):
     @property
     @abstractmethod
     def data_size(self) -> int:
