@@ -1,10 +1,8 @@
 from collections.abc import Sequence
-from pathlib import Path
-from typing import Any, Literal, Optional, TypeAlias, TypeVar, Union
+from typing import Any, Literal, Optional, TypeVar
 
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
-from matplotlib.markers import MarkerStyle
 from pandas import Series
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -24,50 +22,26 @@ from mitoolspro.plotting.plots.validation.functions import (
     is_marker,
     normalize_rgb_tuple,
 )
+from mitoolspro.plotting.plots.validation.types import (
+    BinsType,
+    ColormapType,
+    ColorSequence,
+    ColorSequences,
+    ColorType,
+    EdgeColorSequence,
+    EdgeColorSequences,
+    EdgeColorType,
+    MarkerSequence,
+    MarkerSequences,
+    NormalizationType,
+    NumericTupleType,
+    NumericType,
+    SizesType,
+    StrSequence,
+    StrSequences,
+)
 
 T = TypeVar("T")
-BoolSequence = Sequence[bool]
-BoolSequences = Sequence[BoolSequence]
-BinsType: TypeAlias = int | str
-BinsSequence = Sequence[BinsType]
-BinsSequences = Sequence[BinsSequence]
-DictSequence = Sequence[dict]
-DictSequences = Sequence[DictSequence]
-MarkerType = MarkerStyle | Path | str | dict
-MarkerSequence = Sequence[MarkerType]
-MarkerSequences = Sequence[MarkerSequence]
-LiteralType = Literal["options"]
-LiteralSequence = Sequence[LiteralType]
-LiteralSequences = Sequence[LiteralSequence]
-NumericType: TypeAlias = float | int
-NumericSequence = Sequence[NumericType]
-NumericSequences = Sequence[NumericSequence]
-StrSequence = Sequence[str]
-StrSequences = Sequence[StrSequence]
-ColorType = Union[
-    str,
-    tuple[NumericType, NumericType, NumericType],  # RGB
-    tuple[NumericType, NumericType, NumericType, NumericType],  # RGBA
-    list[NumericType],
-    int,
-    float,
-    None,
-]
-ColorSequence = Sequence[ColorType]
-ColorSequences = Sequence[ColorSequence]
-ColormapType = Union[Colormap, str]
-ColormapSequence = Sequence[ColormapType]
-ColormapSequences = Sequence[ColormapSequence]
-EdgeColorType = Union[Literal["face"], ColorType]
-EdgeColorSequence = Sequence[EdgeColorType]
-EdgeColorSequences = Sequence[EdgeColorSequence]
-NumericTupleType: TypeAlias = tuple[NumericType, ...]
-NumericTupleSequence = Sequence[NumericTupleType]
-NumericTupleSequences = Sequence[NumericTupleSequence]
-NormalizationType = Union[Normalize, str]
-NormalizationSequence = Sequence[NormalizationType]
-NormalizationSequences = Sequence[NormalizationSequence]
-SizesType = Union[Sequence[int], int]
 
 
 class Param[T](BaseModel):
@@ -667,7 +641,7 @@ class MarkerParam(Param[Any]):
 
 
 class MarkerSequenceParam(SequenceParam[MarkerParam]):
-    value: Sequence[MarkerType]
+    value: MarkerSequence
 
     @model_validator(mode="before")
     @classmethod
@@ -694,7 +668,7 @@ class MarkerSequenceParam(SequenceParam[MarkerParam]):
 
 
 class MarkerSequencesParam(SequencesParam[MarkerParam]):
-    value: Sequence[Sequence[MarkerType]]
+    value: MarkerSequences
 
     @model_validator(mode="before")
     @classmethod
@@ -731,7 +705,7 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
 
 
 class LiteralParam(StrParam):
-    options: Sequence[str] = Field(..., description="Allowed options for the literal.")
+    options: StrSequence = Field(..., description="Allowed options for the literal.")
 
     @model_validator(mode="before")
     @classmethod
@@ -758,7 +732,7 @@ class LiteralParam(StrParam):
 
 
 class LiteralSequenceParam(SequenceParam[str]):
-    options: Optional[Sequence[str]] = None
+    options: Optional[StrSequence] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -795,7 +769,7 @@ class LiteralSequenceParam(SequenceParam[str]):
 
 
 class LiteralSequencesParam(SequencesParam[str]):
-    options: Optional[Sequence[str]] = None
+    options: Optional[StrSequences] = None
 
     @model_validator(mode="before")
     @classmethod
