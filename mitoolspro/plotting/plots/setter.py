@@ -149,7 +149,12 @@ class Setter(ABC):
         max_value: NumericType = None,
         single_value: bool = True,
     ):
-        no_range = not any(min_value, max_value)
+        has_range = min_value is not None or max_value is not None
+        if has_range:
+            min_value = min_value if min_value is not None else -np.inf
+            max_value = max_value if max_value is not None else np.inf
+        no_range = not has_range
+
         if self.multi_data:
             try:
                 sequences = (
@@ -158,126 +163,46 @@ class Setter(ABC):
                     else RangeSequencesParam(
                         sequences, min_value=min_value, max_value=max_value
                     )
-                )
-                sequences = sequences.value
+                ).value
                 validate_sequence_length(sequences, self.n_sequences, param_name)
-                sequences = [
-                    np.repeat(seq, self.data_size).tolist() if len(seq) == 1 else seq
-                    for seq in sequences
-                ]
-                validate_subsequences_length(sequences, self.data_size, param_name)
+                validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequences"
                 return self
             except ValidationError:
                 pass
-            try:
-                sequences = (
-                    NumericSequenceParam(sequences)
-                    if no_range
-                    else RangeSequenceParam(
-                        sequences, min_value=min_value, max_value=max_value
-                    )
+        try:
+            sequences = (
+                NumericSequenceParam(sequences)
+                if no_range
+                else RangeSequenceParam(
+                    sequences, min_value=min_value, max_value=max_value
                 )
-                sequences = sequences.value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                validate_sequence_values_in_range(
-                    sequences, min_value, max_value, param_name
-                )
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                sequences = (
-                    NumericParam(sequences)
-                    if no_range
-                    else RangeParam(sequences, min_value=min_value, max_value=max_value)
-                )
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                sequences = (
-                    NumericSequenceParam(sequences)
-                    if no_range
-                    else RangeSequenceParam(
-                        sequences, min_value=min_value, max_value=max_value
-                    )
-                )
-                validate_sequence_length(sequences, self.data_size, param_name)
-                validate_sequence_values_in_range(
-                    sequences, min_value, max_value, param_name
-                )
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                sequences = (
-                    NumericParam(sequences)
-                    if no_range
-                    else RangeParam(sequences, min_value=min_value, max_value=max_value)
-                )
-                validate_value_in_range(sequences, min_value, max_value, param_name)
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
+            ).value
+            validate_sequence_length(
+                sequences,
+                self.n_sequences if self.multi_data else self.data_size,
+                param_name,
+            )
+            setattr(self, param_name, sequences)
+            return self
+        except ValidationError:
+            pass
+        try:
+            sequences = (
+                NumericParam(sequences)
+                if no_range
+                else RangeParam(sequences, min_value=min_value, max_value=max_value)
+            ).value
+            setattr(self, param_name, sequences)
+            return self
+        except ValidationError:
+            pass
+
         if single_value:
             msg = f"Invalid {param_name}, must be a numeric value, numeric sequences, or sequence of numeric sequences."
         else:
             msg = f"Invalid {param_name}, must be a numeric sequences, or sequence of numeric sequences."
         raise ArgumentStructureError(msg)
-
-    def set_numeric_sequence(
-        self,
-        sequence: Union[NumericSequence, NumericType],
-        param_name: str,
-        min_value: NumericType = None,
-        max_value: NumericType = None,
-    ):
-        no_range = not any(min_value, max_value)
-        if self.multi_data:
-            try:
-                sequence = (
-                    NumericSequenceParam(sequence)
-                    if no_range
-                    else RangeSequenceParam(
-                        sequence, min_value=min_value, max_value=max_value
-                    )
-                )
-                validate_sequence_length(sequence, self.n_sequences, param_name)
-                validate_sequence_values_in_range(
-                    sequence, min_value, max_value, param_name
-                )
-                setattr(self, param_name, np.asarray(sequence))
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                sequence = (
-                    NumericParam(sequence)
-                    if no_range
-                    else RangeParam(sequence, min_value=min_value, max_value=max_value)
-                )
-                validate_value_in_range(sequence, min_value, max_value, param_name)
-                setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a numeric value or sequence of numbers."
-        )
 
     def set_literal_sequences(
         self,
