@@ -355,68 +355,26 @@ class Setter(ABC):
                 validate_sequence_length(sequences, self.n_sequences, param_name)
                 validate_subsequences_length(sequences, [1, self.data_size], param_name)
                 setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequences"
                 return self
             except ValidationError:
                 pass
-            try:
-                sequences = NumericTupleSequenceParam(sequences, sizes=sizes).value
-                validate_sequence_length(sequences, self.n_sequences, param_name)
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                sequences = NumericTupleParam(sequences, sizes=sizes).value
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                sequences = NumericTupleSequenceParam(sequences, sizes=sizes).value
-                validate_sequence_length(sequences, self.data_size, param_name)
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-            try:
-                sequences = NumericTupleParam(sequences, sizes=sizes).value
-                setattr(self, param_name, sequences)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
-        )
-
-    def set_numeric_tuple_sequence(
-        self,
-        sequence: Union[NumericTupleSequence, NumericTupleType],
-        sizes: Union[Sequence[int], int],
-        param_name: str,
-    ):
-        if self.multi_data:
-            try:
-                sequence = NumericTupleSequenceParam(sequence, sizes=sizes).value
-                validate_sequence_length(sequence, self.n_sequences, param_name)
-                setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "sequence"
-                return self
-            except ValidationError:
-                pass
-        else:
-            try:
-                sequence = NumericTupleParam(sequence, sizes=sizes).value
-                setattr(self, param_name, sequence)
-                self.multi_params_structure[param_name] = "value"
-                return self
-            except ValidationError:
-                pass
+        try:
+            sequences = NumericTupleSequenceParam(sequences, sizes=sizes).value
+            validate_sequence_length(
+                sequences,
+                self.n_sequences if self.multi_data else self.data_size,
+                param_name,
+            )
+            setattr(self, param_name, sequences)
+            return self
+        except ValidationError:
+            pass
+        try:
+            sequences = NumericTupleParam(sequences, sizes=sizes).value
+            setattr(self, param_name, sequences)
+            return self
+        except ValidationError:
+            pass
         raise ArgumentStructureError(
             f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
         )
