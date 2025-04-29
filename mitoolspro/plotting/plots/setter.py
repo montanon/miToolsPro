@@ -71,9 +71,7 @@ from mitoolspro.plotting.plots.validation.models import (
 )
 from mitoolspro.plotting.plots.validations import (
     validate_sequence_length,
-    validate_sequence_values_in_range,
     validate_subsequences_length,
-    validate_value_in_range,
 )
 
 
