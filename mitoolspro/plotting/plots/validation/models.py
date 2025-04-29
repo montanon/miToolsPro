@@ -189,11 +189,15 @@ class RangeSequenceParam(SequenceParam[NumericType]):
 
 class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
     value: Sequence[Sequence[T]]
+    sizes: Optional[Sequence[int] | int] = None
+    sub_sizes: Optional[Sequence[int] | int] = None
 
     @model_validator(mode="before")
     @classmethod
     def standardize_input(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             values = values["value"]
 
         values = coerce_to_list(values)
@@ -201,12 +205,28 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
 
+        if sizes is not None:
+            sizes = sizes if isinstance(sizes, Sequence) else list(sizes)
+            if len(values) not in sizes:
+                raise ArgumentValidationError(
+                    f"Expected outer Sequence must be of sizes: {sizes}, got size: {len(values)}"
+                )
+
+        if sub_sizes is not None:
+            sub_sizes = (
+                sub_sizes if isinstance(sub_sizes, Sequence) else list(sub_sizes)
+            )
+
         normalized = []
-        for value in values:
+        for idx, value in enumerate(values):
             value = coerce_to_list(value)
             if not isinstance(value, Sequence) or isinstance(value, str):
                 raise ArgumentValidationError(
-                    f"Expected a Sequence inside outer list, got {type(value)}"
+                    f"Expected a Sequence inside outer Sequence, got {type(value)} at index={idx}"
+                )
+            if sub_sizes is not None and len(value) not in sub_sizes:
+                raise ArgumentValidationError(
+                    f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
                 )
             normalized.append(value)
 
