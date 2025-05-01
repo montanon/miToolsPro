@@ -120,8 +120,8 @@ class TestSentenceLemmaTagger(unittest.TestCase):
         self.assertTrue(doc[7].sent._.drink)
         self.assertEqual(doc[3].sent._.food_tags, ["apples", "bananas"])
         self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
-        self.assertEqual(doc[3].sent._.food_matches, [[2, 3], [4, 5]])
-        self.assertEqual(doc[7].sent._.drink_matches, [[6, 7]])
+        self.assertEqual(doc[3].sent._.food_matches, [[7, 13], [18, 25]])
+        self.assertEqual(doc[7].sent._.drink_matches, [[31, 37]])
 
 
 class TestBuildWordPatterns(unittest.TestCase):
@@ -195,8 +195,28 @@ class TestSentenceWordTagger(unittest.TestCase):
         self.assertTrue(doc[7].sent._.drink)
         self.assertEqual(doc[3].sent._.food_tags, ["apple", "banana"])
         self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
-        self.assertEqual(doc[3].sent._.food_matches, [[2, 3], [4, 5]])
-        self.assertEqual(doc[7].sent._.drink_matches, [[6, 7]])
+        self.assertEqual(doc[3].sent._.food_matches, [[7, 12], [17, 23]])
+        self.assertEqual(doc[7].sent._.drink_matches, [[29, 35]])
+
+    def test_sentence_multiple_matches(self):
+        text = "Comparece, chileno, soltero, contratista comuna de Vallenar Vallenar, en calle, de Vallenar."
+        nlp = spacy.load("en_core_web_sm")
+        nlp.add_pipe(
+            "sentence_word_tagger",
+            config={
+                "categories": {"comuna": ["Vallenar"]},
+                "strip_accents": True,
+                "ignore_case": True,
+                "keep_tags": True,
+            },
+        )
+        doc = nlp(text)
+        print(doc[1].sent._.comuna_tags)
+        print(doc[1].sent._.comuna_matches)
+        self.assertEqual(
+            doc[1].sent._.comuna_tags, ["Vallenar", "Vallenar", "Vallenar"]
+        )
+        self.assertEqual(len(doc[1].sent._.comuna_matches), 3)
 
 
 class TestBuildRegexPatternTable(unittest.TestCase):
