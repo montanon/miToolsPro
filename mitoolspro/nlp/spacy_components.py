@@ -87,11 +87,12 @@ class SentenceLemmaTagger:
             sent = doc[start].sent
             sent._.set(category, True)
             if self.keep_tags:
-                sent._.get(f"{category}_tags").append(doc[start:end].text)
-                sent_start = sent.start
-                sent._.get(f"{category}_matches").append(
-                    [start - sent_start, end - sent_start]
-                )
+                match_text = doc[start:end].text
+                sent._.get(f"{category}_tags").append(match_text)
+                sent_start = sent.start_char
+                char_start = doc[start].idx - sent_start
+                char_end = (doc[end - 1].idx + len(doc[end - 1].text)) - sent_start
+                sent._.get(f"{category}_matches").append([char_start, char_end])
         if self.ignore_case:
             for token, original_lemma in zip(doc, original_lemmas):
                 token.lemma_ = original_lemma
@@ -233,11 +234,12 @@ class SentenceWordTagger:
             sent = doc[start].sent
             sent._.set(category, True)
             if self.keep_tags:
-                sent._.get(f"{category}_tags").append(doc[start:end].text)
-                sent_start = sent.start
-                sent._.get(f"{category}_matches").append(
-                    [start - sent_start, end - sent_start]
-                )
+                match_text = doc[start:end].text
+                sent._.get(f"{category}_tags").append(match_text)
+                sent_start = sent.start_char
+                char_start = doc[start].idx - sent_start
+                char_end = (doc[end - 1].idx + len(doc[end - 1].text)) - sent_start
+                sent._.get(f"{category}_matches").append([char_start, char_end])
         return doc
 
 
