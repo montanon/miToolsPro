@@ -139,6 +139,10 @@ class DictSequenceParam(SequenceParam[dict]):
     pass
 
 
+class DataSequenceParam(SequenceParam[NumericType | None]):
+    pass
+
+
 class RangeSequenceParam(SequenceParam[NumericType]):
     min_value: Optional[NumericType] = -np.inf
     max_value: Optional[NumericType] = np.inf
@@ -205,6 +209,51 @@ class BoolSequencesParam(SequencesParam[bool]):
 
 class DictSequencesParam(SequencesParam[dict]):
     pass
+
+
+class DataSequencesParam(SequencesParam[NumericType | None]):
+    @model_validator(mode="before")
+    @classmethod
+    def standardize_input(cls, values: Any) -> dict:
+        if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
+            values = values["value"]
+        else:
+            sizes = None
+            sub_sizes = None
+
+        values = coerce_to_list(values)
+
+        if not isinstance(values, Sequence) or isinstance(values, str):
+            raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
+
+        standardized = []
+        for outer_idx, outer in enumerate(values):
+            # Handle single point Sequence
+            if isinstance(outer, NumericType | None):
+                outer = [outer]
+            outer = coerce_to_list(outer)
+            if not isinstance(outer, Sequence) or isinstance(outer, str):
+                raise ArgumentValidationError(
+                    f"Expected a Sequence at index {outer_idx}, got {type(outer)}"
+                )
+
+            for inner_idx, v in enumerate(outer):
+                if v is not None and not isinstance(v, (int, float)):
+                    raise ArgumentValidationError(
+                        f"Invalid value at [{outer_idx}, {inner_idx}]: {v!r}. Must be numeric or None."
+                    )
+            standardized.append(outer)
+
+        sizes = validate_sequence_sizes(standardized, sizes)
+        sub_sizes = validate_sequences_sizes(standardized, sub_sizes)
+
+        return {
+            "value": standardized,
+            "sizes": sizes,
+            "sub_sizes": sub_sizes,
+        }
 
 
 class RangeSequencesParam(SequencesParam[NumericType]):

@@ -23,6 +23,8 @@ from mitoolspro.plotting.plots.validation.models import (
     ColorParam,
     ColorSequenceParam,
     ColorSequencesParam,
+    DataSequenceParam,
+    DataSequencesParam,
     DictParam,
     DictSequenceParam,
     DictSequencesParam,
@@ -3329,6 +3331,188 @@ class TestSpinesParam(TestCase):
         self.assertEqual(spines.right.linewidth, 2.0)
         self.assertEqual(spines.top.linewidth, 3.0)
         self.assertEqual(spines.bottom.linewidth, 4.0)
+
+
+class TestDataSequenceParam(TestCase):
+    def test_init_with_valid_numeric_sequence(self):
+        param = DataSequenceParam(value=[1, 2, 3])
+        self.assertEqual(param.value, [1, 2, 3])
+
+    def test_init_with_valid_float_sequence(self):
+        param = DataSequenceParam(value=[1.0, 2.5, 3.7])
+        self.assertEqual(param.value, [1.0, 2.5, 3.7])
+
+    def test_init_with_mixed_numeric_sequence(self):
+        param = DataSequenceParam(value=[1, 2.5, 3])
+        self.assertEqual(param.value, [1, 2.5, 3])
+
+    def test_init_with_none_values(self):
+        param = DataSequenceParam(value=[1, None, 3])
+        self.assertEqual(param.value, [1, None, 3])
+
+    def test_init_with_all_none_values(self):
+        param = DataSequenceParam(value=[None, None, None])
+        self.assertEqual(param.value, [None, None, None])
+
+    def test_init_with_empty_sequence(self):
+        param = DataSequenceParam(value=[])
+        self.assertEqual(param.value, [])
+
+    def test_init_with_numpy_array(self):
+        param = DataSequenceParam(value=np.array([1, 2, 3]))
+        self.assertEqual(param.value, [1, 2, 3])
+
+    def test_init_with_pandas_series(self):
+        param = DataSequenceParam(value=pd.Series([1, 2, 3]))
+        self.assertEqual(param.value, [1, 2, 3])
+
+    def test_init_with_tuple(self):
+        param = DataSequenceParam(value=(1, 2, 3))
+        self.assertEqual(param.value, [1, 2, 3])
+
+    def test_init_with_valid_sizes(self):
+        param = DataSequenceParam(value=[1, 2, 3], sizes=3)
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [3])
+
+    def test_init_with_invalid_sizes(self):
+        with self.assertRaises(ValidationError):
+            DataSequenceParam(value=[1, 2, 3], sizes=4)
+
+    def test_init_with_invalid_sequence_type(self):
+        with self.assertRaises(ValidationError):
+            DataSequenceParam(value="not_a_sequence")
+
+    def test_init_with_invalid_numeric_type(self):
+        with self.assertRaises(ValidationError):
+            DataSequenceParam(value=[1, "2", 3])
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            DataSequenceParam(value=None)
+
+    def test_init_with_very_large_numbers(self):
+        param = DataSequenceParam(value=[1e100, 1e101, 1e102])
+        self.assertEqual(param.value, [1e100, 1e101, 1e102])
+
+    def test_init_with_very_small_numbers(self):
+        param = DataSequenceParam(value=[1e-100, 1e-101, 1e-102])
+        self.assertEqual(param.value, [1e-100, 1e-101, 1e-102])
+
+    def test_init_with_mixed_none_and_numbers(self):
+        param = DataSequenceParam(value=[1e100, None, 1e-100])
+        self.assertEqual(param.value, [1e100, None, 1e-100])
+
+    def test_init_with_dict_initialization(self):
+        param = DataSequenceParam.model_validate({"value": [1, None, 3], "sizes": 3})
+        self.assertEqual(param.value, [1, None, 3])
+        self.assertEqual(param.sizes, [3])
+
+
+class TestDataSequencesParam(TestCase):
+    def test_init_with_valid_numeric_sequences(self):
+        param = DataSequencesParam(value=[[1, 2, 3], [4, 5, 6]])
+        self.assertEqual(param.value, [[1, 2, 3], [4, 5, 6]])
+
+    def test_init_with_valid_float_sequences(self):
+        param = DataSequencesParam(value=[[1.0, 2.5], [3.7, 4.2]])
+        self.assertEqual(param.value, [[1.0, 2.5], [3.7, 4.2]])
+
+    def test_init_with_mixed_numeric_sequences(self):
+        param = DataSequencesParam(value=[[1, 2.5], [3, 4.2]])
+        self.assertEqual(param.value, [[1, 2.5], [3, 4.2]])
+
+    def test_init_with_none_values(self):
+        param = DataSequencesParam(value=[[1, None], [None, 4]])
+        self.assertEqual(param.value, [[1, None], [None, 4]])
+
+    def test_init_with_all_none_values(self):
+        param = DataSequencesParam(value=[[None, None], [None, None]])
+        self.assertEqual(param.value, [[None, None], [None, None]])
+
+    def test_init_with_empty_sequences(self):
+        param = DataSequencesParam(value=[[], []])
+        self.assertEqual(param.value, [[], []])
+
+    def test_init_with_single_value_sequences(self):
+        param = DataSequencesParam(value=[[1], [2]])
+        self.assertEqual(param.value, [[1], [2]])
+
+    def test_init_with_single_none_sequences(self):
+        param = DataSequencesParam(value=[[None], [None]])
+        self.assertEqual(param.value, [[None], [None]])
+
+    def test_init_with_numpy_arrays(self):
+        param = DataSequencesParam(value=[np.array([1, 2]), np.array([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_pandas_series(self):
+        param = DataSequencesParam(value=[pd.Series([1, 2]), pd.Series([3, 4])])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+
+    def test_init_with_mixed_sequences_types(self):
+        param = DataSequencesParam(
+            value=[np.array([1, 2]), pd.Series([3, 4]), [5, 6], (7, 8)]
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4], [5, 6], [7, 8]])
+
+    def test_init_with_valid_sizes(self):
+        param = DataSequencesParam(value=[[1, 2], [3, 4]], sizes=2, sub_sizes=2)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2])
+
+    def test_init_with_invalid_sizes(self):
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value=[[1, 2], [3, 4]], sizes=3)
+
+    def test_init_with_invalid_sub_sizes(self):
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value=[[1, 2], [3, 4]], sub_sizes=3)
+
+    def test_init_with_single_point_sequence(self):
+        param = DataSequencesParam(value=[1, 2, 3])
+        self.assertEqual(param.value, [[1], [2], [3]])
+
+    def test_init_with_single_point_none_sequence(self):
+        param = DataSequencesParam(value=[None, 2, None])
+        self.assertEqual(param.value, [[None], [2], [None]])
+
+    def test_init_with_invalid_sequence_type(self):
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value="not_a_sequence")
+
+    def test_init_with_invalid_numeric_type(self):
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value=[[1, "2"], [3, 4]])
+
+    def test_init_with_none_value(self):
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value=None)
+
+    def test_init_with_very_large_numbers(self):
+        param = DataSequencesParam(value=[[1e100, 1e101], [1e102, 1e103]])
+        self.assertEqual(param.value, [[1e100, 1e101], [1e102, 1e103]])
+
+    def test_init_with_very_small_numbers(self):
+        param = DataSequencesParam(value=[[1e-100, 1e-101], [1e-102, 1e-103]])
+        self.assertEqual(param.value, [[1e-100, 1e-101], [1e-102, 1e-103]])
+
+    def test_init_with_mixed_none_and_numbers(self):
+        param = DataSequencesParam(value=[[1e100, None], [None, 1e-100]])
+        self.assertEqual(param.value, [[1e100, None], [None, 1e-100]])
+
+    def test_init_with_uneven_sequence_lengths(self):
+        param = DataSequencesParam(value=[[1, 2, 3], [4, 5], [6]])
+        self.assertEqual(param.value, [[1, 2, 3], [4, 5], [6]])
+
+    def test_init_with_dict_initialization(self):
+        param = DataSequencesParam.model_validate(
+            {"value": [[1, None], [3, 4]], "sizes": 2, "sub_sizes": 2}
+        )
+        self.assertEqual(param.value, [[1, None], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2])
 
 
 if __name__ == "__main__":
