@@ -93,6 +93,14 @@ class TransformParam(Param[Transform]):
     pass
 
 
+class FloatParam(Param[float]):
+    pass
+
+
+class IntParam(Param[int]):
+    pass
+
+
 class SequenceParam[T](Param[Sequence[T]]):
     value: Sequence[T]
     sizes: Optional[SizesType] = None

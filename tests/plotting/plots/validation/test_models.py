@@ -29,6 +29,8 @@ from mitoolspro.plotting.plots.validation.models import (
     EdgeColorParam,
     EdgeColorSequenceParam,
     EdgeColorSequencesParam,
+    FloatParam,
+    IntParam,
     LiteralParam,
     LiteralSequenceParam,
     LiteralSequencesParam,
@@ -355,6 +357,38 @@ class TestSpecializedParams(TestCase):
         with self.assertRaises(ValidationError):
             TransformParam(value=[])
 
+    def test_float_param_valid_values(self):
+        param = FloatParam(value=3.14)
+        self.assertEqual(param.value, 3.14)
+        param = FloatParam(value=0.0)
+        self.assertEqual(param.value, 0.0)
+        param = FloatParam(value=-1.0)
+        self.assertEqual(param.value, -1.0)
+
+    def test_float_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            FloatParam(value="3.14")
+        with self.assertRaises(ValidationError):
+            FloatParam(value=None)
+        with self.assertRaises(ValidationError):
+            FloatParam(value=[])
+
+    def test_int_param_valid_values(self):
+        param = IntParam(value=42)
+        self.assertEqual(param.value, 42)
+        param = IntParam(value=0)
+        self.assertEqual(param.value, 0)
+        param = IntParam(value=-1)
+        self.assertEqual(param.value, -1)
+
+    def test_int_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            IntParam(value="42")
+        with self.assertRaises(ValidationError):
+            IntParam(value=None)
+        with self.assertRaises(ValidationError):
+            IntParam(value=[])
+
     def test_str_param_with_extra_fields(self):
         with self.assertRaises(ValidationError):
             StrParam(value="test", extra_field="should_fail")
@@ -390,6 +424,14 @@ class TestSpecializedParams(TestCase):
     def test_transform_param_with_dict_initialization(self):
         param = TransformParam.model_validate({"value": Transform()})
         self.assertEqual(param.value._shorthand_name, Transform()._shorthand_name)
+
+    def test_float_param_with_dict_initialization(self):
+        param = FloatParam.model_validate({"value": 3.14})
+        self.assertEqual(param.value, 3.14)
+
+    def test_int_param_with_dict_initialization(self):
+        param = IntParam.model_validate({"value": 42})
+        self.assertEqual(param.value, 42)
 
 
 class TestSequenceParam(TestCase):
