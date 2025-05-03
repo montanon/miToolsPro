@@ -485,7 +485,7 @@ class ParamsMixIn:
         if self.spines:
             for spine, spine_params in self.spines.model_dump().items():
                 if spine_params is not None:
-                    for param, values in spine_params.model_dump().items():
+                    for param, values in spine_params.items():
                         if values is not None:
                             if param == "visible":
                                 self.ax.spines[spine].set_visible(values)
