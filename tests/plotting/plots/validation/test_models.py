@@ -53,6 +53,8 @@ from mitoolspro.plotting.plots.validation.models import (
     RangeSequencesParam,
     SequenceParam,
     SequencesParam,
+    SpineParam,
+    SpinesParam,
     StrParam,
     StrSequenceParam,
     StrSequencesParam,
@@ -3256,6 +3258,77 @@ class TestRangeSequencesParam(TestCase):
         param = RangeSequencesParam(value=[[1e-100, 1e-101], [1e-102, 1e-103]])
         self.assertEqual(param.value[0][0], 1e-100)
         self.assertEqual(param.value[1][1], 1e-103)
+
+
+class TestSpineParam(TestCase):
+    def test_valid_minimal(self):
+        param = SpineParam()
+        self.assertTrue(param.visible)
+
+    def test_valid_full(self):
+        param = SpineParam(
+            visible=False,
+            position=(0.0, 1.0),
+            color="black",
+            linewidth=2.5,
+            linestyle="--",
+            alpha=0.7,
+            bounds=(0.1, 0.9),
+            capstyle="round",
+        )
+        self.assertEqual(param.capstyle, "round")
+        self.assertEqual(param.linewidth, 2.5)
+
+    def test_invalid_extra_field(self):
+        with self.assertRaises(ValidationError):
+            SpineParam(invalid_field=123)
+
+    def test_invalid_capstyle_literal(self):
+        with self.assertRaises(ValidationError):
+            SpineParam(capstyle="square")  # Not in allowed literals
+
+    def test_invalid_position_type(self):
+        with self.assertRaises(ValidationError):
+            SpineParam(position=42)  # Not a tuple or str
+
+    def test_invalid_bounds_length(self):
+        with self.assertRaises(ValidationError):
+            SpineParam(bounds=(0.1,))  # Too short
+
+    def test_color_can_be_rgb_tuple(self):
+        param = SpineParam(color=(0.1, 0.2, 0.3))
+        self.assertEqual(param.color, (0.1, 0.2, 0.3))
+
+
+class TestSpinesParam(TestCase):
+    def test_valid_empty(self):
+        spines = SpinesParam()
+        self.assertIsNone(spines.left)
+        self.assertIsNone(spines.top)
+
+    def test_partial_side_config(self):
+        spines = SpinesParam(
+            left=SpineParam(visible=False), top=SpineParam(color="red")
+        )
+        self.assertFalse(spines.left.visible)
+        self.assertEqual(spines.top.color, "red")
+        self.assertIsNone(spines.right)
+
+    def test_invalid_side_type(self):
+        with self.assertRaises(ValidationError):
+            SpinesParam(left={"invalid": True})  # not a SpineParam instance
+
+    def test_all_sides_configured(self):
+        spines = SpinesParam(
+            left=SpineParam(linewidth=1.0),
+            right=SpineParam(linewidth=2.0),
+            top=SpineParam(linewidth=3.0),
+            bottom=SpineParam(linewidth=4.0),
+        )
+        self.assertEqual(spines.left.linewidth, 1.0)
+        self.assertEqual(spines.right.linewidth, 2.0)
+        self.assertEqual(spines.top.linewidth, 3.0)
+        self.assertEqual(spines.bottom.linewidth, 4.0)
 
 
 if __name__ == "__main__":
