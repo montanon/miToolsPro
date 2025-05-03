@@ -18,7 +18,7 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
     NumericType,
     StrSequence,
 )
-from mitoolspro.plotting.plots.plot_params import PlotParams
+from mitoolspro.plotting.plots.plot_params import PlotParamsMixIn
 from mitoolspro.plotting.plots.setter import SetterMixIn
 from mitoolspro.plotting.plots.validations import (
     is_numeric,
@@ -36,7 +36,7 @@ class PlotterException(Exception):
     pass
 
 
-class Plotter(PlotParams, SetterMixIn, ABC):
+class Plotter(PlotParamsMixIn, SetterMixIn, ABC):
     def __init__(
         self,
         x_data: Union[NumericSequence, NumericSequences],
