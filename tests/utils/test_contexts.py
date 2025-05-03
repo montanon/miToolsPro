@@ -204,10 +204,10 @@ class TestRetry(TestCase):
         self.assertEqual(len(delays), 3)
         delay1 = delays[1] - delays[0]
         delay2 = delays[2] - delays[1]
-        self.assertGreater(delay1, 0.09)  # 0.1 * 0.9
-        self.assertLess(delay1, 0.11)  # 0.1 * 1.1
-        self.assertGreater(delay2, 0.18)  # 0.2 * 0.9
-        self.assertLess(delay2, 0.22)  # 0.2 * 1.1
+        self.assertGreater(delay1, 0.099)  # 0.1 * 0.9
+        self.assertLess(delay1, 0.12)  # 0.1 * 1.1
+        self.assertGreater(delay2, 0.199)  # 0.2 * 0.9
+        self.assertLess(delay2, 0.242)  # 0.2 * 1.1
 
     def test_no_jitter(self):
         delays = []
