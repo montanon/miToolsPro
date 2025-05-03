@@ -536,7 +536,7 @@ class ParamsMixIn:
         return value
 
 
-class FigureParams:
+class FigureParamsMixIn:
     def __init__(self, figure: Figure = None, **kwargs):
         self.figure: Figure = figure
         self._figure_params = {

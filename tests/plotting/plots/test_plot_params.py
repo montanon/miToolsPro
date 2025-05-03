@@ -12,7 +12,7 @@ from matplotlib.transforms import Transform
 from pandas import Series
 from pydantic import ValidationError
 
-from mitoolspro.plotting.plots.plot_params import FigureParams, ParamsMixIn
+from mitoolspro.plotting.plots.plot_params import FigureParamsMixIn, ParamsMixIn
 
 
 class TestParamsMixIn(TestCase):
@@ -314,10 +314,10 @@ class TestFigureParams(TestCase):
     def setUp(self):
         self.figure = MagicMock(spec=Figure)
         self.figure.get_size_inches.return_value = (12, 8)
-        self.params = FigureParams(figure=self.figure)
+        self.params = FigureParamsMixIn(figure=self.figure)
 
     def test_initialization(self):
-        params = FigureParams()
+        params = FigureParamsMixIn()
         self.assertIsNone(params.figure)
         self.assertEqual(params.figsize, (10, 8))
         self.assertFalse(params.tight_layout)
@@ -325,7 +325,7 @@ class TestFigureParams(TestCase):
         self.assertIsNone(params.figure_background)
         self.assertIsNone(params.suptitle)
 
-        params = FigureParams(figure=self.figure)
+        params = FigureParamsMixIn(figure=self.figure)
         self.assertEqual(params.figure, self.figure)
         self.assertEqual(params.figsize, (12, 8))
 

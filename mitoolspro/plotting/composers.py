@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from mitoolspro.exceptions import AxesComposerException
-from mitoolspro.plotting.plots.plot_params import FigureParams, ParamsMixIn
+from mitoolspro.plotting.plots.plot_params import FigureParamsMixIn, ParamsMixIn
 from mitoolspro.plotting.plots.plotter import Plotter
 from mitoolspro.plotting.plots.validations import validate_type
 
@@ -137,7 +137,7 @@ class PlotComposer(ParamsMixIn):
         return composer
 
 
-class AxesComposer(FigureParams):
+class AxesComposer(FigureParamsMixIn):
     def __init__(
         self,
         axes: Sequence[Axes],
