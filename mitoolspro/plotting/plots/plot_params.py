@@ -12,7 +12,25 @@ from numpy import ndarray
 from pandas import Series
 
 from mitoolspro.exceptions import ArgumentStructureError, ArgumentValueError
-from mitoolspro.plotting.plots.matplotlib_typing import Color, Scale
+from mitoolspro.plotting.plots.validation.models import (
+    DictParam,
+    LiteralParam,
+    NumericParam,
+    NumericSequenceParam,
+    NumericTupleParam,
+    RangeParam,
+    StrParam,
+    StrSequenceParam,
+    TransformParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
+    ColorType,
+    NumericSequence,
+    NumericTupleType,
+    NumericType,
+    ScaleType,
+    StrSequence,
+)
 from mitoolspro.plotting.plots.validations import (
     NUMERIC_TYPES,
     SEQUENCE_TYPES,
@@ -49,6 +67,7 @@ class ParamsMixIn:
             "legend": None,
             "texts": None,
             "grid": None,
+            "facecolor": None,
             "background": None,
             "figure_background": None,
             "figsize": (10, 8),
@@ -91,36 +110,50 @@ class ParamsMixIn:
                     )
 
     def reset_params(self):
-        for param, config in self._init_params.items():
-            setattr(self, param, config["default"])
+        for param, default in self._init_params.items():
+            setattr(self, param, default)
         return self
 
-    def set_alpha(self, alpha: float):
-        raise NotImplementedError("Not implemented yet.")
+    def set_alpha(self, alpha: NumericType | None):
+        if alpha is not None:
+            RangeParam(value=alpha, min_value=0, max_value=1)
+        self.alpha = alpha
+        return self
 
-    def set_aspect(self, aspect: Literal["auto", "equal"] | float):
-        raise NotImplementedError("Not implemented yet.")
+    def set_aspect(self, aspect: Literal["auto", "equal"] | float | None):
+        if aspect is not None:
+            if isinstance(aspect, str):
+                LiteralParam(value=aspect, options=["auto", "equal"])
+            elif isinstance(aspect, float):
+                RangeParam(value=aspect, min_value=0)
+        self.aspect = aspect
+        return self
 
     def set_title(self, label: str, **kwargs):
         """https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html"""
+        StrParam(value=label)
         self.title = dict(label=label, **kwargs)
         return self
 
     def set_suptitle(self, t: str, **kwargs):
-        validate_type(t, str, "t")
+        StrParam(value=t)
         self.suptitle = dict(t=t, **kwargs)
         return self
 
     def set_transform(self, transform: Transform):
-        raise NotImplementedError("Not implemented yet.")
+        TransformParam(value=transform)
+        self.transform = transform
+        return self
 
     def set_xlabel(self, xlabel: str, **kwargs):
         """https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel"""
+        StrParam(value=xlabel)
         self.xlabel = dict(xlabel=xlabel, **kwargs)
         return self
 
     def set_ylabel(self, ylabel: str, **kwargs):
         """https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel"""
+        StrParam(value=ylabel)
         self.ylabel = dict(ylabel=ylabel, **kwargs)
         return self
 
@@ -129,45 +162,37 @@ class ParamsMixIn:
         self.set_ylabel(ylabel, **kwargs)
         return self
 
-    def set_xscale(self, xscale: Scale = None):
+    def set_xscale(self, xscale: Optional[ScaleType] = None):
         if xscale is not None:
-            validate_value_in_options(
-                xscale, ["linear", "log", "symlog", "logit"], "xscale"
-            )
+            LiteralParam(value=xscale, options=["linear", "log", "symlog", "logit"])
         self.xscale = xscale
         return self
 
-    def set_yscale(self, yscale: Scale = None):
+    def set_yscale(self, yscale: Optional[ScaleType] = None):
         if yscale is not None:
-            validate_value_in_options(
-                yscale, ["linear", "log", "symlog", "logit"], "yscale"
-            )
+            LiteralParam(value=yscale, options=["linear", "log", "symlog", "logit"])
         self.yscale = yscale
         return self
 
     def set_scales(
         self,
-        xscale: Scale = None,
-        yscale: Scale = None,
+        xscale: Optional[ScaleType] = None,
+        yscale: Optional[ScaleType] = None,
     ):
         self.set_xscale(xscale)
         self.set_yscale(yscale)
         return self
 
-    def set_xlim(self, xlim: Union[Tuple[float, float], None]):
+    def set_xlim(self, xlim: Optional[NumericTupleType] = None):
         if xlim is not None:
-            validate_type(xlim, (list, tuple), "xlim")
-            validate_sequence_length(xlim, 2, "xlim")
-            validate_sequence_type(xlim, (*NUMERIC_TYPES, type(None)), "xlim")
-            self.xlim = xlim
+            NumericTupleParam(value=xlim, tuple_sizes=2)
+        self.xlim = xlim
         return self
 
-    def set_ylim(self, ylim: Union[Tuple[float, float], None]):
+    def set_ylim(self, ylim: Optional[NumericTupleType] = None):
         if ylim is not None:
-            validate_type(ylim, (list, tuple), "ylim")
-            validate_sequence_length(ylim, 2, "ylim")
-            validate_sequence_type(ylim, (*NUMERIC_TYPES, type(None)), "ylim")
-            self.ylim = ylim
+            NumericTupleParam(value=ylim, tuple_sizes=2)
+        self.ylim = ylim
         return self
 
     def set_limits(
@@ -179,72 +204,64 @@ class ParamsMixIn:
         self.set_ylim(ylim)
         return self
 
-    def set_xticks(self, xticks: Union[Sequence[Union[float, int]], None]):
+    def set_xticks(self, xticks: Optional[NumericSequence] = None):
         if xticks is not None:
-            validate_type(xticks, SEQUENCE_TYPES, "xticks")
-            validate_sequence_type(xticks, NUMERIC_TYPES, "xticks")
-            self.xticks = xticks
+            NumericSequenceParam(value=xticks)
+        self.xticks = xticks
         return self
 
-    def set_yticks(self, yticks: Union[Sequence[Union[float, int]], None]):
+    def set_yticks(self, yticks: Optional[NumericSequence] = None):
         if yticks is not None:
-            validate_type(yticks, SEQUENCE_TYPES, "yticks")
-            validate_sequence_type(yticks, NUMERIC_TYPES, "yticks")
-            self.yticks = yticks
+            NumericSequenceParam(value=yticks)
+        self.yticks = yticks
         return self
 
     def set_ticks(
         self,
-        xticks: Union[Sequence[Union[float, int]], None] = None,
-        yticks: Union[Sequence[Union[float, int]], None] = None,
+        xticks: Optional[NumericSequence] = None,
+        yticks: Optional[NumericSequence] = None,
     ):
         self.set_xticks(xticks)
         self.set_yticks(yticks)
         return self
 
-    def set_xticklabels(
-        self, xticklabels: Union[Sequence[Union[str, float, int]], None]
-    ):
+    def set_xticklabels(self, xticklabels: Optional[StrSequence] = None):
         if xticklabels is not None:
-            validate_type(xticklabels, SEQUENCE_TYPES, "xticklabels")
-            validate_sequence_type(xticklabels, (str, *NUMERIC_TYPES), "xticklabels")
-            self.xticklabels = xticklabels
+            StrSequenceParam(value=xticklabels)
+        self.xticklabels = xticklabels
         return self
 
-    def set_yticklabels(
-        self, yticklabels: Union[Sequence[Union[str, float, int]], None]
-    ):
+    def set_yticklabels(self, yticklabels: Optional[StrSequence] = None):
         if yticklabels is not None:
-            validate_type(yticklabels, SEQUENCE_TYPES, "yticklabels")
-            validate_sequence_type(yticklabels, (str, *NUMERIC_TYPES), "yticklabels")
-            self.yticklabels = yticklabels
+            StrSequenceParam(value=yticklabels)
+        self.yticklabels = yticklabels
         return self
 
     def set_ticklabels(
         self,
-        xticklabels: Union[Sequence[Union[str, float, int]], None] = None,
-        yticklabels: Union[Sequence[Union[str, float, int]], None] = None,
+        xticklabels: Optional[StrSequence] = None,
+        yticklabels: Optional[StrSequence] = None,
     ):
         self.set_xticklabels(xticklabels)
         self.set_yticklabels(yticklabels)
         return self
 
-    def set_xtickparams(self, xtickparams: Dict[str, Any] = None):
+    def set_xtickparams(self, xtickparams: Optional[Dict[str, Any]] = None):
         if xtickparams is not None:
-            validate_type(xtickparams, dict, "xtickparams")
-            self.xtickparams = xtickparams
+            DictParam(value=xtickparams)
+        self.xtickparams = xtickparams
         return self
 
-    def set_ytickparams(self, ytickparams: Dict[str, Any] = None):
+    def set_ytickparams(self, ytickparams: Optional[Dict[str, Any]] = None):
         if ytickparams is not None:
-            validate_type(ytickparams, dict, "ytickparams")
-            self.ytickparams = ytickparams
+            DictParam(value=ytickparams)
+        self.ytickparams = ytickparams
         return self
 
     def set_tickparams(
         self,
-        xtickparams: Dict[str, Any] = None,
-        ytickparams: Dict[str, Any] = None,
+        xtickparams: Optional[Dict[str, Any]] = None,
+        ytickparams: Optional[Dict[str, Any]] = None,
     ):
         self.set_xtickparams(xtickparams)
         self.set_ytickparams(ytickparams)
@@ -254,7 +271,7 @@ class ParamsMixIn:
         self,
         visible: Union[bool, Dict[str, bool]] = True,
         position: Union[Dict[str, Union[Tuple[float, float], str]], None] = None,
-        color: Union[Color, Dict[str, Color]] = None,
+        color: Union[ColorType, Dict[str, ColorType]] = None,
         linewidth: Union[float, Dict[str, float]] = None,
         linestyle: Union[str, Dict[str, str]] = None,
         alpha: Union[float, Dict[str, float]] = None,
@@ -388,7 +405,10 @@ class ParamsMixIn:
         self.grid = dict(visible=visible, which=which, axis=axis, **kwargs)
         return self
 
-    def set_background(self, background: Color):
+    def set_facecolor(self, facecolor: ColorType):
+        raise NotImplementedError("Not implemented yet.")
+
+    def set_background(self, background: ColorType):
         validate_type(background, (str, tuple), "background")
         if isinstance(background, tuple):
             validate_sequence_type(background, NUMERIC_TYPES, "background")
@@ -396,7 +416,7 @@ class ParamsMixIn:
         self.background = background
         return self
 
-    def set_figure_background(self, figure_background: Color):
+    def set_figure_background(self, figure_background: ColorType):
         validate_type(figure_background, (str, tuple), "figure_background")
         if isinstance(figure_background, tuple):
             validate_sequence_type(
@@ -561,7 +581,7 @@ class FigureParams:
             },
             "style": {"default": None, "type": str},
             "tight_layout": {"default": False, "type": bool},
-            "figure_background": {"default": None, "type": Color},
+            "figure_background": {"default": None, "type": ColorType},
             "suptitle": {"default": None, "type": Text},
         }
         self._init_params = {**self._figure_params}
@@ -602,7 +622,7 @@ class FigureParams:
         self.tight_layout = tight_layout
         return self
 
-    def set_figure_background(self, figure_background: Color):
+    def set_figure_background(self, figure_background: ColorType):
         validate_type(figure_background, (str, tuple), "figure_background")
         if isinstance(figure_background, tuple):
             validate_sequence_type(
