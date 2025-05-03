@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import Colormap, Normalize
 from matplotlib.markers import MarkerStyle
+from matplotlib.transforms import Transform
 from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentValidationError
@@ -52,6 +53,7 @@ from mitoolspro.plotting.plots.validation.models import (
     StrParam,
     StrSequenceParam,
     StrSequencesParam,
+    TransformParam,
 )
 
 
@@ -337,6 +339,22 @@ class TestSpecializedParams(TestCase):
         with self.assertRaises(ValidationError):
             DictParam(value=[])
 
+    def test_transform_param_valid_values(self):
+        param = TransformParam(value=Transform())
+        self.assertEqual(param.value._shorthand_name, Transform()._shorthand_name)
+        param = TransformParam(value=Transform(shorthand_name="log"))
+        self.assertEqual(
+            param.value._shorthand_name, Transform(shorthand_name="log")._shorthand_name
+        )
+
+    def test_transform_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            TransformParam(value="not_a_transform")
+        with self.assertRaises(ValidationError):
+            TransformParam(value=None)
+        with self.assertRaises(ValidationError):
+            TransformParam(value=[])
+
     def test_str_param_with_extra_fields(self):
         with self.assertRaises(ValidationError):
             StrParam(value="test", extra_field="should_fail")
@@ -368,6 +386,10 @@ class TestSpecializedParams(TestCase):
     def test_dict_param_with_dict_initialization(self):
         param = DictParam.model_validate({"value": {"key": "value"}})
         self.assertEqual(param.value, {"key": "value"})
+
+    def test_transform_param_with_dict_initialization(self):
+        param = TransformParam.model_validate({"value": Transform()})
+        self.assertEqual(param.value._shorthand_name, Transform()._shorthand_name)
 
 
 class TestSequenceParam(TestCase):
