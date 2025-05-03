@@ -30,6 +30,18 @@ def is_indexable(value: Any, index: Any) -> bool:
         return False
 
 
+def is_numeric(value: Any) -> bool:
+    return isinstance(value, NumericType)
+
+
+def is_numeric_sequence(value: Any) -> bool:
+    return isinstance(value, Sequence) and all(is_numeric(v) for v in value)
+
+
+def is_numeric_sequences(value: Any) -> bool:
+    return isinstance(value, Sequence) and all(is_numeric_sequence(v) for v in value)
+
+
 def is_value_in_range(value: Any, min_value: NumericType, max_value: NumericType):
     return isinstance(value, NumericType) and min_value <= value and value <= max_value
 
