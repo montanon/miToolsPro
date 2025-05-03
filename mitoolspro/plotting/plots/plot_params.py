@@ -276,10 +276,10 @@ class ParamsMixIn:
         top: Dict[str, Any] = None,
     ):
         self.spines = SpinesParam(
-            left=SpineParam.model_validate(**left) if left is not None else None,
-            right=SpineParam.model_validate(**right) if right is not None else None,
-            bottom=SpineParam.model_validate(**bottom) if bottom is not None else None,
-            top=SpineParam.model_validate(**top) if top is not None else None,
+            left=SpineParam.model_validate(left) if left is not None else None,
+            right=SpineParam.model_validate(right) if right is not None else None,
+            bottom=SpineParam.model_validate(bottom) if bottom is not None else None,
+            top=SpineParam.model_validate(top) if top is not None else None,
         )
         return self
 
@@ -323,7 +323,7 @@ class ParamsMixIn:
             NumStrParam(value=title_fontsize)
         if edgecolor is not None:
             EdgeColorParam(value=edgecolor)
-        if facecolor is not None:
+        if facecolor is not None and facecolor != "inherit":
             ColorParam(value=facecolor)
         if "kwargs" not in kwargs:
             legend_kwargs = {
