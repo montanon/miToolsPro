@@ -1,10 +1,10 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Literal, Sequence, Tuple, Union
+from typing import Any, Tuple, Union
 
-import numpy as np
 from matplotlib.axes import Axes
+from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.matplotlib_typing import (
@@ -18,15 +18,14 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
 )
 from mitoolspro.plotting.plots.plot_params import ParamsMixIn
 from mitoolspro.plotting.plots.setter import SetterMixIn
-from mitoolspro.plotting.plots.validations import (
+from mitoolspro.plotting.plots.validation.functions import (
     is_numeric,
     is_numeric_sequence,
     is_numeric_sequences,
-    is_str_sequence,
-    validate_consistent_len,
-    validate_numeric_sequences,
-    validate_same_length,
-    validate_sequence_length,
+)
+from mitoolspro.plotting.plots.validation.models import (
+    DataSequenceParam,
+    DataSequencesParam,
 )
 
 
@@ -42,32 +41,16 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         ax: Axes = None,
         **kwargs,
     ):
-        self.x_data = self._validate_data(x_data, "x_data")
-        self.y_data = self._validate_data(y_data, "y_data")
-        validate_same_length(
-            self.x_data[0],
-            self.y_data[0] if self.y_data is not None else self.x_data[0],
-            "x_data",
-            "y_data",
-        )
+        self.x_data, self.y_data = self._validate_data(x_data, y_data)
         self._n_sequences = len(self.x_data)
         self._multi_data = self._n_sequences > 1
-        self._data_size = len(self.x_data[0])
+        self._data_size = max(len(x) for x in self.x_data)
         # Specific Parameters that are based on the number of data sequences
         self._multi_data_params = {
-            "color": {
-                "default": None,
-                "type": Union[ColorSequences, ColorSequence, Color],
-            },
-            "alpha": {
-                "default": 1.0,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "label": {"default": None, "type": Union[StrSequence, str]},
-            "zorder": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
+            "color": None,
+            "alpha": 1.0,
+            "label": None,
+            "zorder": None,
         }
         self._multi_params_structure = {}
         super().__init__(ax=ax, **kwargs)
@@ -92,16 +75,34 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
 
     def _validate_data(
         self,
-        data: Union[NumericSequence, NumericSequences, None],
-        name: Literal["x_data", "y_data"],
-    ) -> NumericSequences:
-        if name == "y_data" and data is None:
-            return data
-        if is_numeric_sequence(data):
-            data = [data]
-        validate_numeric_sequences(data, name)
-        validate_consistent_len(data, name)
-        return np.asarray(data)
+        x_data: Union[NumericSequence, NumericSequences],
+        y_data: Union[NumericSequence, NumericSequences, None],
+    ) -> tuple[NumericSequences, NumericSequences | None]:
+        try:
+            x_data = DataSequencesParam(value=x_data).value
+        except ValidationError:
+            try:
+                x_data = DataSequenceParam(value=x_data).value
+                x_data = [x_data]
+            except ValidationError:
+                raise ArgumentStructureError(
+                    "Invalid x_data, must be a sequence of sequences or a sequence of numeric values"
+                )
+
+        if y_data is None:
+            return x_data, None
+        try:
+            y_data = DataSequencesParam(value=y_data).value
+        except ValidationError:
+            try:
+                y_data = DataSequenceParam(value=y_data).value
+                y_data = [y_data]
+            except ValidationError:
+                raise ArgumentStructureError(
+                    "Invalid y_data, must be a sequence of sequences or a sequence of numeric values"
+                )
+
+        return x_data, y_data
 
     def set_color(self, color: Union[ColorSequences, ColorSequence, Color]):
         return self.set_color_sequences(color, param_name="color")
@@ -111,32 +112,11 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
             alpha, param_name="alpha", min_value=0, max_value=1
         )
 
-    def set_label(self, labels: Union[Sequence[str], str]):
-        if self._multi_data and is_str_sequence(labels):
-            validate_sequence_length(labels, self._n_sequences, "labels")
-            self.label = labels
-            self._multi_params_structure["label"] = "sequence"
-            return self
-        if isinstance(labels, str):
-            self.label = labels
-            self._multi_params_structure["label"] = "value"
-            return self
-        raise ArgumentStructureError(
-            "Invalid label, must be a string or sequence of strings."
-        )
+    def set_label(self, labels: Union[StrSequence, str]):
+        return self.set_str_sequences(labels, param_name="label")
 
     def set_zorder(self, zorder: Union[NumericSequences, NumericSequence, NumericType]):
         return self.set_numeric_sequences(zorder, param_name="zorder")
-
-    def get_sequences_param(self, param_name: str, n_sequence: int):
-        param_value = getattr(self, param_name)
-        if self._multi_data:
-            param_structure = self._multi_params_structure.get(param_name)
-            if param_structure in ["sequences", "sequence"]:
-                return param_value[n_sequence]
-            elif param_structure == "value":
-                return param_value
-        return param_value
 
     @abstractmethod
     def _create_plot(self):
@@ -173,7 +153,7 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         self, file_path: Union[str, Path], data: bool = True, return_json: bool = False
     ) -> None:
         init_params = {}
-        for param, config in self._init_params.items():
+        for param in self._init_params:
             value = getattr(self, param)
             init_params[param] = self._to_serializable(value)
         if data:
@@ -183,6 +163,9 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
             return init_params
         with open(file_path, "w") as f:
             json.dump(init_params, f, indent=4)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}(n_sequences={self.n_sequences}, data_size={self.data_size}, multi_data={self.multi_data})>"
 
     @classmethod
     def _convert_list_to_tuple(
@@ -211,18 +194,16 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         x_data = params.pop("x_data") if "x_data" in params else None
         y_data = params.pop("y_data") if "y_data" in params else None
         # Convert lists to tuples where needed
-        if "xlim" in params:
-            params["xlim"] = cls._convert_list_to_tuple(params["xlim"], 2)
-        if "ylim" in params:
-            params["ylim"] = cls._convert_list_to_tuple(params["ylim"], 2)
-        if "figsize" in params:
-            params["figsize"] = cls._convert_list_to_tuple(params["figsize"], 2)
-        if "center" in params:
-            params["center"] = cls._convert_list_to_tuple(params["center"], 2)
-        if "range" in params:
-            params["range"] = cls._convert_list_to_tuple(params["range"], 2)
-        if "color" in params:
-            params["color"] = cls._convert_list_to_tuple(params["color"], (3, 4))
-        if "whis" in params:
-            params["whis"] = cls._convert_list_to_tuple(params["whis"], 2)
+        _TUPLE_CONVERSION_KEYS = {
+            "xlim": 2,
+            "ylim": 2,
+            "figsize": 2,
+            "center": 2,
+            "range": 2,
+            "color": (3, 4),
+            "whis": 2,
+        }
+        for key, size in _TUPLE_CONVERSION_KEYS.items():
+            if key in params:
+                params[key] = cls._convert_list_to_tuple(params[key], size)
         return cls(x_data=x_data, y_data=y_data, **params)
