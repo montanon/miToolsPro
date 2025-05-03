@@ -13,18 +13,28 @@ from pandas import Series
 
 from mitoolspro.exceptions import ArgumentStructureError, ArgumentValueError
 from mitoolspro.plotting.plots.validation.models import (
+    BoolParam,
+    ColorParam,
     DictParam,
+    DictSequenceParam,
+    EdgeColorParam,
+    IntParam,
     LiteralParam,
     NumericParam,
     NumericSequenceParam,
     NumericTupleParam,
+    NumStrParam,
     RangeParam,
+    SequenceParam,
+    SpineParam,
+    SpinesParam,
     StrParam,
     StrSequenceParam,
     TransformParam,
 )
 from mitoolspro.plotting.plots.validation.types import (
     ColorType,
+    DictSequence,
     NumericSequence,
     NumericTupleType,
     NumericType,
@@ -267,28 +277,6 @@ class ParamsMixIn:
         self.set_ytickparams(ytickparams)
         return self
 
-    def _spine_params(
-        self,
-        visible: Union[bool, Dict[str, bool]] = True,
-        position: Union[Dict[str, Union[Tuple[float, float], str]], None] = None,
-        color: Union[ColorType, Dict[str, ColorType]] = None,
-        linewidth: Union[float, Dict[str, float]] = None,
-        linestyle: Union[str, Dict[str, str]] = None,
-        alpha: Union[float, Dict[str, float]] = None,
-        bounds: Union[Tuple[float, float], Dict[str, Tuple[float, float]]] = None,
-        capstyle: Union[Literal["butt", "round", "projecting"], Dict[str, str]] = None,
-    ):
-        return {
-            "visible": visible,
-            "position": position,
-            "color": color,
-            "linewidth": linewidth,
-            "linestyle": linestyle,
-            "alpha": alpha,
-            "bounds": bounds,
-            "capstyle": capstyle,
-        }
-
     def set_spines(
         self,
         left: Dict[str, Any] = None,
@@ -296,62 +284,56 @@ class ParamsMixIn:
         bottom: Dict[str, Any] = None,
         top: Dict[str, Any] = None,
     ):
-        self.spines = {
-            "left": self._spine_params(**left) if left is not None else None,
-            "right": self._spine_params(**right) if right is not None else None,
-            "bottom": self._spine_params(**bottom) if bottom is not None else None,
-            "top": self._spine_params(**top) if top is not None else None,
-        }
+        self.spines = SpinesParam(
+            left=SpineParam.model_validate(**left) if left is not None else None,
+            right=SpineParam.model_validate(**right) if right is not None else None,
+            bottom=SpineParam.model_validate(**bottom) if bottom is not None else None,
+            top=SpineParam.model_validate(**top) if top is not None else None,
+        )
         return self
 
     def set_legend(
         self,
         show: bool = True,
-        labels: Union[Sequence[str], str, None] = None,
-        handles: Union[Sequence[Any], None] = None,
-        loc: Union[str, int] = "best",
-        bbox_to_anchor: Union[Tuple[float, float], None] = None,
-        ncol: int = 1,
-        fontsize: Union[int, str, None] = None,
-        title: Union[str, None] = None,
-        title_fontsize: Union[int, str, None] = None,
+        labels: Optional[StrSequence | str] = None,
+        handles: Optional[Sequence[Any]] = None,
+        loc: Optional[str | int] = "best",
+        bbox_to_anchor: Optional[Tuple[float, float]] = None,
+        ncol: Optional[int] = 1,
+        fontsize: Optional[int | str] = None,
+        title: Optional[str] = None,
+        title_fontsize: Optional[int | str] = None,
         frameon: bool = True,
         fancybox: bool = True,
         framealpha: float = 0.8,
-        edgecolor: Union[str, None] = None,
-        facecolor: Union[str, None] = "inherit",
+        edgecolor: Optional[str] = None,
+        facecolor: Optional[str] = "inherit",
         **kwargs,
     ):
-        validate_type(show, bool, "show")
-        validate_type(frameon, bool, "frameon")
-        validate_type(fancybox, bool, "fancybox")
-        validate_type(ncol, int, "ncol")
-        validate_type(framealpha, NUMERIC_TYPES, "framealpha")
+        BoolParam(value=show)
+        BoolParam(value=frameon)
+        BoolParam(value=fancybox)
+        IntParam(value=ncol)
+        NumericParam(value=framealpha)
         if labels is not None:
             if isinstance(labels, str):
                 labels = [labels]
             else:
-                validate_type(labels, SEQUENCE_TYPES, "labels")
-                validate_sequence_type(labels, str, "labels")
+                StrSequenceParam(value=labels)
         if handles is not None:
-            validate_type(handles, (list, tuple), "handles")
+            SequenceParam(value=handles)
         if bbox_to_anchor is not None:
-            validate_type(bbox_to_anchor, tuple, "bbox_to_anchor")
-            if len(bbox_to_anchor) not in [2, 4]:
-                raise ArgumentStructureError(
-                    "'bbox_to_anchor' must be a tuple of 2 or 4 floats"
-                )
-            validate_sequence_type(bbox_to_anchor, NUMERIC_TYPES, "bbox_to_anchor")
+            NumericTupleParam(value=bbox_to_anchor, tuple_sizes=[2, 4])
         if fontsize is not None:
-            validate_type(fontsize, (int, str), "fontsize")
+            NumStrParam(value=fontsize)
         if title is not None:
-            validate_type(title, str, "title")
+            StrParam(value=title)
         if title_fontsize is not None:
-            validate_type(title_fontsize, (int, str), "title_fontsize")
+            NumStrParam(value=title_fontsize)
         if edgecolor is not None:
-            validate_type(edgecolor, str, "edgecolor")
+            EdgeColorParam(value=edgecolor)
         if facecolor is not None:
-            validate_type(facecolor, str, "facecolor")
+            ColorParam(value=facecolor)
         if "kwargs" not in kwargs:
             legend_kwargs = {
                 "loc": loc,
@@ -383,13 +365,13 @@ class ParamsMixIn:
         self.legend = legend if show else None
         return self
 
-    def set_texts(self, texts: Union[Sequence[Dict], Dict]):
-        if isinstance(texts, dict):
-            self.texts = [texts]
-        else:
-            validate_type(texts, SEQUENCE_TYPES, "texts")
-            validate_sequence_type(texts, dict, "texts")
-            self.texts = texts
+    def set_texts(self, texts: Optional[DictSequence | Dict] = None):
+        if texts is not None:
+            if isinstance(texts, dict):
+                texts = [texts]
+            else:
+                DictSequenceParam(value=texts)
+        self.texts = texts
         return self
 
     def set_grid(
@@ -399,16 +381,19 @@ class ParamsMixIn:
         axis: Literal["both", "x", "y"] = "both",
         **kwargs,
     ):
-        validate_type(visible, bool, "visible")
-        validate_value_in_options(which, ["major", "minor", "both"], "which")
-        validate_value_in_options(axis, ["both", "x", "y"], "axis")
+        BoolParam(value=visible)
+        LiteralParam(value=which, options=["major", "minor", "both"])
+        LiteralParam(value=axis, options=["both", "x", "y"])
         self.grid = dict(visible=visible, which=which, axis=axis, **kwargs)
         return self
 
-    def set_facecolor(self, facecolor: ColorType):
-        raise NotImplementedError("Not implemented yet.")
+    def set_facecolor(self, facecolor: Optional[ColorType] = None):
+        if facecolor is not None:
+            ColorParam(value=facecolor)
+        self.facecolor = facecolor
+        return self
 
-    def set_background(self, background: ColorType):
+    def set_background(self, background: Optional[ColorType] = None):
         validate_type(background, (str, tuple), "background")
         if isinstance(background, tuple):
             validate_sequence_type(background, NUMERIC_TYPES, "background")
@@ -573,23 +558,18 @@ class FigureParams:
     def __init__(self, figure: Figure = None, **kwargs):
         self.figure: Figure = figure
         self._figure_params = {
-            "figsize": {
-                "default": tuple(self.figure.get_size_inches())
-                if self.figure
-                else (10, 8),
-                "type": Tuple[float, float],
-            },
-            "style": {"default": None, "type": str},
-            "tight_layout": {"default": False, "type": bool},
-            "figure_background": {"default": None, "type": ColorType},
-            "suptitle": {"default": None, "type": Text},
+            "figsize": tuple(self.figure.get_size_inches()) if self.figure else (10, 8),
+            "style": None,
+            "tight_layout": False,
+            "figure_background": None,
+            "suptitle": None,
         }
         self._init_params = {**self._figure_params}
         self._set_init_params(**kwargs)
 
     def _set_init_params(self, **kwargs):
-        for param, config in self._init_params.items():
-            setattr(self, param, config["default"])
+        for param, default in self._init_params.items():
+            setattr(self, param, default)
             if param in kwargs and kwargs[param] is not None:
                 setter_name = f"set_{param}"
                 if hasattr(self, setter_name):
