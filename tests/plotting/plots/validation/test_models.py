@@ -46,6 +46,7 @@ from mitoolspro.plotting.plots.validation.models import (
     NumericTupleParam,
     NumericTupleSequenceParam,
     NumericTupleSequencesParam,
+    NumStrParam,
     Param,
     RangeParam,
     RangeSequenceParam,
@@ -389,6 +390,16 @@ class TestSpecializedParams(TestCase):
         with self.assertRaises(ValidationError):
             IntParam(value=[])
 
+    def test_num_str_param_valid_values(self):
+        param = NumStrParam(value=42)
+        self.assertEqual(param.value, 42)
+        param = NumStrParam(value="42")
+        self.assertEqual(param.value, "42")
+
+    def test_num_str_param_invalid_values(self):
+        with self.assertRaises(ValidationError):
+            NumStrParam(value=3.14)
+
     def test_str_param_with_extra_fields(self):
         with self.assertRaises(ValidationError):
             StrParam(value="test", extra_field="should_fail")
@@ -432,6 +443,10 @@ class TestSpecializedParams(TestCase):
     def test_int_param_with_dict_initialization(self):
         param = IntParam.model_validate({"value": 42})
         self.assertEqual(param.value, 42)
+
+    def test_num_str_param_with_dict_initialization(self):
+        param = NumStrParam.model_validate({"value": "42"})
+        self.assertEqual(param.value, "42")
 
 
 class TestSequenceParam(TestCase):

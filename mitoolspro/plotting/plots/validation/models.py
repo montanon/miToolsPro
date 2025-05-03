@@ -101,6 +101,10 @@ class IntParam(Param[int]):
     pass
 
 
+class NumStrParam(Param[int | str]):
+    pass
+
+
 class SequenceParam[T](Param[Sequence[T]]):
     value: Sequence[T]
     sizes: Optional[SizesType] = None
