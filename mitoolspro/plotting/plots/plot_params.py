@@ -394,40 +394,31 @@ class ParamsMixIn:
         return self
 
     def set_background(self, background: Optional[ColorType] = None):
-        validate_type(background, (str, tuple), "background")
-        if isinstance(background, tuple):
-            validate_sequence_type(background, NUMERIC_TYPES, "background")
-            validate_sequence_length(background, (3, 4), "background")
+        if background is not None:
+            ColorParam(value=background)
         self.background = background
         return self
 
-    def set_figure_background(self, figure_background: ColorType):
-        validate_type(figure_background, (str, tuple), "figure_background")
-        if isinstance(figure_background, tuple):
-            validate_sequence_type(
-                figure_background, NUMERIC_TYPES, "figure_background"
-            )
-            validate_sequence_length(figure_background, (3, 4), "figure_background")
+    def set_figure_background(self, figure_background: Optional[ColorType] = None):
+        if figure_background is not None:
+            ColorParam(value=figure_background)
         self.figure_background = figure_background
         return self
 
-    def set_figsize(self, figsize: Tuple[float, float]):
-        if isinstance(figsize, list):
-            figsize = tuple(figsize)
-        validate_type(figsize, tuple, "figsize")
-        validate_sequence_type(figsize, NUMERIC_TYPES, "figsize")
-        validate_sequence_length(figsize, 2, "figsize")
+    def set_figsize(self, figsize: Optional[NumericTupleType] = None):
+        if figsize is not None:
+            NumericTupleParam(value=figsize, tuple_sizes=2)
         self.figsize = figsize
         return self
 
     def set_tight_layout(self, tight_layout: bool = False):
-        validate_type(tight_layout, bool, "tight_layout")
+        BoolParam(value=tight_layout)
         self.tight_layout = tight_layout
         return self
 
-    def set_style(self, style: str):
+    def set_style(self, style: Optional[str] = None):
         if style is not None:
-            validate_value_in_options(style, plt.style.available, "style")
+            LiteralParam(value=style, options=plt.style.available)
         self.style = style
         return self
 
@@ -578,42 +569,34 @@ class FigureParams:
                     raise ArgumentValueError(f"Parameter '{param}' is not valid.")
 
     def reset_params(self):
-        for param, config in self._init_params.items():
-            setattr(self, param, config["default"])
+        for param, default in self._init_params.items():
+            setattr(self, param, default)
         return self
 
-    def set_figsize(self, figsize: Tuple[float, float]):
-        if isinstance(figsize, list):
-            figsize = tuple(figsize)
-        validate_type(figsize, tuple, "figsize")
-        validate_sequence_type(figsize, NUMERIC_TYPES, "figsize")
-        validate_sequence_length(figsize, 2, "figsize")
+    def set_figsize(self, figsize: NumericTupleType):
+        NumericTupleParam(value=figsize, tuple_sizes=2)
         self.figsize = figsize
         return self
 
-    def set_style(self, style: str):
+    def set_style(self, style: Optional[str] = None):
         if style is not None:
-            validate_value_in_options(style, plt.style.available, "style")
+            LiteralParam(value=style, options=plt.style.available)
         self.style = style
         return self
 
     def set_tight_layout(self, tight_layout: bool = False):
-        validate_type(tight_layout, bool, "tight_layout")
+        BoolParam(value=tight_layout)
         self.tight_layout = tight_layout
         return self
 
-    def set_figure_background(self, figure_background: ColorType):
-        validate_type(figure_background, (str, tuple), "figure_background")
-        if isinstance(figure_background, tuple):
-            validate_sequence_type(
-                figure_background, NUMERIC_TYPES, "figure_background"
-            )
-            validate_sequence_length(figure_background, (3, 4), "figure_background")
+    def set_figure_background(self, figure_background: Optional[ColorType] = None):
+        if figure_background is not None:
+            ColorParam(value=figure_background)
         self.figure_background = figure_background
         return self
 
     def set_suptitle(self, t: str, **kwargs):
-        validate_type(t, str, "t")
+        StrParam(value=t)
         self.suptitle = dict(t=t, **kwargs)
         return self
 
