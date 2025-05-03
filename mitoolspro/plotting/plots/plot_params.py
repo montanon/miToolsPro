@@ -6,12 +6,11 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
 from matplotlib.markers import MarkerStyle
-from matplotlib.text import Text
 from matplotlib.transforms import Transform
 from numpy import ndarray
 from pandas import Series
 
-from mitoolspro.exceptions import ArgumentStructureError, ArgumentValueError
+from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.plotting.plots.validation.models import (
     BoolParam,
     ColorParam,
@@ -40,14 +39,6 @@ from mitoolspro.plotting.plots.validation.types import (
     NumericType,
     ScaleType,
     StrSequence,
-)
-from mitoolspro.plotting.plots.validations import (
-    NUMERIC_TYPES,
-    SEQUENCE_TYPES,
-    validate_sequence_length,
-    validate_sequence_type,
-    validate_type,
-    validate_value_in_options,
 )
 
 
@@ -492,9 +483,9 @@ class ParamsMixIn:
         if self.ytickparams is not None:
             self.ax.tick_params(axis="y", **self.ytickparams)
         if self.spines:
-            for spine, spine_params in self.spines.items():
+            for spine, spine_params in self.spines.model_dump().items():
                 if spine_params is not None:
-                    for param, values in spine_params.items():
+                    for param, values in spine_params.model_dump().items():
                         if values is not None:
                             if param == "visible":
                                 self.ax.spines[spine].set_visible(values)
