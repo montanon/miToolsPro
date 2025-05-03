@@ -3,17 +3,12 @@ from typing import Any, Literal, Optional, TypeVar
 
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
+from matplotlib.transforms import Transform
 from pandas import Series
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from mitoolspro.exceptions import (
-    ArgumentValidationError,
-)
-from mitoolspro.plotting.plots.matplotlib_typing import (
-    BINS,
-    CMAPS,
-    NORMALIZATIONS,
-)
+from mitoolspro.exceptions import ArgumentValidationError
+from mitoolspro.plotting.plots.matplotlib_typing import BINS, CMAPS, NORMALIZATIONS
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
     is_bins,
@@ -91,6 +86,10 @@ class NumericParam(Param[NumericType]):
 
 
 class DictParam(Param[dict]):
+    pass
+
+
+class TransformParam(Param[Transform]):
     pass
 
 
