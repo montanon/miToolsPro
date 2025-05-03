@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Literal, Optional, TypeVar
+from typing import Any, Literal, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 from matplotlib.colors import Colormap, Normalize
@@ -863,3 +863,23 @@ class BinsSequencesParam(SequencesParam[BinsType]):
             normalized_outer.append(normalized_inner)
 
         return {"value": normalized_outer}
+
+
+class SpineParam(BaseModel):
+    visible: Optional[bool] = True
+    position: Optional[Union[Tuple[float, float], str]] = None
+    color: Optional[ColorType] = None
+    linewidth: Optional[float] = None
+    linestyle: Optional[str] = None
+    alpha: Optional[float] = None
+    bounds: Optional[Tuple[float, float]] = None
+    capstyle: Optional[Literal["butt", "round", "projecting"]] = None
+
+    model_config = {"extra": "forbid"}
+
+
+class SpinesParam(BaseModel):
+    left: Optional[SpineParam] = None
+    right: Optional[SpineParam] = None
+    top: Optional[SpineParam] = None
+    bottom: Optional[SpineParam] = None
