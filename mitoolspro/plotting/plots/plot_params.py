@@ -7,6 +7,7 @@ from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
 from matplotlib.markers import MarkerStyle
 from matplotlib.text import Text
+from matplotlib.transforms import Transform
 from numpy import ndarray
 from pandas import Series
 
@@ -22,40 +23,46 @@ from mitoolspro.plotting.plots.validations import (
 )
 
 
-class PlotParams:
+class PlotParamsMixIn:
     def __init__(self, ax: Axes = None, **kwargs):
         self.ax: Axes = ax if ax is not None else None
         self.figure: Figure = None if self.ax is None else self.ax.figure
         self._single_data_params = {
+            "alpha": {"default": None, "type": float | None},
+            "aspect": {
+                "default": None,
+                "type": Literal["auto", "equal"] | float | None,
+            },
             "title": {"default": "", "type": Text},
-            "xlabel": {"default": "", "type": Text},
-            "ylabel": {"default": "", "type": Text},
-            "legend": {"default": None, "type": Union[Dict, None]},
-            "figsize": {"default": (10, 8), "type": Tuple[float, float]},
-            "style": {"default": None, "type": str},
-            "grid": {"default": None, "type": Dict[str, Any]},
-            "tight_layout": {"default": False, "type": bool},
-            "texts": {"default": None, "type": Union[Sequence[Text], Text]},
-            "xscale": {"default": None, "type": Scale},
-            "yscale": {"default": None, "type": Scale},
-            "background": {"default": None, "type": Color},
-            "figure_background": {"default": None, "type": Color},
             "suptitle": {"default": None, "type": Text},
+            "transform": {"default": None, "type": Transform | None},
+            "xlabel": {"default": "", "type": Text},
             "xlim": {"default": None, "type": Union[Tuple[float, float], None]},
-            "ylim": {"default": None, "type": Union[Tuple[float, float], None]},
+            "xscale": {"default": None, "type": Scale},
+            "xticklabels": {"default": None, "type": Union[Sequence[str], None]},
             "xticks": {
                 "default": None,
                 "type": Union[Sequence[Union[float, int]], None],
             },
+            "xtickparams": {"default": None, "type": Dict[str, Any]},
+            "ylabel": {"default": "", "type": Text},
+            "yscale": {"default": None, "type": Scale},
+            "ylim": {"default": None, "type": Union[Tuple[float, float], None]},
+            "yticklabels": {"default": None, "type": Union[Sequence[str], None]},
             "yticks": {
                 "default": None,
                 "type": Union[Sequence[Union[float, int]], None],
             },
-            "xticklabels": {"default": None, "type": Union[Sequence[str], None]},
-            "yticklabels": {"default": None, "type": Union[Sequence[str], None]},
-            "xtickparams": {"default": None, "type": Dict[str, Any]},
             "ytickparams": {"default": None, "type": Dict[str, Any]},
+            "legend": {"default": None, "type": Union[Dict, None]},
+            "texts": {"default": None, "type": Union[Sequence[Text], Text]},
+            "figsize": {"default": (10, 8), "type": Tuple[float, float]},
             "spines": {"default": {}, "type": Dict[str, Any]},
+            "grid": {"default": None, "type": Dict[str, Any]},
+            "tight_layout": {"default": False, "type": bool},
+            "background": {"default": None, "type": Color},
+            "figure_background": {"default": None, "type": Color},
+            "style": {"default": None, "type": str},
         }
         self._init_params = {**self._single_data_params}
         self._set_init_params(**kwargs)
