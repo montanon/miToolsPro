@@ -1,19 +1,21 @@
 import unittest
+from pathlib import Path
+from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
-import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
+from matplotlib.markers import MarkerStyle
 from matplotlib.transforms import Transform
 from pandas import Series
 from pydantic import ValidationError
 
-from mitoolspro.exceptions import ArgumentValueError
-from mitoolspro.plotting.plots.plot_params import ParamsMixIn
+from mitoolspro.plotting.plots.plot_params import FigureParams, ParamsMixIn
 
 
-class TestParamsMixIn(unittest.TestCase):
+class TestParamsMixIn(TestCase):
     def setUp(self):
         self.ax = MagicMock(spec=Axes)
         self.figure = MagicMock(spec=Figure)
@@ -235,6 +237,37 @@ class TestParamsMixIn(unittest.TestCase):
         result = self.params._to_serializable(test_series)
         self.assertEqual(result, [1, 2, 3])
 
+        test_colormap = MagicMock(spec=Colormap)
+        test_colormap.name = "viridis"
+        result = self.params._to_serializable(test_colormap)
+        self.assertEqual(result, "viridis")
+
+        test_normalize = MagicMock(spec=Normalize)
+        test_normalize.__class__.__name__ = "Normalize"
+        result = self.params._to_serializable(test_normalize)
+        self.assertEqual(result, "normalize")
+
+        test_path = MagicMock(spec=Path)
+        test_path.__str__.return_value = "/test/path"
+        result = self.params._to_serializable(test_path)
+        self.assertEqual(result, "/test/path")
+
+        test_marker = MagicMock(spec=MarkerStyle)
+        test_marker.get_marker.return_value = "o"
+        test_marker.get_fillstyle.return_value = "full"
+        test_marker.get_capstyle.return_value = "round"
+        test_marker.get_joinstyle.return_value = "round"
+        result = self.params._to_serializable(test_marker)
+        self.assertEqual(
+            result,
+            {
+                "marker": "o",
+                "fillstyle": "full",
+                "capstyle": "round",
+                "joinstyle": "round",
+            },
+        )
+
     def test_apply_common_properties(self):
         self.params.set_title("Test Title")
         self.params.set_xlabel("X Label")
@@ -275,6 +308,152 @@ class TestParamsMixIn(unittest.TestCase):
         self.ax.set_facecolor.assert_called_once_with(self.params.background)
         self.figure.set_facecolor.assert_called_once_with(self.params.figure_background)
         self.figure.suptitle.assert_called_once_with(**self.params.suptitle)
+
+
+class TestFigureParams(TestCase):
+    def setUp(self):
+        self.figure = MagicMock(spec=Figure)
+        self.figure.get_size_inches.return_value = (12, 8)
+        self.params = FigureParams(figure=self.figure)
+
+    def test_initialization(self):
+        params = FigureParams()
+        self.assertIsNone(params.figure)
+        self.assertEqual(params.figsize, (10, 8))
+        self.assertFalse(params.tight_layout)
+        self.assertIsNone(params.style)
+        self.assertIsNone(params.figure_background)
+        self.assertIsNone(params.suptitle)
+
+        params = FigureParams(figure=self.figure)
+        self.assertEqual(params.figure, self.figure)
+        self.assertEqual(params.figsize, (12, 8))
+
+    def test_set_figsize(self):
+        self.params.set_figsize((14, 10))
+        self.assertEqual(self.params.figsize, (14, 10))
+        with self.assertRaises(ValidationError):
+            self.params.set_figsize((1, 2, 3))
+
+    def test_set_style(self):
+        with patch("matplotlib.pyplot.style.available", ["seaborn"]):
+            self.params.set_style("seaborn")
+            self.assertEqual(self.params.style, "seaborn")
+            with self.assertRaises(ValidationError):
+                self.params.set_style("invalid")
+
+    def test_set_tight_layout(self):
+        self.params.set_tight_layout(True)
+        self.assertTrue(self.params.tight_layout)
+
+    def test_set_figure_background(self):
+        self.params.set_figure_background("red")
+        self.assertEqual(self.params.figure_background, "red")
+        with self.assertRaises(ValidationError):
+            self.params.set_figure_background("invalid_color")
+
+    def test_set_suptitle(self):
+        self.params.set_suptitle("Test Title", color="red")
+        self.assertEqual(self.params.suptitle["t"], "Test Title")
+        self.assertEqual(self.params.suptitle["color"], "red")
+
+    def test_reset_params(self):
+        self.params.set_figsize((14, 10))
+        self.params.set_style("ggplot")
+        self.params.set_tight_layout(True)
+        self.params.set_figure_background("red")
+        self.params.set_suptitle("Test Title")
+
+        self.params.reset_params()
+
+        self.assertEqual(self.params.figsize, (12, 8))
+        self.assertIsNone(self.params.style)
+        self.assertFalse(self.params.tight_layout)
+        self.assertIsNone(self.params.figure_background)
+        self.assertIsNone(self.params.suptitle)
+
+    def test_prepare_draw(self):
+        with (
+            patch("matplotlib.pyplot.style.use") as mock_style_use,
+            patch("matplotlib.pyplot.figure") as mock_figure,
+            patch("matplotlib.pyplot.rcParams.copy") as mock_copy,
+        ):
+            mock_copy.return_value = {"style": "default"}
+            mock_figure.return_value = self.figure
+
+            self.params.set_style("ggplot")
+            self.params._prepare_draw()
+
+            mock_style_use.assert_called_once_with("ggplot")
+            mock_copy.assert_called_once()
+            self.assertEqual(self.params._default_style, {"style": "default"})
+
+            self.params.figure = None
+            self.params._prepare_draw(clear=True)
+            mock_figure.assert_called_once_with(figsize=(12, 8))
+
+    def test_finalize_draw(self):
+        with (
+            patch("matplotlib.pyplot.tight_layout") as mock_tight_layout,
+            patch("matplotlib.pyplot.rcParams.update") as mock_update,
+        ):
+            self.params.set_tight_layout(True)
+            self.params.set_style("ggplot")
+            self.params._default_style = {"style": "default"}
+
+            result = self.params._finalize_draw(show=True)
+
+            mock_tight_layout.assert_called_once()
+            self.figure.show.assert_called_once()
+            mock_update.assert_called_once_with({"style": "default"})
+            self.assertEqual(result, self.figure)
+
+    def test_clear(self):
+        with patch("matplotlib.pyplot.close") as mock_close:
+            self.params.clear()
+            mock_close.assert_called_once_with(self.figure)
+            self.assertIsNone(self.params.figure)
+
+    def test_to_serializable(self):
+        test_dict = {"a": 1, "b": np.array([1, 2, 3])}
+        result = self.params._to_serializable(test_dict)
+        self.assertEqual(result["a"], 1)
+        self.assertEqual(result["b"], [1, 2, 3])
+
+        test_series = Series([1, 2, 3])
+        result = self.params._to_serializable(test_series)
+        self.assertEqual(result, [1, 2, 3])
+
+        test_colormap = MagicMock(spec=Colormap)
+        test_colormap.name = "viridis"
+        result = self.params._to_serializable(test_colormap)
+        self.assertEqual(result, "viridis")
+
+        test_normalize = MagicMock(spec=Normalize)
+        test_normalize.__class__.__name__ = "Normalize"
+        result = self.params._to_serializable(test_normalize)
+        self.assertEqual(result, "normalize")
+
+        test_path = MagicMock(spec=Path)
+        test_path.__str__.return_value = "/test/path"
+        result = self.params._to_serializable(test_path)
+        self.assertEqual(result, "/test/path")
+
+        test_marker = MagicMock(spec=MarkerStyle)
+        test_marker.get_marker.return_value = "o"
+        test_marker.get_fillstyle.return_value = "full"
+        test_marker.get_capstyle.return_value = "round"
+        test_marker.get_joinstyle.return_value = "round"
+        result = self.params._to_serializable(test_marker)
+        self.assertEqual(
+            result,
+            {
+                "marker": "o",
+                "fillstyle": "full",
+                "capstyle": "round",
+                "joinstyle": "round",
+            },
+        )
 
 
 if __name__ == "__main__":

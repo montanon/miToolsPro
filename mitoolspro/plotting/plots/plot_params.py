@@ -610,7 +610,7 @@ class FigureParams:
         return self.figure
 
     def clear(self):
-        if self.figure or self.ax:
+        if self.figure:
             plt.close(self.figure)
             self.figure = None
         return self
