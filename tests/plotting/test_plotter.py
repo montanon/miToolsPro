@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.testing import assert_array_equal
+from pydantic import ValidationError
 
 from mitoolspro.exceptions import (
     ArgumentStructureError,
@@ -32,8 +33,8 @@ class TestPlotter(TestCase):
         x_data = np.array([1, 2, 3, 4])
         y_data = [4, 3, 2, 1]
         plotter = DummyPlotter(x_data, y_data)
-        assert_array_equal(plotter.x_data, x_data.reshape(1, -1))
-        assert_array_equal(plotter.y_data, np.asarray([y_data]))
+        self.assertEqual(plotter.x_data, [x_data.tolist()])
+        self.assertEqual(plotter.y_data, [y_data])
         self.assertEqual(plotter._n_sequences, 1)
         self.assertFalse(plotter._multi_data)
         self.assertEqual(plotter.data_size, 4)
@@ -61,7 +62,7 @@ class TestPlotter(TestCase):
     def test_init_invalid_x_data(self):
         x_data = ["a", "b", "c"]
         y_data = [1, 2, 3]
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ArgumentStructureError):
             DummyPlotter(x_data, y_data)
 
     def test_init_inconsistent_lengths(self):
@@ -108,7 +109,7 @@ class TestPlotter(TestCase):
         )
 
     def test_set_legend_invalid_ncol(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_legend(ncol="two")
 
     def test_set_figsize(self):
@@ -116,7 +117,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.figsize, (10, 5))
 
     def test_set_figsize_invalid(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_figsize("10x5")
 
     def test_set_style(self):
@@ -124,7 +125,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.style, "ggplot")
 
     def test_set_style_invalid(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_style("unknown_style")
 
     def test_set_grid(self):
@@ -153,7 +154,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.xscale, "log")
 
     def test_set_xscale_invalid(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_xscale("unknown_scale")
 
     def test_set_yscale(self):
@@ -161,7 +162,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.yscale, "linear")
 
     def test_set_yscale_invalid(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_yscale("unknown_scale")
 
     def test_set_scales(self):
@@ -174,7 +175,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.background, "blue")
 
     def test_set_background_invalid(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_background(123)
 
     def test_set_figure_background(self):
@@ -182,7 +183,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.figure_background, "white")
 
     def test_set_figure_background_invalid(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_figure_background(456)
 
     def test_set_suptitle(self):
@@ -199,7 +200,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.xlim, (0, None))
 
     def test_set_xlim_invalid(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_xlim("0 to 10")
 
     def test_set_ylim(self):
@@ -207,7 +208,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.ylim, (0, 5))
 
     def test_set_ylim_invalid(self):
-        with self.assertRaises(ArgumentStructureError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_ylim([0])
 
     def test_set_limits(self):
@@ -220,7 +221,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.xticks, [0, 1, 2])
 
     def test_set_xticks_invalid(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_xticks("0,1,2")
 
     def test_set_yticks(self):
@@ -228,7 +229,7 @@ class TestPlotter(TestCase):
         self.assertEqual(self.plotter.yticks, [0, 1, 2])
 
     def test_set_yticks_invalid(self):
-        with self.assertRaises(ArgumentTypeError):
+        with self.assertRaises(ValidationError):
             self.plotter.set_yticks({"ticks": [0, 1, 2]})
 
     def test_set_ticks(self):
@@ -270,8 +271,8 @@ class TestPlotter(TestCase):
         left_params = {"visible": False}
         right_params = {"color": "green"}
         self.plotter.set_spines(left=left_params, right=right_params)
-        self.assertEqual(self.plotter.spines["left"]["visible"], False)
-        self.assertEqual(self.plotter.spines["right"]["color"], "green")
+        self.assertEqual(self.plotter.spines.left.visible, False)
+        self.assertEqual(self.plotter.spines.right.color, "green")
 
     def test_set_color_single_color(self):
         self.plotter.set_color("red")
@@ -290,7 +291,7 @@ class TestPlotter(TestCase):
         with self.assertRaises(ArgumentStructureError):
             self.plotter.set_color([1, 2, 3, 4, 5])
         with self.assertRaises(ArgumentStructureError):
-            self.multi_plotter.set_color(["red", "green", "blue", "yellow"])
+            self.multi_plotter.set_color(["red", "green", "blue", "yellow", "black"])
 
     def test_set_alpha_single_value(self):
         self.plotter.set_alpha(0.5)
@@ -304,14 +305,14 @@ class TestPlotter(TestCase):
         assert_array_equal(self.multi_plotter.alpha, np.array([alphas, alphas]))
 
     def test_set_alpha_invalid(self):
-        with self.assertRaises(ArgumentValueError):
+        with self.assertRaises(ArgumentStructureError):
             self.plotter.set_alpha(123)
         with self.assertRaises(ArgumentStructureError):
             self.plotter.set_alpha(["asdasd"] * 3)
         with self.assertRaises(ArgumentStructureError):
             self.plotter.set_alpha([1, 2, 3, 4, 5])
         with self.assertRaises(ArgumentStructureError):
-            self.multi_plotter.set_alpha([0.5, 0.6, 0.7, 0.9])
+            self.multi_plotter.set_alpha([0.5, 0.6, 0.7, 0.9, 0.6])
 
     def test_set_label_single(self):
         self.plotter.set_label("Series 1")
