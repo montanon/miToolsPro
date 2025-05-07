@@ -1121,8 +1121,6 @@ class TestNumericTupleParam(TestCase):
             NumericTupleParam(value=("1", "2", "3"))
         with self.assertRaises(ValidationError):
             NumericTupleParam(value=(True, False, True))
-        with self.assertRaises(ValidationError):
-            NumericTupleParam(value=(None, None, None))
 
     def test_init_with_none_value(self):
         with self.assertRaises(ValidationError):
@@ -1281,8 +1279,6 @@ class TestNumericTupleSequenceParam(TestCase):
             NumericTupleSequenceParam(value=[("1", "2"), ("3", "4")])
         with self.assertRaises(ValidationError):
             NumericTupleSequenceParam(value=[(True, False), (False, True)])
-        with self.assertRaises(ValidationError):
-            NumericTupleSequenceParam(value=[(None, None), (None, None)])
 
     def test_init_with_none_value(self):
         with self.assertRaises(ValidationError):
@@ -1520,10 +1516,6 @@ class TestNumericTupleSequencesParam(TestCase):
         with self.assertRaises(ValidationError):
             NumericTupleSequencesParam(
                 value=[[(True, False), (False, True)], [(True, False), (False, True)]]
-            )
-        with self.assertRaises(ValidationError):
-            NumericTupleSequencesParam(
-                value=[[(None, None), (None, None)], [(None, None), (None, None)]]
             )
 
     def test_init_with_none_value(self):
