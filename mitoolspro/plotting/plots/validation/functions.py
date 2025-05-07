@@ -256,6 +256,16 @@ def validate_sequences_sizes(
                 raise ArgumentValidationError(
                     f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
                 )
+        if structured:
+            if len(sub_sizes) != len(values):
+                raise ArgumentValidationError(
+                    f"Expected Sequence of sizes: {sub_sizes}, got size: {len(values)} instead"
+                )
+            for idx, value in enumerate(values):
+                if len(value) != sub_sizes[idx]:
+                    raise ArgumentValidationError(
+                        f"Expected sub Sequences of size: {sub_sizes[idx]}, got size: {len(value)} at index={idx}"
+                    )
     return sub_sizes
 
 
