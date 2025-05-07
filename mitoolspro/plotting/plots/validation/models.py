@@ -190,6 +190,7 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
     value: Sequence[Sequence[T]]
     sizes: Optional[SizesType] = None
     sub_sizes: Optional[SizesType] = None
+    structured: Optional[bool] = False
 
     @model_validator(mode="before")
     @classmethod
@@ -197,16 +198,26 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
             sub_sizes = values.get("sub_sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
+        else:
+            sizes = None
+            sub_sizes = None
+            structured = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
 
-        sizes = validate_sequence_sizes(values, sizes)
+        sizes = validate_sequence_sizes(values, sizes, structured)
         values = standardize_sequences(values)
-        sub_sizes = validate_sequences_sizes(values, sub_sizes)
+        sub_sizes = validate_sequences_sizes(values, sub_sizes, structured)
 
-        return {"value": values, "sizes": sizes, "sub_sizes": sub_sizes}
+        return {
+            "value": values,
+            "sizes": sizes,
+            "sub_sizes": sub_sizes,
+            "structured": structured,
+        }
 
 
 class NumericSequencesParam(SequencesParam[NumericType]):
@@ -232,10 +243,12 @@ class DataSequencesParam(SequencesParam[NumericType | None]):
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
             sub_sizes = values.get("sub_sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
         else:
             sizes = None
             sub_sizes = None
+            structured = False
 
         values = coerce_to_list(values)
 
@@ -264,13 +277,14 @@ class DataSequencesParam(SequencesParam[NumericType | None]):
                     )
             standardized.append(outer)
 
-        sizes = validate_sequence_sizes(standardized, sizes)
-        sub_sizes = validate_sequences_sizes(standardized, sub_sizes)
+        sizes = validate_sequence_sizes(standardized, sizes, structured)
+        sub_sizes = validate_sequences_sizes(standardized, sub_sizes, structured)
 
         return {
             "value": standardized,
             "sizes": sizes,
             "sub_sizes": sub_sizes,
+            "structured": structured,
         }
 
 
@@ -285,6 +299,7 @@ class RangeSequencesParam(SequencesParam[NumericType]):
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
             sub_sizes = values.get("sub_sizes", None)
+            structured = values.get("structured", False)
             min_value = values.get("min_value", -np.inf)
             max_value = values.get("max_value", np.inf)
             strict = values.get("strict", False)
@@ -292,15 +307,16 @@ class RangeSequencesParam(SequencesParam[NumericType]):
         else:
             sizes = None
             sub_sizes = None
+            structured = False
             min_value = -np.inf
             max_value = np.inf
             strict = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
-        sizes = validate_sequence_sizes(values, sizes)
+        sizes = validate_sequence_sizes(values, sizes, structured)
         values = standardize_sequences(values)
-        sub_sizes = validate_sequences_sizes(values, sub_sizes)
+        sub_sizes = validate_sequences_sizes(values, sub_sizes, structured)
 
         return {
             "value": values,
@@ -309,6 +325,7 @@ class RangeSequencesParam(SequencesParam[NumericType]):
             "min_value": min_value,
             "max_value": max_value,
             "strict": strict,
+            "structured": structured,
         }
 
     @model_validator(mode="after")
@@ -337,16 +354,23 @@ class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
             tuple_sizes = values.get("tuple_sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
         else:
             sizes = None
             tuple_sizes = None
+            structured = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
         validate_tuple_sequence(values)
-        sizes = validate_sequence_sizes(values, sizes)
-        return {"value": values, "sizes": sizes, "tuple_sizes": tuple_sizes}
+        sizes = validate_sequence_sizes(values, sizes, structured)
+        return {
+            "value": values,
+            "sizes": sizes,
+            "tuple_sizes": tuple_sizes,
+            "structured": structured,
+        }
 
     @model_validator(mode="after")
     def validate_numeric_tuple_sequence(self) -> "NumericTupleSequenceParam":
@@ -364,24 +388,27 @@ class NumericTupleSequencesParam(SequencesParam[NumericTupleType]):
             sizes = values.get("sizes", None)
             sub_sizes = values.get("sub_sizes", None)
             tuple_sizes = values.get("tuple_sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
         else:
             sizes = None
             sub_sizes = None
             tuple_sizes = None
+            structured = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
-        sizes = validate_sequence_sizes(values, sizes)
+        sizes = validate_sequence_sizes(values, sizes, structured)
         values = standardize_sequences(values)
         validate_tuple_sequences(values)
-        sub_sizes = validate_sequences_sizes(values, sub_sizes)
+        sub_sizes = validate_sequences_sizes(values, sub_sizes, structured)
 
         return {
             "value": values,
             "sizes": sizes,
             "sub_sizes": sub_sizes,
             "tuple_sizes": tuple_sizes,
+            "structured": structured,
         }
 
     @model_validator(mode="after")
