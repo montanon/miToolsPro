@@ -156,14 +156,25 @@ class RangeSequenceParam(SequenceParam[NumericType]):
     def validate_type(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            structured = values.get("structured", False)
             min_value = values.get("min_value", -np.inf)
             max_value = values.get("max_value", np.inf)
             strict = values.get("strict", False)
             values = values["value"]
+        else:
+            sizes = None
+            structured = False
+            min_value = -np.inf
+            max_value = np.inf
+            strict = False
 
+        values = coerce_to_list(values)
+        validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes, structured)
         return {
             "value": values,
             "sizes": sizes,
+            "structured": structured,
             "min_value": min_value,
             "max_value": max_value,
             "strict": strict,
