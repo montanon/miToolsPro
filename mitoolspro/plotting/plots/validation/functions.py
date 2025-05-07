@@ -225,18 +225,29 @@ def validate_numeric(value: Any) -> None:
         raise ArgumentValidationError(f"Expected numeric {value=}, got {type(value)}")
 
 
-def validate_sequence_sizes(values: Sequence, sizes: SizesType) -> SizesType | None:
+def validate_sequence_sizes(
+    values: Sequence, sizes: SizesType, structured: bool
+) -> SizesType | None:
     if sizes is not None:
         sizes = sizes if isinstance(sizes, Sequence) else [sizes]
         if len(values) not in sizes:
             raise ArgumentValidationError(
                 f"Expected Sequence of sizes: {sizes}, got size: {len(values)} instead"
             )
+        if structured:
+            if len(sizes) != 1:
+                raise ArgumentValidationError(
+                    f"Validation of structured Sequence requires a single size: int, got {sizes=}"
+                )
+            if len(values) != sizes[0]:
+                raise ArgumentValidationError(
+                    f"Expected Sequence of size: {sizes[0]}, got size: {len(values)} instead"
+                )
     return sizes
 
 
 def validate_sequences_sizes(
-    values: Sequence, sub_sizes: SizesType
+    values: Sequence, sub_sizes: SizesType, structured: bool
 ) -> SizesType | None:
     if sub_sizes is not None:
         sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
