@@ -80,9 +80,13 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
     ) -> tuple[NumericSequences, NumericSequences | None]:
         try:
             x_data = DataSequencesParam(value=x_data).value
+            x_data_size = len(x_data)
+            x_data_sub_sizes = [len(x) for x in x_data]
         except ValidationError:
             try:
                 x_data = DataSequenceParam(value=x_data).value
+                x_data_size = len(x_data)
+                x_data_sub_sizes = None
                 x_data = [x_data]
             except ValidationError:
                 raise ArgumentStructureError(
@@ -92,10 +96,16 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         if y_data is None:
             return x_data, None
         try:
-            y_data = DataSequencesParam(value=y_data).value
+            y_data = DataSequencesParam(
+                value=y_data,
+                sizes=x_data_size,
+                sub_sizes=x_data_sub_sizes,
+            ).value
         except ValidationError:
             try:
-                y_data = DataSequenceParam(value=y_data).value
+                y_data = DataSequenceParam(
+                    value=y_data, sizes=x_data_size, sub_sizes=x_data_sub_sizes
+                ).value
                 y_data = [y_data]
             except ValidationError:
                 raise ArgumentStructureError(
