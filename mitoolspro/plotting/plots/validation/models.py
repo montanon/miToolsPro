@@ -227,6 +227,10 @@ class DataSequencesParam(SequencesParam[NumericType | None]):
 
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(f"Expected a Sequence, got {type(values)}")
+        if all(isinstance(v, NumericType | None) for v in values):
+            raise ArgumentValidationError(
+                "Expected at least one Sequence inside outer Sequence."
+            )
 
         standardized = []
         for outer_idx, outer in enumerate(values):

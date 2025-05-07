@@ -3471,12 +3471,12 @@ class TestDataSequencesParam(TestCase):
             DataSequencesParam(value=[[1, 2], [3, 4]], sub_sizes=3)
 
     def test_init_with_single_point_sequence(self):
-        param = DataSequencesParam(value=[1, 2, 3])
-        self.assertEqual(param.value, [[1], [2], [3]])
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value=[1, 2, 3])
 
     def test_init_with_single_point_none_sequence(self):
-        param = DataSequencesParam(value=[None, 2, None])
-        self.assertEqual(param.value, [[None], [2], [None]])
+        with self.assertRaises(ValidationError):
+            DataSequencesParam(value=[None, 2, None])
 
     def test_init_with_invalid_sequence_type(self):
         with self.assertRaises(ValidationError):
