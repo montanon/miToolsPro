@@ -108,19 +108,22 @@ class NumStrParam(Param[int | str]):
 class SequenceParam[T](Param[Sequence[T]]):
     value: Sequence[T]
     sizes: Optional[SizesType] = None
+    structured: Optional[bool] = False
 
     @model_validator(mode="before")
     @classmethod
     def validate_type(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
         else:
             sizes = None
+            structured = False
         values = coerce_to_list(values)
         validate_sequence(values)
-        sizes = validate_sequence_sizes(values, sizes)
-        return {"value": values, "sizes": sizes}
+        sizes = validate_sequence_sizes(values, sizes, structured)
+        return {"value": values, "sizes": sizes, "structured": structured}
 
 
 class NumericSequenceParam(SequenceParam[NumericType]):

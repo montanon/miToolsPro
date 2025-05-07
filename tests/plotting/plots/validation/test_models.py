@@ -653,6 +653,74 @@ class TestSequenceParam(TestCase):
         self.assertEqual(param.value, [1, 2])
         self.assertEqual(param.sizes, [2, 3])
 
+    def test_init_with_structured_true_and_valid_size(self):
+        param = SequenceParam[int](value=[1, 2, 3], sizes=3, structured=True)
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequenceParam[int](value=[1, 2], sizes=3, structured=True)
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_sequence_sizes(self):
+        with self.assertRaises(ValidationError) as context:
+            SequenceParam[int](value=[1, 2, 3], sizes=[2, 3, 4], structured=True)
+        self.assertIn(
+            "Validation of structured Sequence requires a single size: int",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_false_and_sequence_sizes(self):
+        param = SequenceParam[int](value=[1, 2, 3], sizes=[2, 3, 4], structured=False)
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [2, 3, 4])
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_default_value(self):
+        param = SequenceParam[int](value=[1, 2, 3])
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertIsNone(param.sizes)
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_true_and_no_sizes(self):
+        param = SequenceParam[int](value=[1, 2, 3], structured=True)
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertIsNone(param.sizes)
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_and_structured(self):
+        param = SequenceParam[int].model_validate(
+            {"value": [1, 2, 3], "sizes": 3, "structured": True}
+        )
+        self.assertEqual(param.value, [1, 2, 3])
+        self.assertEqual(param.sizes, [3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequenceParam[int].model_validate(
+                {"value": [1, 2], "sizes": 3, "structured": True}
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_dict_initialization_structured_and_sequence_sizes(self):
+        with self.assertRaises(ValidationError) as context:
+            SequenceParam[int].model_validate(
+                {"value": [1, 2, 3], "sizes": [2, 3, 4], "structured": True}
+            )
+        self.assertIn(
+            "Validation of structured Sequence requires a single size: int",
+            str(context.exception),
+        )
+
 
 class TestSpecializedSequenceParams(TestCase):
     def test_numeric_sequence_param_valid_values(self):
