@@ -633,5 +633,121 @@ class TestSetEdgeColorSequences(TestCase):
         )
 
 
+class TestSetStrSequences(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_string(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_str_sequences("Label A", "label")
+        self.assertEqual(plotter.label, "Label A")
+
+    def test_single_sequence_string_sequence(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_str_sequences(["Label A", "Label B", "Label C", "Label D"], "label")
+        self.assertEqual(plotter.label, ["Label A", "Label B", "Label C", "Label D"])
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(["Label A", "Label B"], "label")
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(
+                ["Label A", "Label B", "Label C", "Label D", "Label E"], "label"
+            )
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences([["Label A", "Label B"]], "label")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_string(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_str_sequences("Common Label", "label")
+        self.assertEqual(plotter.label, "Common Label")
+
+    def test_multi_sequence_string_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_str_sequences(["Label A", "Label B"], "label")
+        self.assertEqual(plotter.label, ["Label A", "Label B"])
+
+    def test_multi_sequence_nested_strings_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_str_sequences(
+            [["Label A1", "Label A2"], ["Label B1", "Label B2"]],
+            "label",
+        )
+        self.assertEqual(
+            plotter.label,
+            [["Label A1", "Label A2"], ["Label B1", "Label B2"]],
+        )
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(["Label A"], "label")
+
+    def test_multi_sequence_invalid_string(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(["Label A", 123], "label")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(
+                [["Label A", "Label B", "Label C"], ["Label D"]],
+                "label",
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_str_sequences(
+            [["Label A", "Label B"], ["Label C", "Label D", "Label E"]],
+            "label",
+            structured=True,
+        )
+        self.assertEqual(
+            plotter.label,
+            [["Label A", "Label B"], ["Label C", "Label D", "Label E"]],
+        )
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(
+                [["Label A", "Label B"], ["Label C"]], "label", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_string_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_str_sequences(123, "label")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_str_sequences("Label", "label")
+
+    def test_mixed_string_types(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        plotter.set_str_sequences(["Label A", "Label B", "Label C"], "label")
+        self.assertEqual(plotter.label, ["Label A", "Label B", "Label C"])
+
+
 if __name__ == "__main__":
     unittest.main()
