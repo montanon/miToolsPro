@@ -237,40 +237,52 @@ class SetterMixIn(ABC):
         sequences: Union[LiteralSequences, LiteralSequence, LiteralType],
         options: Sequence[str],
         param_name: str,
+        structured: bool = True,
     ):
+        sizes, sub_sizes = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequences = LiteralSequencesParam(
                     value=sequences,
-                    sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
+                    sizes=sizes,
+                    sub_sizes=sub_sizes,
                     options=options,
-                    structured=True,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             sequences = LiteralSequenceParam(
                 value=sequences,
-                sizes=self.data_sizes,
+                sizes=sizes,
                 options=options,
-                structured=True,
+                structured=structured,
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             sequences = LiteralParam(value=sequences, options=options).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a literal or sequence of literals."
-        )
+        except ValidationError as e:
+            last_error = str(e)
+
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a literal, a sequence of literals, "
+                f"or sequence of literals matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected a literal, a sequence of literals, "
+                f"or sequence of literals matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_marker_sequences(
         self,
