@@ -1245,5 +1245,100 @@ class TestSetBoolSequence(TestCase):
         self.assertEqual(plotter.visible, [True, False, True])
 
 
+class TestSetDictSequence(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_dict(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_dict_sequence({"a": 1, "b": 2}, "props")
+        self.assertEqual(plotter.props, {"a": 1, "b": 2})
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence([{"a": 1}, {"b": 2}], "props")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence([[{"a": 1}], [{"b": 2}]], "props")
+
+    def test_single_sequence_invalid_value(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence("not_a_dict", "props")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_dict(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_dict_sequence({"a": 1, "b": 2}, "props")
+        self.assertEqual(plotter.props, {"a": 1, "b": 2})
+
+    def test_multi_sequence_dict_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_dict_sequence([{"a": 1}, {"b": 2}], "props")
+        self.assertEqual(plotter.props, [{"a": 1}, {"b": 2}])
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence([{"a": 1}], "props")
+
+    def test_multi_sequence_invalid_dict_value(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence([{"a": 1}, "not_a_dict"], "props")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence(
+                [[{"a": 1}, {"b": 2}, {"c": 3}], [{"d": 4}]], "props"
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_dict_sequence(
+            [{"a": 1}, {"b": 2}],
+            "props",
+            structured=True,
+        )
+        self.assertEqual(
+            plotter.props,
+            [{"a": 1}, {"b": 2}],
+        )
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence(
+                [[{"a": 1}, {"b": 2}], [{"c": 3}]], "props", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_dict_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_dict_sequence("invalid", "props")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_dict_sequence({"a": 1}, "props")
+
+
 if __name__ == "__main__":
     unittest.main()
