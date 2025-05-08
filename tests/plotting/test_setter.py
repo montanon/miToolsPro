@@ -2,6 +2,7 @@ import unittest
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm, Normalize, SymLogNorm
 
 from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.setter import SetterMixIn
@@ -944,6 +945,117 @@ class TestSetColormapSequence(TestCase):
                 [["viridis", "plasma", "magma"], ["inferno"]],
                 "colormap",
             )
+
+
+class TestSetNormSequence(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_normalization(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_norm_sequence(Normalize(vmin=0, vmax=1), "norm")
+        self.assertIsInstance(plotter.norm, Normalize)
+
+    def test_single_sequence_normalization_literal(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_norm_sequence("linear", "norm")
+        self.assertEqual(plotter.norm, "linear")
+
+    def test_single_sequence_invalid_normalization(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence("invalid_norm", "norm")
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence([Normalize(), LogNorm(), SymLogNorm(1)], "norm")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence([[Normalize(), LogNorm()]], "norm")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_normalization(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_norm_sequence(Normalize(vmin=0, vmax=1), "norm")
+        self.assertIsInstance(plotter.norm, Normalize)
+
+    def test_multi_sequence_normalization_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_norm_sequence(["linear", "log"], "norm")
+        self.assertEqual(plotter.norm, ["linear", "log"])
+
+    def test_multi_sequence_nested_normalizations_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_norm_sequence([Normalize(), SymLogNorm(1)], "norm")
+        self.assertEqual(
+            [type(n) for n in plotter.norm],
+            [Normalize, SymLogNorm],
+        )
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence(["linear"], "norm")
+
+    def test_multi_sequence_invalid_normalization(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence(["linear", "invalid_norm"], "norm")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence(
+                [[Normalize(), LogNorm(), SymLogNorm(1)], [Normalize()]], "norm"
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_norm_sequence([Normalize(), LogNorm()], "norm", structured=True)
+        self.assertEqual([type(n) for n in plotter.norm], [Normalize, LogNorm])
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence(
+                [[Normalize(), LogNorm()], [SymLogNorm(1)]], "norm", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_normalization_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_norm_sequence("invalid", "norm")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_norm_sequence(Normalize(), "norm")
+
+    def test_mixed_normalization_types(self):
+        plotter = self.MockPlotter(
+            [[1, 2, 3], [2, 3, 4, 5, 6], [1, 2]], multi_data=True
+        )
+        plotter.set_norm_sequence([Normalize(), "linear", LogNorm()], "norm")
+        self.assertEqual(
+            [type(n) if not isinstance(n, str) else n for n in plotter.norm],
+            [Normalize, "linear", LogNorm],
+        )
 
 
 if __name__ == "__main__":
