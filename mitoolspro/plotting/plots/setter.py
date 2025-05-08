@@ -68,6 +68,7 @@ from mitoolspro.plotting.plots.validation.types import (
     NumericTupleSequences,
     NumericTupleType,
     NumericType,
+    SizesType,
     StrSequence,
     StrSequences,
 )
@@ -76,12 +77,7 @@ from mitoolspro.plotting.plots.validation.types import (
 class SetterMixIn(ABC):
     @property
     @abstractmethod
-    def data_sizes(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def data_sub_sizes(self) -> int:
+    def x_data(self) -> Sequence[Sequence[Any]]:
         pass
 
     @property
@@ -89,10 +85,14 @@ class SetterMixIn(ABC):
     def multi_data(self) -> bool:
         pass
 
-    @property
-    @abstractmethod
-    def multi_params_structure(self) -> dict:
-        pass
+    def _calculate_sizes(self) -> tuple[SizesType, SizesType]:
+        if self.multi_data:
+            sizes = len(self.x_data)
+            sub_sizes = [len(seq) for seq in self.x_data]
+        else:
+            sizes = len(self.x_data[0])
+            sub_sizes = None
+        return sizes, sub_sizes
 
     def set_color_sequences(
         self,
@@ -102,40 +102,48 @@ class SetterMixIn(ABC):
             ColorType,
         ],
         param_name: str,
+        structured: bool = True,
     ) -> Any:
+        sizes, sub_sizes = self._calculate_sizes()
         if self.multi_data:
             try:
                 validated = ColorSequencesParam(
                     value=colors,
-                    sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    sub_sizes=sub_sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, validated)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             validated = ColorSequenceParam(
                 value=colors,
-                sizes=self.data_sizes,
-                structured=True,
+                sizes=sizes,
+                structured=structured,
             ).value
             setattr(self, param_name, validated)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             validated = ColorParam(value=colors).value
             setattr(self, param_name, validated)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
 
         if self.multi_data:
-            msg = f"Invalid {param_name}, must be a color, sequence of colors, or sequences of colors."
+            msg = (
+                f"Invalid {param_name}. Expected a color, a sequence of colors, "
+                f"or sequences of colors matching the data structure.\nLast Error: {last_error}"
+            )
         else:
-            msg = f"Invalid {param_name}, must be a color or sequence of colors."
+            msg = (
+                f"Invalid {param_name}. Expected a color or sequence of colors "
+                f"matching the sequence length.\nLast Error: {last_error}"
+            )
 
         raise ArgumentStructureError(msg)
 
@@ -410,7 +418,6 @@ class SetterMixIn(ABC):
                 sequence = ColormapSequenceParam(
                     value=sequence,
                     sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
                     structured=True,
                 ).value
                 setattr(self, param_name, sequence)
