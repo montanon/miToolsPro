@@ -508,5 +508,130 @@ class TestSetMarkerSequences(TestCase):
         self.assertEqual(plotter.marker, ["o", "s", "x"])
 
 
+class TestSetEdgeColorSequences(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_edgecolor(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_edgecolor_sequences("red", "edgecolor")
+        self.assertEqual(plotter.edgecolor, "red")
+
+    def test_single_sequence_edgecolor_sequence(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_edgecolor_sequences(["red", "blue", "green", "yellow"], "edgecolor")
+        self.assertEqual(
+            plotter.edgecolor,
+            ["red", "blue", "green", "yellow"],
+        )
+
+    def test_single_sequence_invalid_edgecolor(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences("invalid_color", "edgecolor")
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences(["red", "blue"], "edgecolor")
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences(
+                ["red", "blue", "green", "yellow", "purple"], "edgecolor"
+            )
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences([["red", "blue"]], "edgecolor")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_edgecolor(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_edgecolor_sequences("red", "edgecolor")
+        self.assertEqual(plotter.edgecolor, "red")
+
+    def test_multi_sequence_edgecolor_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_edgecolor_sequences(["red", "blue"], "edgecolor")
+        self.assertEqual(plotter.edgecolor, ["red", "blue"])
+
+    def test_multi_sequence_nested_edgecolors_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_edgecolor_sequences(
+            [["red", "green"], ["blue", "yellow"]],
+            "edgecolor",
+        )
+        self.assertEqual(
+            plotter.edgecolor,
+            [["red", "green"], ["blue", "yellow"]],
+        )
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences(["red"], "edgecolor")
+
+    def test_multi_sequence_invalid_edgecolor(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences(["red", "invalid_color"], "edgecolor")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences(
+                [["red", "green", "blue"], ["yellow"]],
+                "edgecolor",
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_edgecolor_sequences(
+            [["red", "green"], ["blue", "yellow", "cyan"]], "edgecolor", structured=True
+        )
+        self.assertEqual(
+            plotter.edgecolor,
+            [["red", "green"], ["blue", "yellow", "cyan"]],
+        )
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences(
+                [["red", "green"], ["blue"]], "edgecolor", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_edgecolor_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_edgecolor_sequences("invalid", "edgecolor")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_edgecolor_sequences("red", "edgecolor")
+
+    def test_mixed_edgecolor_types(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        plotter.set_edgecolor_sequences(["red", (0, 0, 0), "#0000FF"], "edgecolor")
+        self.assertEqual(
+            plotter.edgecolor,
+            ["red", (0, 0, 0), "#0000FF"],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
