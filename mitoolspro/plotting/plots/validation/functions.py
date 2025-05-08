@@ -257,9 +257,9 @@ def validate_sequences_sizes(
                     f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
                 )
         if structured:
-            if len(sub_sizes) != len(values):
+            if len(values) != len(sub_sizes):
                 raise ArgumentValidationError(
-                    f"Expected Sequence of sizes: {sub_sizes}, got size: {len(values)} instead"
+                    f"Mismatch in structured Sequence of length: {len(values)}, got sizes: {sub_sizes} instead"
                 )
             for idx, value in enumerate(values):
                 if len(value) != sub_sizes[idx]:

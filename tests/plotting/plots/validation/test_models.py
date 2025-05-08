@@ -990,6 +990,124 @@ class TestSequencesParam(TestCase):
         self.assertEqual(param.sizes, [2])
         self.assertEqual(param.sub_sizes, [2])
 
+    def test_init_with_structured_true_and_valid_sizes(self):
+        param = SequencesParam[int](
+            value=[[1, 2], [3, 4]], sizes=2, sub_sizes=[2, 2], structured=True
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2, 2])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_valid_sequence_sizes(self):
+        param = SequencesParam[int](
+            value=[[1], [1, 2], [1, 2, 3]],
+            sizes=3,
+            sub_sizes=[1, 2, 3],
+            structured=True,
+        )
+        self.assertEqual(param.value, [[1], [1, 2], [1, 2, 3]])
+        self.assertEqual(param.sizes, [3])
+        self.assertEqual(param.sub_sizes, [1, 2, 3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_invalid_outer_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int](
+                value=[[1, 2], [3, 4]], sizes=3, sub_sizes=2, structured=True
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_invalid_sub_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int](
+                value=[[1, 2, 3], [4, 5]], sizes=2, sub_sizes=[3, 3], structured=True
+            )
+        self.assertIn(
+            "Expected sub Sequences of sizes: [3, 3] got size: 2 at index=1",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_mismatched_sub_sizes_length(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int](
+                value=[[1], [1, 2]], sizes=2, sub_sizes=[1, 2, 3], structured=True
+            )
+        self.assertIn(
+            "Mismatch in structured Sequence of length",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_false_and_valid_sizes(self):
+        param = SequencesParam[int](
+            value=[[1, 2], [3, 4]], sizes=[2, 3], sub_sizes=[2, 3], structured=False
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2, 3])
+        self.assertEqual(param.sub_sizes, [2, 3])
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_default_value(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]])
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertIsNone(param.sizes)
+        self.assertIsNone(param.sub_sizes)
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_true_and_no_sizes(self):
+        param = SequencesParam[int](value=[[1, 2], [3, 4]], structured=True)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertIsNone(param.sizes)
+        self.assertIsNone(param.sub_sizes)
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_and_structured(self):
+        param = SequencesParam[int].model_validate(
+            {
+                "value": [[1, 2], [3, 4]],
+                "sizes": 2,
+                "sub_sizes": [2, 2],
+                "structured": True,
+            }
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2, 2])
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int].model_validate(
+                {
+                    "value": [[1, 2], [3, 4]],
+                    "sizes": 3,
+                    "sub_sizes": 2,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_dict_initialization_structured_and_invalid_sub_size(self):
+        with self.assertRaises(ValidationError) as context:
+            SequencesParam[int].model_validate(
+                {
+                    "value": [[1, 2, 3], [4, 5]],
+                    "sizes": 2,
+                    "sub_sizes": [3, 3],
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected sub Sequences of sizes: [3, 3] got size: 2 at index=1",
+            str(context.exception),
+        )
+
 
 class TestSpecializedSequencesParams(TestCase):
     def test_numeric_sequences_param_valid_values(self):
