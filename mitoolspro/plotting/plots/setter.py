@@ -288,38 +288,49 @@ class SetterMixIn(ABC):
         self,
         sequences: Union[MarkerSequences, MarkerSequence, MarkerType],
         param_name: str,
+        structured: bool = True,
     ):
+        sizes, sub_sizes = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequences = MarkerSequencesParam(
                     value=sequences,
-                    sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    sub_sizes=sub_sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             sequences = MarkerSequenceParam(
                 value=sequences,
-                sizes=self.data_sizes,
-                structured=True,
+                sizes=sizes,
+                structured=structured,
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             sequences = MarkerParam(value=sequences).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a marker, sequence of markers, or sequences of markers."
-        )
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a marker, a sequence of markers, "
+                f"or sequence of markers matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected a marker, a sequence of markers, "
+                f"or sequence of markers matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_edgecolor_sequences(
         self,
