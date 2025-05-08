@@ -149,5 +149,114 @@ class TestSetColorSequences(TestCase):
         self.assertEqual(plotter.color, [1, "red", (0, 0, 0)])
 
 
+class TestSetNumericSequences(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_value(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_numeric_sequences(5, "alpha")
+        self.assertEqual(plotter.alpha, 5)
+
+    def test_single_sequence_numeric_sequence(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_numeric_sequences([0.1, 0.2, 0.3, 0.4], "alpha")
+        self.assertEqual(plotter.alpha, [0.1, 0.2, 0.3, 0.4])
+
+    def test_single_sequence_out_of_range(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences(
+                [0.1, 1.5, 0.3, 0.4], "alpha", min_value=0, max_value=1
+            )
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences([0.1, 0.2], "alpha")
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences([0.1, 0.2, 0.3, 0.4, 0.5], "alpha")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences([[0.1, 0.2], [0.3, 0.4]], "alpha")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_value(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_numeric_sequences(0.5, "alpha")
+        self.assertEqual(plotter.alpha, 0.5)
+
+    def test_multi_sequence_numeric_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_numeric_sequences([0.3, 0.6], "alpha")
+        self.assertEqual(plotter.alpha, [0.3, 0.6])
+
+    def test_multi_sequence_nested_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_numeric_sequences([[0.1, 0.2], [0.3, 0.4]], "alpha")
+        self.assertEqual(plotter.alpha, [[0.1, 0.2], [0.3, 0.4]])
+
+    def test_multi_sequence_mixed_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3]], multi_data=True)
+        plotter.set_numeric_sequences([[0.1, 0.2], [0.3]], "alpha", structured=False)
+        self.assertEqual(plotter.alpha, [[0.1, 0.2], [0.3]])
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences([0.1, 0.2, 0.3], "alpha")
+
+    def test_multi_sequence_out_of_range(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences(
+                [[0.1, 0.2], [1.5, 0.4]], "alpha", min_value=0, max_value=1
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_numeric_sequences(
+            [[0.1, 0.2], [0.3, 0.4, 0.5]], "alpha", structured=True
+        )
+        self.assertEqual(plotter.alpha, [[0.1, 0.2], [0.3, 0.4, 0.5]])
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences(
+                [[0.1, 0.2], [0.3, 0.4]], "alpha", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_numeric_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_sequences("invalid", "alpha")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_numeric_sequences(0.5, "alpha")
+
+    def test_mixed_numeric_types(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        plotter.set_numeric_sequences([1, 0.5, 3.2], "alpha")
+        self.assertEqual(plotter.alpha, [1, 0.5, 3.2])
+
+
 if __name__ == "__main__":
     unittest.main()
