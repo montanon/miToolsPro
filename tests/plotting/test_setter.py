@@ -1152,5 +1152,98 @@ class TestSetBinsSequence(TestCase):
         self.assertEqual(plotter.bins, [5, "auto", 15])
 
 
+class TestSetBoolSequence(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_boolean(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_bool_sequence(True, "visible")
+        self.assertEqual(plotter.visible, True)
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence([True, False], "visible")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence([[True, False]], "visible")
+
+    def test_single_sequence_invalid_value(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence("not_a_boolean", "visible")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_boolean(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_bool_sequence(True, "visible")
+        self.assertEqual(plotter.visible, True)
+
+    def test_multi_sequence_boolean_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_bool_sequence([True, False], "visible")
+        self.assertEqual(plotter.visible, [True, False])
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence([True], "visible")
+
+    def test_multi_sequence_invalid_boolean_value(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence([True, "not_a_boolean"], "visible")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence([[True, False, True], [False]], "visible")
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_bool_sequence([True, False], "visible", structured=True)
+        self.assertEqual(plotter.visible, [True, False])
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence(
+                [[True, False], [True]], "visible", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_boolean_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bool_sequence("invalid", "visible")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_bool_sequence(True, "visible")
+
+    def test_mixed_boolean_types(self):
+        plotter = self.MockPlotter(
+            [[1, 2, 3], [2, 4, 5, 6], [1, 2, 3, 4, 5, 6]], multi_data=True
+        )
+        plotter.set_bool_sequence([True, False, True], "visible")
+        self.assertEqual(plotter.visible, [True, False, True])
+
+
 if __name__ == "__main__":
     unittest.main()
