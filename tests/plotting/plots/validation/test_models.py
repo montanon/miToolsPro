@@ -3271,6 +3271,196 @@ class TestEdgeColorParams(TestCase):
         with self.assertRaises(ValidationError):
             EdgeColorSequencesParam(value=[["face", "#FF0000"], ["invalid", "red"]])
 
+    def test_init_with_structured_true_and_valid_sizes(self):
+        param = EdgeColorSequenceParam(
+            value=["face", "#00FF00", (0, 0, 1)], sizes=3, structured=True
+        )
+        self.assertEqual(param.value, ["face", "#00FF00", (0.0, 0.0, 1.0)])
+        self.assertEqual(param.sizes, [3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequenceParam(
+                value=["face", "#00FF00", (0, 0, 1)], sizes=4, structured=True
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [4], got size: 3 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_sequence_sizes(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequenceParam(
+                value=["face", "#00FF00", (0, 0, 1)], sizes=[2, 3, 4], structured=True
+            )
+        self.assertIn(
+            "Validation of structured Sequence requires a single size: int",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_false_and_valid_sizes(self):
+        param = EdgeColorSequenceParam(
+            value=["face", "#00FF00"], sizes=[2, 3], structured=False
+        )
+        self.assertEqual(param.value, ["face", "#00FF00"])
+        self.assertEqual(param.sizes, [2, 3])
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_default_value(self):
+        param = EdgeColorSequenceParam(value=["face", "#00FF00"])
+        self.assertEqual(param.value, ["face", "#00FF00"])
+        self.assertIsNone(param.sizes)
+        self.assertFalse(param.structured)
+
+    def test_init_with_dict_initialization_and_structured(self):
+        param = EdgeColorSequenceParam.model_validate(
+            {
+                "value": ["face", "#00FF00", (0, 0, 1)],
+                "sizes": 3,
+                "structured": True,
+            }
+        )
+        self.assertEqual(param.value, ["face", "#00FF00", (0.0, 0.0, 1.0)])
+        self.assertEqual(param.sizes, [3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequenceParam.model_validate(
+                {
+                    "value": ["face", "#00FF00", (0, 0, 1)],
+                    "sizes": 4,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [4], got size: 3 instead",
+            str(context.exception),
+        )
+
+    def test_sequence_with_structured_true_and_invalid_color(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequenceParam(
+                value=["face", "invalid_color", (0, 0, 1)], sizes=3, structured=True
+            )
+        self.assertIn(
+            "Invalid color format: 'invalid_color' at index 1",
+            str(context.exception),
+        )
+
+    def test_sequences_with_structured_true_and_valid_sizes(self):
+        param = EdgeColorSequencesParam(
+            value=[["face", "#00FF00"], ["blue", "#0000FF"]], sizes=2, structured=True
+        )
+        self.assertEqual(param.value, [["face", "#00FF00"], ["blue", "#0000FF"]])
+        self.assertEqual(param.sizes, [2])
+        self.assertTrue(param.structured)
+
+    def test_sequences_with_structured_true_and_valid_sequence_sizes(self):
+        param = EdgeColorSequencesParam(
+            value=[["face"], ["blue", "face"], ["yellow", "#FF0000", "#00FF00"]],
+            sizes=3,
+            structured=True,
+        )
+        self.assertEqual(
+            param.value, [["face"], ["blue", "face"], ["yellow", "#FF0000", "#00FF00"]]
+        )
+        self.assertEqual(param.sizes, [3])
+        self.assertTrue(param.structured)
+
+    def test_sequences_with_structured_true_and_invalid_outer_size(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequencesParam(
+                value=[["face", "#00FF00"], ["blue", "#0000FF"]],
+                sizes=3,
+                structured=True,
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_sequences_with_structured_true_and_sequence_sizes_list(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequencesParam(
+                value=[["face", "#00FF00"], ["blue", "#0000FF"]],
+                sizes=[2, 3],
+                structured=True,
+            )
+        self.assertIn(
+            "Validation of structured Sequence requires a single size: int",
+            str(context.exception),
+        )
+
+    def test_sequences_with_structured_true_and_invalid_color(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequencesParam(
+                value=[["face", "#00FF00"], ["blue", "invalid_color"]],
+                sizes=2,
+                structured=True,
+            )
+        self.assertIn(
+            "Invalid color format: 'invalid_color' at index [1, 1]",
+            str(context.exception),
+        )
+
+    def test_sequences_with_structured_false_and_valid_sizes(self):
+        param = EdgeColorSequencesParam(
+            value=[["face"], ["blue", "face"]], sizes=[2, 3], structured=False
+        )
+        self.assertEqual(param.value, [["face"], ["blue", "face"]])
+        self.assertEqual(param.sizes, [2, 3])
+        self.assertFalse(param.structured)
+
+    def test_sequences_with_structured_default_value(self):
+        param = EdgeColorSequencesParam(value=[["face"], ["blue", "face"]])
+        self.assertEqual(param.value, [["face"], ["blue", "face"]])
+        self.assertIsNone(param.sizes)
+        self.assertFalse(param.structured)
+
+    def test_sequences_with_dict_initialization_and_structured(self):
+        param = EdgeColorSequencesParam.model_validate(
+            {
+                "value": [["face", "#00FF00"], ["blue", "#0000FF"]],
+                "sizes": 2,
+                "structured": True,
+            }
+        )
+        self.assertEqual(param.value, [["face", "#00FF00"], ["blue", "#0000FF"]])
+        self.assertEqual(param.sizes, [2])
+        self.assertTrue(param.structured)
+
+    def test_sequences_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            EdgeColorSequencesParam.model_validate(
+                {
+                    "value": [["face", "#00FF00"], ["blue", "#0000FF"]],
+                    "sizes": 3,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_sequences_with_mixed_color_formats_structured(self):
+        param = EdgeColorSequencesParam(
+            value=[["face", "#00FF00", (0, 0, 1)], ["#FF0000", (0, 1, 0), "face"]],
+            sizes=2,
+            structured=True,
+        )
+        self.assertEqual(
+            param.value,
+            [
+                ["face", "#00FF00", (0.0, 0.0, 1.0)],
+                ["#FF0000", (0.0, 1.0, 0.0), "face"],
+            ],
+        )
+        self.assertEqual(param.sizes, [2])
+        self.assertTrue(param.structured)
+
 
 class TestMarkerParam(TestCase):
     def test_init_with_valid_string_markers(self):

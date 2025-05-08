@@ -530,11 +530,16 @@ class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
     @classmethod
     def validate_edgecolor_sequence(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
+        else:
+            sizes = None
+            structured = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
-
+        sizes = validate_sequence_sizes(values, sizes, structured)
         normalized = []
         for idx, v in enumerate(values):
             try:
@@ -545,7 +550,7 @@ class EdgeColorSequenceParam(SequenceParam[EdgeColorType]):
                 )
             normalized.append(v)
 
-        return {"value": normalized}
+        return {"value": normalized, "sizes": sizes, "structured": structured}
 
 
 class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
@@ -555,10 +560,16 @@ class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
     @classmethod
     def validate_edgecolor_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
+        else:
+            sizes = None
+            structured = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes, structured)
 
         normalized_outer = []
         for outer_idx, outer in enumerate(values):
@@ -580,7 +591,7 @@ class EdgeColorSequencesParam(SequencesParam[EdgeColorType]):
 
             normalized_outer.append(normalized_inner)
 
-        return {"value": normalized_outer}
+        return {"value": normalized_outer, "sizes": sizes, "structured": structured}
 
 
 class MarkerParam(Param[Any]):
