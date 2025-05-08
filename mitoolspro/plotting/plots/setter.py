@@ -71,21 +71,17 @@ from mitoolspro.plotting.plots.validation.types import (
     StrSequence,
     StrSequences,
 )
-from mitoolspro.plotting.plots.validations import (
-    validate_sequence_length,
-    validate_subsequences_length,
-)
 
 
 class SetterMixIn(ABC):
     @property
     @abstractmethod
-    def data_size(self) -> int:
+    def data_sizes(self) -> int:
         pass
 
     @property
     @abstractmethod
-    def n_sequences(self) -> int:
+    def data_sub_sizes(self) -> int:
         pass
 
     @property
@@ -111,8 +107,9 @@ class SetterMixIn(ABC):
             try:
                 validated = ColorSequencesParam(
                     value=colors,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, validated)
                 return self
@@ -121,7 +118,8 @@ class SetterMixIn(ABC):
         try:
             validated = ColorSequenceParam(
                 value=colors,
-                sizes=self.n_sequences if self.multi_data else self.data_size,
+                sizes=self.data_sizes,
+                structured=True,
             ).value
             setattr(self, param_name, validated)
             return self
@@ -159,16 +157,18 @@ class SetterMixIn(ABC):
                 sequences = (
                     NumericSequencesParam(
                         value=sequences,
-                        sizes=self.n_sequences,
-                        sub_sizes=[1, self.data_size],
+                        sizes=self.data_sizes,
+                        sub_sizes=self.data_sub_sizes,
+                        structured=True,
                     )
                     if no_range
                     else RangeSequencesParam(
                         value=sequences,
-                        sizes=self.n_sequences,
-                        sub_sizes=[1, self.data_size],
+                        sizes=self.data_sizes,
+                        sub_sizes=self.data_sub_sizes,
                         min_value=min_value,
                         max_value=max_value,
+                        structured=True,
                     )
                 ).value
                 setattr(self, param_name, sequences)
@@ -179,14 +179,16 @@ class SetterMixIn(ABC):
             sequences = (
                 NumericSequenceParam(
                     value=sequences,
-                    sizes=self.n_sequences if self.multi_data else self.data_size,
+                    sizes=self.data_sizes,
+                    structured=True,
                 )
                 if no_range
                 else RangeSequenceParam(
                     value=sequences,
-                    sizes=self.n_sequences if self.multi_data else self.data_size,
+                    sizes=self.data_sizes,
                     min_value=min_value,
                     max_value=max_value,
+                    structured=True,
                 )
             ).value
             setattr(self, param_name, sequences)
@@ -219,9 +221,10 @@ class SetterMixIn(ABC):
             try:
                 sequences = LiteralSequencesParam(
                     value=sequences,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
                     options=options,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
@@ -230,8 +233,9 @@ class SetterMixIn(ABC):
         try:
             sequences = LiteralSequenceParam(
                 value=sequences,
-                sizes=self.n_sequences if self.multi_data else self.data_size,
+                sizes=self.data_sizes,
                 options=options,
+                structured=True,
             ).value
             setattr(self, param_name, sequences)
             return self
@@ -256,8 +260,9 @@ class SetterMixIn(ABC):
             try:
                 sequences = MarkerSequencesParam(
                     value=sequences,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
@@ -266,7 +271,8 @@ class SetterMixIn(ABC):
         try:
             sequences = MarkerSequenceParam(
                 value=sequences,
-                sizes=self.n_sequences if self.multi_data else self.data_size,
+                sizes=self.data_sizes,
+                structured=True,
             ).value
             setattr(self, param_name, sequences)
             return self
@@ -291,8 +297,9 @@ class SetterMixIn(ABC):
             try:
                 sequences = EdgeColorSequencesParam(
                     value=sequences,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
@@ -301,7 +308,8 @@ class SetterMixIn(ABC):
         try:
             sequences = EdgeColorSequenceParam(
                 value=sequences,
-                sizes=self.n_sequences if self.multi_data else self.data_size,
+                sizes=self.data_sizes,
+                structured=True,
             ).value
             setattr(self, param_name, sequences)
             return self
@@ -324,8 +332,9 @@ class SetterMixIn(ABC):
             try:
                 sequences = StrSequencesParam(
                     value=sequences,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
@@ -334,7 +343,8 @@ class SetterMixIn(ABC):
         try:
             sequences = StrSequenceParam(
                 value=sequences,
-                sizes=self.n_sequences if self.multi_data else self.data_size,
+                sizes=self.data_sizes,
+                structured=True,
             ).value
             setattr(self, param_name, sequences)
             return self
@@ -360,9 +370,10 @@ class SetterMixIn(ABC):
             try:
                 sequences = NumericTupleSequencesParam(
                     value=sequences,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
                     tuple_sizes=tuple_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
@@ -371,8 +382,9 @@ class SetterMixIn(ABC):
         try:
             sequences = NumericTupleSequenceParam(
                 value=sequences,
-                sizes=self.n_sequences if self.multi_data else self.data_size,
+                sizes=self.data_sizes,
                 tuple_sizes=tuple_sizes,
+                structured=True,
             ).value
             setattr(self, param_name, sequences)
             return self
@@ -397,8 +409,9 @@ class SetterMixIn(ABC):
             try:
                 sequence = ColormapSequenceParam(
                     value=sequence,
-                    sizes=self.n_sequences,
-                    sub_sizes=[1, self.data_size],
+                    sizes=self.data_sizes,
+                    sub_sizes=self.data_sub_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequence)
                 return self
@@ -421,7 +434,9 @@ class SetterMixIn(ABC):
         if self.multi_data:
             try:
                 sequence = NormalizationSequenceParam(
-                    value=sequence, sizes=self.n_sequences
+                    value=sequence,
+                    sizes=self.data_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequence)
                 return self
@@ -444,7 +459,7 @@ class SetterMixIn(ABC):
         if self.multi_data:
             try:
                 sequence = BinsSequenceParam(
-                    value=sequence, sizes=self.n_sequences
+                    value=sequence, sizes=self.data_sizes, structured=True
                 ).value
                 setattr(self, param_name, sequence)
                 return self
@@ -465,7 +480,9 @@ class SetterMixIn(ABC):
         if self.multi_data:
             try:
                 sequence = BoolSequenceParam(
-                    value=sequence, sizes=self.n_sequences
+                    value=sequence,
+                    sizes=self.data_sizes,
+                    structured=True,
                 ).value
                 setattr(self, param_name, sequence)
                 return self
@@ -486,7 +503,7 @@ class SetterMixIn(ABC):
         if self.multi_data:
             try:
                 sequence = DictSequenceParam(
-                    value=sequence, sizes=self.n_sequences
+                    value=sequence, sizes=self.data_sizes, structured=True
                 ).value
                 setattr(self, param_name, sequence)
                 return self
