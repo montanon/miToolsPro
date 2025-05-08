@@ -482,29 +482,42 @@ class SetterMixIn(ABC):
         raise ArgumentStructureError(msg)
 
     def set_colormap_sequence(
-        self, sequence: Union[ColormapSequence, ColormapType], param_name: str
+        self,
+        sequence: Union[ColormapSequence, ColormapType],
+        param_name: str,
+        structured: bool = True,
     ):
+        sizes, _ = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequence = ColormapSequenceParam(
                     value=sequence,
-                    sizes=self.data_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequence)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         else:
             try:
                 sequence = ColormapParam(value=sequence).value
                 setattr(self, param_name, sequence)
                 return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a colormap, sequence of colormaps, or sequences of colormaps."
-        )
+            except ValidationError as e:
+                last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a colormap, a sequence of colormaps, "
+                f"or sequence of colormaps matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected a colormap or sequence of colormaps "
+                f"matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_norm_sequence(
         self, sequence: Union[NormalizationSequence, NormalizationType], param_name: str
