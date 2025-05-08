@@ -1614,11 +1614,11 @@ class TestNumericTupleSequenceParam(TestCase):
 
     def test_init_with_structured_true_and_valid_sizes(self):
         param = NumericTupleSequenceParam(
-            value=[(1, 2), (3, 4)], sizes=2, tuple_sizes=[2, 2], structured=True
+            value=[(1, 2), (3, 4)], sizes=2, tuple_sizes=2, structured=True
         )
         self.assertEqual(param.value, [(1, 2), (3, 4)])
         self.assertEqual(param.sizes, [2])
-        self.assertEqual(param.tuple_sizes, [2, 2])
+        self.assertEqual(param.tuple_sizes, [2])
         self.assertTrue(param.structured)
 
     def test_init_with_structured_true_and_valid_sequence_sizes(self):
@@ -1659,7 +1659,7 @@ class TestNumericTupleSequenceParam(TestCase):
                 value=[(1,), (2, 3)], sizes=2, tuple_sizes=[1, 2, 3], structured=True
             )
         self.assertIn(
-            "Mismatch in structured Sequence of length",
+            "Validation of structured Sequence requires a single tuple size, got tuple_sizes=[1, 2, 3]",
             str(context.exception),
         )
 
