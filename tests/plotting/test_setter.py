@@ -394,5 +394,119 @@ class TestSetLiteralSequences(TestCase):
         self.assertEqual(plotter.label, ["red", "blue", "green"])
 
 
+class TestSetMarkerSequences(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    VALID_MARKERS = ["o", "s", "x", "d", "^", "v", "<", ">"]
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_marker(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_marker_sequences("o", "marker")
+        self.assertEqual(plotter.marker, "o")
+
+    def test_single_sequence_marker_sequence(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_marker_sequences(["o", "s", "x", "d"], "marker")
+        self.assertEqual(plotter.marker, ["o", "s", "x", "d"])
+
+    def test_single_sequence_invalid_marker(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences("invalid_marker", "marker")
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences(["o", "s"], "marker")
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences(["o", "s", "x", "d", "^"], "marker")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences([["o", "s"]], "marker")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_marker(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_marker_sequences("o", "marker")
+        self.assertEqual(plotter.marker, "o")
+
+    def test_multi_sequence_marker_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_marker_sequences(["o", "s"], "marker")
+        self.assertEqual(plotter.marker, ["o", "s"])
+
+    def test_multi_sequence_nested_markers_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_marker_sequences(
+            [["o", "s"], ["x", "d"]],
+            "marker",
+        )
+        self.assertEqual(plotter.marker, [["o", "s"], ["x", "d"]])
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences(["o"], "marker")
+
+    def test_multi_sequence_invalid_marker(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences(["o", "invalid_marker"], "marker")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences(
+                [["o", "s", "x"], ["d"]],
+                "marker",
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_marker_sequences(
+            [["o", "s"], ["x", "d", "^"]], "marker", structured=True
+        )
+        self.assertEqual(
+            plotter.marker,
+            [["o", "s"], ["x", "d", "^"]],
+        )
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences([["o", "s"], ["x"]], "marker", structured=True)
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_marker_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_marker_sequences("invalid", "marker")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_marker_sequences("o", "marker")
+
+    def test_mixed_marker_types(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        plotter.set_marker_sequences(["o", "s", "x"], "marker")
+        self.assertEqual(plotter.marker, ["o", "s", "x"])
+
+
 if __name__ == "__main__":
     unittest.main()
