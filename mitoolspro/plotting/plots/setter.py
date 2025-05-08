@@ -336,38 +336,49 @@ class SetterMixIn(ABC):
         self,
         sequences: Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType],
         param_name: str,
+        structured: bool = True,
     ):
+        sizes, sub_sizes = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequences = EdgeColorSequencesParam(
                     value=sequences,
-                    sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    sub_sizes=sub_sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             sequences = EdgeColorSequenceParam(
                 value=sequences,
-                sizes=self.data_sizes,
-                structured=True,
+                sizes=sizes,
+                structured=structured,
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             sequences = EdgeColorParam(value=sequences).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be an edgecolor, sequence of edgecolors, or sequences of edgecolors."
-        )
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected an edgecolor, a sequence of edgecolors, "
+                f"or sequence of edgecolors matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected an edgecolor, a sequence of edgecolors, "
+                f"or sequence of edgecolors matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_str_sequences(
         self, sequences: Union[StrSequences, StrSequence, str], param_name: str
