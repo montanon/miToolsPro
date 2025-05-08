@@ -433,42 +433,53 @@ class SetterMixIn(ABC):
         sequences: Union[NumericTupleSequences, NumericTupleSequence, NumericTupleType],
         tuple_sizes: Union[Sequence[int], int],
         param_name: str,
+        structured: bool = True,
     ):
+        sizes, sub_sizes = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequences = NumericTupleSequencesParam(
                     value=sequences,
-                    sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
+                    sizes=sizes,
+                    sub_sizes=sub_sizes,
                     tuple_sizes=tuple_sizes,
-                    structured=True,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             sequences = NumericTupleSequenceParam(
                 value=sequences,
-                sizes=self.data_sizes,
+                sizes=sizes,
                 tuple_sizes=tuple_sizes,
-                structured=True,
+                structured=structured,
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             sequences = NumericTupleParam(
                 value=sequences, tuple_sizes=tuple_sizes
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a numeric tuple, sequence of numeric tuples, or sequences of numeric tuples."
-        )
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a numeric tuple, a sequence of numeric tuples, "
+                f"or sequence of numeric tuples matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected a numeric tuple, a sequence of numeric tuples, "
+                f"or sequence of numeric tuples matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_colormap_sequence(
         self, sequence: Union[ColormapSequence, ColormapType], param_name: str
