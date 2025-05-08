@@ -438,10 +438,16 @@ class ColorSequenceParam(SequenceParam[ColorType]):
     @classmethod
     def validate_color_sequence(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
+        else:
+            sizes = None
+            structured = False
 
         values = coerce_to_list(values)
         validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes, structured)
 
         normalized = []
         for idx, v in enumerate(values):
@@ -453,7 +459,7 @@ class ColorSequenceParam(SequenceParam[ColorType]):
                 )
             normalized.append(v)
 
-        return {"value": normalized}
+        return {"value": normalized, "sizes": sizes, "structured": structured}
 
 
 class ColorSequencesParam(SequencesParam[ColorType]):
