@@ -1058,5 +1058,99 @@ class TestSetNormSequence(TestCase):
         )
 
 
+class TestSetBinsSequence(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_bin(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_bins_sequence(10, "bins")
+        self.assertEqual(plotter.bins, 10)
+
+    def test_single_sequence_bin_literal(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_bins_sequence("auto", "bins")
+        self.assertEqual(plotter.bins, "auto")
+
+    def test_single_sequence_invalid_bin_value(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence("invalid_bin", "bins")
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence([5, 10], "bins")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence([[5, 10]], "bins")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_bin(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_bins_sequence(10, "bins")
+        self.assertEqual(plotter.bins, 10)
+
+    def test_multi_sequence_bins_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_bins_sequence([5, 10], "bins")
+        self.assertEqual(plotter.bins, [5, 10])
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence([5], "bins")
+
+    def test_multi_sequence_invalid_bin_value(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence(["auto", "invalid_bin"], "bins")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence([[5, 10, 15], [20]], "bins")
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_bins_sequence([5, 10], "bins", structured=True)
+        self.assertEqual(plotter.bins, [5, 10])
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence([[5, 10], [15]], "bins", structured=True)
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_bin_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_bins_sequence("invalid", "bins")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_bins_sequence(10, "bins")
+
+    def test_mixed_bin_types(self):
+        plotter = self.MockPlotter([[1, 2, 3], [1, 2], [3, 4, 5, 6]], multi_data=True)
+        plotter.set_bins_sequence([5, "auto", 15], "bins")
+        self.assertEqual(plotter.bins, [5, "auto", 15])
+
+
 if __name__ == "__main__":
     unittest.main()
