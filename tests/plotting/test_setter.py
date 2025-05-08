@@ -258,5 +258,141 @@ class TestSetNumericSequences(TestCase):
         self.assertEqual(plotter.alpha, [1, 0.5, 3.2])
 
 
+class TestSetLiteralSequences(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    VALID_OPTIONS = ["red", "blue", "green", "yellow"]
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_literal(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_literal_sequences("red", self.VALID_OPTIONS, "label")
+        self.assertEqual(plotter.label, "red")
+
+    def test_single_sequence_literal_sequence(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_literal_sequences(
+            ["red", "blue", "green", "yellow"], self.VALID_OPTIONS, "label"
+        )
+        self.assertEqual(plotter.label, ["red", "blue", "green", "yellow"])
+
+    def test_single_sequence_invalid_literal(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences("purple", self.VALID_OPTIONS, "label")
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(["red", "blue"], self.VALID_OPTIONS, "label")
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(
+                ["red", "blue", "green", "yellow", "purple"],
+                self.VALID_OPTIONS,
+                "label",
+            )
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(
+                [["red", "blue"]], self.VALID_OPTIONS, "label"
+            )
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_literal(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_literal_sequences("red", self.VALID_OPTIONS, "label")
+        self.assertEqual(plotter.label, "red")
+
+    def test_multi_sequence_literal_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_literal_sequences(["red", "blue"], self.VALID_OPTIONS, "label")
+        self.assertEqual(plotter.label, ["red", "blue"])
+
+    def test_multi_sequence_nested_literals_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_literal_sequences(
+            [["red", "green"], ["blue", "yellow"]],
+            self.VALID_OPTIONS,
+            "label",
+        )
+        self.assertEqual(plotter.label, [["red", "green"], ["blue", "yellow"]])
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(["red"], self.VALID_OPTIONS, "label")
+
+    def test_multi_sequence_invalid_literal(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(
+                ["red", "purple"], self.VALID_OPTIONS, "label"
+            )
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(
+                [["red", "blue", "green"], ["yellow"]],
+                self.VALID_OPTIONS,
+                "label",
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_literal_sequences(
+            [["red", "green"], ["blue", "yellow", "green"]],
+            self.VALID_OPTIONS,
+            "label",
+            structured=True,
+        )
+        self.assertEqual(
+            plotter.label,
+            [["red", "green"], ["blue", "yellow", "green"]],
+        )
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences(
+                [["red", "green"], ["blue"]],
+                self.VALID_OPTIONS,
+                "label",
+                structured=True,
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_literal_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_literal_sequences("invalid", self.VALID_OPTIONS, "label")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_literal_sequences("red", self.VALID_OPTIONS, "label")
+
+    def test_mixed_literal_types(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        plotter.set_literal_sequences(
+            ["red", "blue", "green"], self.VALID_OPTIONS, "label"
+        )
+        self.assertEqual(plotter.label, ["red", "blue", "green"])
+
+
 if __name__ == "__main__":
     unittest.main()
