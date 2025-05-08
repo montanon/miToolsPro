@@ -1614,11 +1614,11 @@ class TestNumericTupleSequenceParam(TestCase):
 
     def test_init_with_structured_true_and_valid_sizes(self):
         param = NumericTupleSequenceParam(
-            value=[(1, 2), (3, 4)], sizes=2, tuple_sizes=2, structured=True
+            value=[(1, 2), (3, 4)], sizes=2, tuple_sizes=[2, 2], structured=True
         )
         self.assertEqual(param.value, [(1, 2), (3, 4)])
         self.assertEqual(param.sizes, [2])
-        self.assertEqual(param.tuple_sizes, [2])
+        self.assertEqual(param.tuple_sizes, [2, 2])
         self.assertTrue(param.structured)
 
     def test_init_with_structured_true_and_valid_sequence_sizes(self):
@@ -1684,13 +1684,13 @@ class TestNumericTupleSequenceParam(TestCase):
             {
                 "value": [(1, 2), (3, 4)],
                 "sizes": 2,
-                "tuple_sizes": 2,
+                "tuple_sizes": [2, 2],
                 "structured": True,
             }
         )
         self.assertEqual(param.value, [(1, 2), (3, 4)])
         self.assertEqual(param.sizes, [2])
-        self.assertEqual(param.tuple_sizes, [2])
+        self.assertEqual(param.tuple_sizes, [2, 2])
         self.assertTrue(param.structured)
 
     def test_init_with_dict_initialization_structured_and_invalid_size(self):
