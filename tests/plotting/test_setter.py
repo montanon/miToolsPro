@@ -1,8 +1,7 @@
 import unittest
 from unittest import TestCase
 
-from matplotlib.colors import to_rgba
-from pydantic import ValidationError
+import matplotlib.pyplot as plt
 
 from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.setter import SetterMixIn
@@ -869,6 +868,82 @@ class TestSetNumericTupleSequences(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_numeric_tuple_sequences([(1, 2), (3, 4, 5)], 2, "coordinates")
+
+
+class TestSetColormapSequence(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # List of valid colormap names in matplotlib
+    VALID_COLORMAPS = list(plt.colormaps())
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_colormap(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_colormap_sequence("viridis", "colormap")
+        self.assertEqual(plotter.colormap, "viridis")
+
+    def test_single_sequence_invalid_colormap(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence("invalid_colormap", "colormap")
+
+    def test_single_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence(["viridis", "plasma"], "colormap")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence([["viridis", "plasma"]], "colormap")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_colormap(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_colormap_sequence("viridis", "colormap")
+        self.assertEqual(plotter.colormap, "viridis")
+
+    def test_multi_sequence_colormap_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_colormap_sequence(["viridis", "plasma"], "colormap")
+        self.assertEqual(plotter.colormap, ["viridis", "plasma"])
+
+    def test_multi_sequence_nested_colormaps_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence(
+                [["viridis"], ["inferno"]],
+                "colormap",
+            )
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence(["viridis"], "colormap")
+
+    def test_multi_sequence_invalid_colormap(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence(["viridis", "invalid_colormap"], "colormap")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_colormap_sequence(
+                [["viridis", "plasma", "magma"], ["inferno"]],
+                "colormap",
+            )
 
 
 if __name__ == "__main__":

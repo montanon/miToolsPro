@@ -499,13 +499,12 @@ class SetterMixIn(ABC):
                 return self
             except ValidationError as e:
                 last_error = str(e)
-        else:
-            try:
-                sequence = ColormapParam(value=sequence).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
+        try:
+            sequence = ColormapParam(value=sequence).value
+            setattr(self, param_name, sequence)
+            return self
+        except ValidationError as e:
+            last_error = str(e)
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a colormap, a sequence of colormaps, "
