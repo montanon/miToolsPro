@@ -3439,6 +3439,205 @@ class TestRangeSequencesParam(TestCase):
         self.assertEqual(param.value[0][0], 1e-100)
         self.assertEqual(param.value[1][1], 1e-103)
 
+    def test_init_with_structured_true_and_valid_sizes(self):
+        param = RangeSequencesParam(
+            value=[[1, 2], [3, 4]],
+            sizes=2,
+            sub_sizes=[2, 2],
+            min_value=0,
+            max_value=5,
+            structured=True,
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2, 2])
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 5)
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_valid_sequence_sizes(self):
+        param = RangeSequencesParam(
+            value=[[1], [1, 2], [1, 2, 3]],
+            sizes=3,
+            sub_sizes=[1, 2, 3],
+            min_value=0,
+            max_value=5,
+            structured=True,
+        )
+        self.assertEqual(param.value, [[1], [1, 2], [1, 2, 3]])
+        self.assertEqual(param.sizes, [3])
+        self.assertEqual(param.sub_sizes, [1, 2, 3])
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 5)
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_invalid_outer_size(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam(
+                value=[[1, 2], [3, 4]],
+                sizes=3,
+                sub_sizes=[2, 2],
+                min_value=0,
+                max_value=5,
+                structured=True,
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_invalid_sub_size(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam(
+                value=[[1, 2, 3], [4, 5]],
+                sizes=2,
+                sub_sizes=[3, 3],
+                min_value=0,
+                max_value=5,
+                structured=True,
+            )
+        self.assertIn(
+            "Expected sub Sequences of sizes: [3, 3] got size: 2 at index=1",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_mismatched_sub_sizes_length(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam(
+                value=[[1], [2, 3]],
+                sizes=2,
+                sub_sizes=[1, 2, 3],
+                min_value=0,
+                max_value=5,
+                structured=True,
+            )
+        self.assertIn(
+            "Mismatch in structured Sequence of length",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_out_of_range(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam(
+                value=[[1, 2], [3, 6]],
+                sizes=2,
+                sub_sizes=[2, 2],
+                min_value=0,
+                max_value=5,
+                structured=True,
+            )
+        self.assertIn(
+            "Value 6 at index [1, 1] is not in range [0, 5]", str(context.exception)
+        )
+
+    def test_init_with_structured_true_and_strict_range(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam(
+                value=[[1, 2], [3, 5]],
+                sizes=2,
+                sub_sizes=[2, 2],
+                min_value=0,
+                max_value=5,
+                strict=True,
+                structured=True,
+            )
+        self.assertIn(
+            "Value 5 at index [1, 1] is not in range (0, 5)", str(context.exception)
+        )
+
+    def test_init_with_structured_false_and_valid_sizes(self):
+        param = RangeSequencesParam(
+            value=[[1, 2], [3, 4]],
+            sizes=[2, 3],
+            sub_sizes=[2, 3],
+            min_value=0,
+            max_value=5,
+            structured=False,
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2, 3])
+        self.assertEqual(param.sub_sizes, [2, 3])
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 5)
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_default_value(self):
+        param = RangeSequencesParam(value=[[1, 2], [3, 4]], min_value=0, max_value=5)
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertIsNone(param.sizes)
+        self.assertIsNone(param.sub_sizes)
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 5)
+        self.assertFalse(param.structured)
+
+    def test_init_with_dict_initialization_and_structured(self):
+        param = RangeSequencesParam.model_validate(
+            {
+                "value": [[1, 2], [3, 4]],
+                "sizes": 2,
+                "sub_sizes": [2, 2],
+                "min_value": 0,
+                "max_value": 5,
+                "structured": True,
+            }
+        )
+        self.assertEqual(param.value, [[1, 2], [3, 4]])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.sub_sizes, [2, 2])
+        self.assertEqual(param.min_value, 0)
+        self.assertEqual(param.max_value, 5)
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam.model_validate(
+                {
+                    "value": [[1, 2], [3, 4]],
+                    "sizes": 3,
+                    "sub_sizes": [2, 2],
+                    "min_value": 0,
+                    "max_value": 5,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_dict_initialization_structured_and_invalid_sub_size(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam.model_validate(
+                {
+                    "value": [[1, 2, 3], [4, 5]],
+                    "sizes": 2,
+                    "sub_sizes": [3, 3],
+                    "min_value": 0,
+                    "max_value": 5,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected sub Sequences of sizes: [3, 3] got size: 2 at index=1",
+            str(context.exception),
+        )
+
+    def test_init_with_dict_initialization_structured_and_out_of_range(self):
+        with self.assertRaises(ValidationError) as context:
+            RangeSequencesParam.model_validate(
+                {
+                    "value": [[1, 2], [3, 6]],
+                    "sizes": 2,
+                    "sub_sizes": [2, 2],
+                    "min_value": 0,
+                    "max_value": 5,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Value 6 at index [1, 1] is not in range [0, 5]", str(context.exception)
+        )
+
 
 class TestSpineParam(TestCase):
     def test_valid_minimal(self):
