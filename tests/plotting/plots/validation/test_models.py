@@ -1093,18 +1093,13 @@ class TestSequencesParam(TestCase):
             str(context.exception),
         )
 
-    def test_init_with_dict_initialization_structured_and_invalid_sub_size(self):
+    def test_init_with_dict_initialization_structured_and_sequence_sizes(self):
         with self.assertRaises(ValidationError) as context:
-            SequencesParam[int].model_validate(
-                {
-                    "value": [[1, 2, 3], [4, 5]],
-                    "sizes": 2,
-                    "sub_sizes": [3, 3],
-                    "structured": True,
-                }
+            SequenceParam[int].model_validate(
+                {"value": [1, 2, 3], "sizes": [2, 3, 4], "structured": True}
             )
         self.assertIn(
-            "Expected sub Sequences of sizes: [3, 3] got size: 2 at index=1",
+            "Validation of structured Sequence requires a single size: int",
             str(context.exception),
         )
 
@@ -1616,6 +1611,117 @@ class TestNumericTupleSequenceParam(TestCase):
             NumericTupleSequenceParam.model_validate(
                 {"value": [(1, 2), (3, 4)], "tuple_sizes": "invalid"}
             )
+
+    def test_init_with_structured_true_and_valid_sizes(self):
+        param = NumericTupleSequenceParam(
+            value=[(1, 2), (3, 4)], sizes=2, tuple_sizes=2, structured=True
+        )
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.tuple_sizes, [2])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_valid_sequence_sizes(self):
+        param = NumericTupleSequenceParam(
+            value=[(1,), (1, 2), (1, 2, 3)],
+            sizes=3,
+            tuple_sizes=[1, 2, 3],
+            structured=True,
+        )
+        self.assertEqual(param.value, [(1,), (1, 2), (1, 2, 3)])
+        self.assertEqual(param.sizes, [3])
+        self.assertEqual(param.tuple_sizes, [1, 2, 3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_invalid_outer_size(self):
+        with self.assertRaises(ValidationError) as context:
+            NumericTupleSequenceParam(
+                value=[(1, 2), (3, 4)], sizes=3, tuple_sizes=2, structured=True
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_invalid_tuple_size(self):
+        with self.assertRaises(ValidationError) as context:
+            NumericTupleSequenceParam(
+                value=[(1, 2, 3), (4, 5)], sizes=2, tuple_sizes=[3, 3], structured=True
+            )
+        self.assertIn(
+            "Invalid tuple length 2 at index 1. Allowed sizes: [3, 3]",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_mismatched_tuple_sizes_length(self):
+        with self.assertRaises(ValidationError) as context:
+            NumericTupleSequenceParam(
+                value=[(1,), (2, 3)], sizes=2, tuple_sizes=[1, 2, 3], structured=True
+            )
+        self.assertIn(
+            "Mismatch in structured Sequence of length",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_false_and_valid_sizes(self):
+        param = NumericTupleSequenceParam(
+            value=[(1, 2), (3, 4)], sizes=[2, 3], tuple_sizes=[2, 3], structured=False
+        )
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2, 3])
+        self.assertEqual(param.tuple_sizes, [2, 3])
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_default_value(self):
+        param = NumericTupleSequenceParam(value=[(1, 2), (3, 4)])
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertIsNone(param.sizes)
+        self.assertIsNone(param.tuple_sizes)
+        self.assertFalse(param.structured)
+
+    def test_init_with_dict_initialization_and_structured(self):
+        param = NumericTupleSequenceParam.model_validate(
+            {
+                "value": [(1, 2), (3, 4)],
+                "sizes": 2,
+                "tuple_sizes": 2,
+                "structured": True,
+            }
+        )
+        self.assertEqual(param.value, [(1, 2), (3, 4)])
+        self.assertEqual(param.sizes, [2])
+        self.assertEqual(param.tuple_sizes, [2])
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            NumericTupleSequenceParam.model_validate(
+                {
+                    "value": [(1, 2), (3, 4)],
+                    "sizes": 3,
+                    "tuple_sizes": 2,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_dict_initialization_structured_and_invalid_tuple_size(self):
+        with self.assertRaises(ValidationError) as context:
+            NumericTupleSequenceParam.model_validate(
+                {
+                    "value": [(1, 2, 3), (4, 5)],
+                    "sizes": 2,
+                    "tuple_sizes": [3, 3],
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Invalid tuple length 2 at index 1. Allowed sizes: [3, 3]",
+            str(context.exception),
+        )
 
 
 class TestNumericTupleSequencesParam(TestCase):

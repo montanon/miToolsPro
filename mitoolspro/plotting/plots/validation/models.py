@@ -373,7 +373,9 @@ class NumericTupleSequenceParam(SequenceParam[NumericTupleType]):
 
     @model_validator(mode="after")
     def validate_numeric_tuple_sequence(self) -> "NumericTupleSequenceParam":
-        self.tuple_sizes = validate_tuple_sequence_sizes(self.value, self.tuple_sizes)
+        self.tuple_sizes = validate_tuple_sequence_sizes(
+            self.value, self.tuple_sizes, self.structured
+        )
         return self
 
 

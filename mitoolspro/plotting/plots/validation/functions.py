@@ -297,7 +297,7 @@ def validate_tuple_sizes(value: Any, tuple_sizes: SizesType) -> SizesType | None
 
 
 def validate_tuple_sequence_sizes(
-    values: Sequence, tuple_sizes: SizesType
+    values: Sequence, tuple_sizes: SizesType, structured: bool
 ) -> SizesType | None:
     if tuple_sizes is not None:
         if not isinstance(tuple_sizes, Sequence):
@@ -311,6 +311,16 @@ def validate_tuple_sequence_sizes(
                 raise ArgumentValidationError(
                     f"Invalid tuple length {len(value)} at index {idx}. Allowed sizes: {tuple_sizes}."
                 )
+        if structured:
+            if len(values) != len(tuple_sizes):
+                raise ArgumentValidationError(
+                    f"Mismatch in structured Sequence of length: {len(values)}, got sizes: {tuple_sizes} instead"
+                )
+            for idx, value in enumerate(values):
+                if len(value) != tuple_sizes[idx]:
+                    raise ArgumentValidationError(
+                        f"Expected sub Sequences of size: {tuple_sizes[idx]}, got size: {len(value)} at index={idx}"
+                    )
     return tuple_sizes
 
 
