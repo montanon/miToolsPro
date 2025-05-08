@@ -470,10 +470,12 @@ class ColorSequencesParam(SequencesParam[ColorType]):
     def validate_color_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             values = values["value"]
         else:
             sizes = None
+            sub_sizes = None
             structured = False
 
         values = coerce_to_list(values)
@@ -507,7 +509,14 @@ class ColorSequencesParam(SequencesParam[ColorType]):
 
             normalized_outer.append(normalized_inner)
 
-        return {"value": normalized_outer, "sizes": sizes, "structured": structured}
+        sub_sizes = validate_sequences_sizes(normalized_outer, sub_sizes, structured)
+
+        return {
+            "value": normalized_outer,
+            "sizes": sizes,
+            "sub_sizes": sub_sizes,
+            "structured": structured,
+        }
 
 
 class EdgeColorParam(Param[EdgeColorType]):
