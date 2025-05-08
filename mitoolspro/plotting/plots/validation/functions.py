@@ -311,18 +311,15 @@ def validate_tuple_sequence_sizes(
                 raise ArgumentValidationError(
                     f"Invalid tuple length {len(value)} at index {idx}. Allowed sizes: {tuple_sizes}."
                 )
-        if structured:
-            if len(tuple_sizes) != 1 and len(tuple_sizes) != len(values):
+        if len(tuple_sizes) != 1 and structured:
+            if len(tuple_sizes) != len(values):
                 raise ArgumentValidationError(
                     f"Validation of structured Sequence requires a single tuple size, got {tuple_sizes=}"
                 )
             for idx, value in enumerate(values):
-                tuple_size = (
-                    tuple_sizes[0] if len(tuple_sizes) == 1 else tuple_sizes[idx]
-                )
-                if len(value) != tuple_size:
+                if len(value) != tuple_sizes[idx]:
                     raise ArgumentValidationError(
-                        f"Expected tuple size: {tuple_size}, got size: {len(value)} at index {idx}"
+                        f"Expected tuple size: {tuple_sizes[idx]}, got size: {len(value)} at index {idx}"
                     )
     return tuple_sizes
 
