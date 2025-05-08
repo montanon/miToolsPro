@@ -519,93 +519,144 @@ class SetterMixIn(ABC):
         raise ArgumentStructureError(msg)
 
     def set_norm_sequence(
-        self, sequence: Union[NormalizationSequence, NormalizationType], param_name: str
+        self,
+        sequence: Union[NormalizationSequence, NormalizationType],
+        param_name: str,
+        structured: bool = True,
     ):
+        sizes, _ = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequence = NormalizationSequenceParam(
                     value=sequence,
-                    sizes=self.data_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequence)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
+        try:
+            sequence = NormalizationParam(value=sequence).value
+            setattr(self, param_name, sequence)
+            return self
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a normalization, a sequence of normalizations, "
+                f"or sequence of normalizations matching the data structure.\nLast Error: {last_error}"
+            )
         else:
-            try:
-                sequence = NormalizationParam(value=sequence).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a normalization, sequence of normalizations, or sequences of normalizations."
-        )
+            msg = (
+                f"Invalid {param_name}. Expected a normalization, a sequence of normalizations, "
+                f"or sequence of normalizations matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_bins_sequence(
-        self, sequence: Union[BinsSequence, BinsType], param_name: str
+        self,
+        sequence: Union[BinsSequence, BinsType],
+        param_name: str,
+        structured: bool = True,
     ):
+        sizes, _ = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequence = BinsSequenceParam(
-                    value=sequence, sizes=self.data_sizes, structured=True
+                    value=sequence, sizes=sizes, structured=structured
                 ).value
                 setattr(self, param_name, sequence)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
+        try:
+            sequence = BinsParam(value=sequence).value
+            setattr(self, param_name, sequence)
+            return self
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a bin, a sequence of bins, "
+                f"or sequence of bins matching the data structure.\nLast Error: {last_error}"
+            )
         else:
-            try:
-                sequence = BinsParam(value=sequence).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a bin, sequence of bins, or sequences of bins."
-        )
+            msg = (
+                f"Invalid {param_name}. Expected a bin, a sequence of bins, "
+                f"or sequence of bins matching the sequence length.\nLast Error: {last_error}"
+            )
 
-    def set_bool_sequence(self, sequence: Union[BoolSequence, bool], param_name: str):
+        raise ArgumentStructureError(msg)
+
+    def set_bool_sequence(
+        self,
+        sequence: Union[BoolSequence, bool],
+        param_name: str,
+        structured: bool = True,
+    ):
+        sizes, _ = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequence = BoolSequenceParam(
                     value=sequence,
-                    sizes=self.data_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequence)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
+        try:
+            sequence = BoolParam(value=sequence).value
+            setattr(self, param_name, sequence)
+            return self
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a boolean, a sequence of booleans, "
+                f"or sequence of booleans matching the data structure.\nLast Error: {last_error}"
+            )
         else:
-            try:
-                sequence = BoolParam(value=sequence).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a boolean or sequence of booleans."
-        )
+            msg = (
+                f"Invalid {param_name}. Expected a boolean, a sequence of booleans, "
+                f"or sequence of booleans matching the sequence length.\nLast Error: {last_error}"
+            )
 
-    def set_dict_sequence(self, sequence: Union[DictSequence, dict], param_name: str):
+        raise ArgumentStructureError(msg)
+
+    def set_dict_sequence(
+        self,
+        sequence: Union[DictSequence, dict],
+        param_name: str,
+        structured: bool = True,
+    ):
+        sizes, _ = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequence = DictSequenceParam(
-                    value=sequence, sizes=self.data_sizes, structured=True
+                    value=sequence, sizes=sizes, structured=structured
                 ).value
                 setattr(self, param_name, sequence)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
+        try:
+            sequence = DictParam(value=sequence).value
+            setattr(self, param_name, sequence)
+            return self
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a dictionary, a sequence of dictionaries, "
+                f"or sequence of dictionaries matching the data structure.\nLast Error: {last_error}"
+            )
         else:
-            try:
-                sequence = DictParam(value=sequence).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError:
-                pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a dictionary or sequence of dictionaries."
-        )
+            msg = (
+                f"Invalid {param_name}. Expected a dictionary, a sequence of dictionaries, "
+                f"or sequence of dictionaries matching the sequence length.\nLast Error: {last_error}"
+            )
+        raise ArgumentStructureError(msg)
