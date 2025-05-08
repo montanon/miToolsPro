@@ -381,39 +381,52 @@ class SetterMixIn(ABC):
         raise ArgumentStructureError(msg)
 
     def set_str_sequences(
-        self, sequences: Union[StrSequences, StrSequence, str], param_name: str
+        self,
+        sequences: Union[StrSequences, StrSequence, str],
+        param_name: str,
+        structured: bool = True,
     ):
+        sizes, sub_sizes = self._calculate_sizes()
         if self.multi_data:
             try:
                 sequences = StrSequencesParam(
                     value=sequences,
-                    sizes=self.data_sizes,
-                    sub_sizes=self.data_sub_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    sub_sizes=sub_sizes,
+                    structured=structured,
                 ).value
                 setattr(self, param_name, sequences)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             sequences = StrSequenceParam(
                 value=sequences,
-                sizes=self.data_sizes,
-                structured=True,
+                sizes=sizes,
+                structured=structured,
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             sequences = StrParam(value=sequences).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a string, sequence of strings, or sequences of strings."
-        )
+        except ValidationError as e:
+            last_error = str(e)
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a string, a sequence of strings, "
+                f"or sequence of strings matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected a string, a sequence of strings, "
+                f"or sequence of strings matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_numeric_tuple_sequences(
         self,
