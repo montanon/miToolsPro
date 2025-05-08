@@ -645,10 +645,12 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
     def validate_marker_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             values = values["value"]
         else:
             sizes = None
+            sub_sizes = None
             structured = False
 
         values = coerce_to_list(values)
@@ -672,7 +674,14 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
 
             normalized_outer.append(normalized_inner)
 
-        return {"value": normalized_outer, "sizes": sizes, "structured": structured}
+        sub_sizes = validate_sequences_sizes(normalized_outer, sub_sizes, structured)
+
+        return {
+            "value": normalized_outer,
+            "sizes": sizes,
+            "sub_sizes": sub_sizes,
+            "structured": structured,
+        }
 
 
 class LiteralParam(StrParam):
@@ -710,11 +719,13 @@ class LiteralSequenceParam(SequenceParam[str]):
     def validate_literal_sequence(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             options = values.get("options", None)
             values = values["value"]
         else:
             sizes = None
+            sub_sizes = None
             structured = False
             options = None
 
@@ -737,10 +748,13 @@ class LiteralSequenceParam(SequenceParam[str]):
                     f"Invalid literal at index {idx}: {v!r}. Allowed options: {options}."
                 )
 
+        sub_sizes = validate_sequences_sizes(values, sub_sizes, structured)
+
         return {
             "value": values,
             "options": options,
             "sizes": sizes,
+            "sub_sizes": sub_sizes,
             "structured": structured,
         }
 
@@ -753,11 +767,13 @@ class LiteralSequencesParam(SequencesParam[str]):
     def validate_literal_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             options = values.get("options", None)
             values = values["value"]
         else:
             sizes = None
+            sub_sizes = None
             structured = False
             options = None
 
@@ -793,10 +809,13 @@ class LiteralSequencesParam(SequencesParam[str]):
 
             normalized_outer.append(normalized_inner)
 
+        sub_sizes = validate_sequences_sizes(normalized_outer, sub_sizes, structured)
+
         return {
             "value": normalized_outer,
             "options": options,
             "sizes": sizes,
+            "sub_sizes": sub_sizes,
             "structured": structured,
         }
 
@@ -947,10 +966,12 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
     def validate_colormap_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             values = values.get("value")
         else:
             sizes = None
+            sub_sizes = None
             structured = False
 
         values = coerce_to_list(values)
@@ -972,9 +993,12 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
                     )
             normalized_outer.append(normalized_inner)
 
+        sub_sizes = validate_sequences_sizes(normalized_outer, sub_sizes, structured)
+
         return {
             "value": normalized_outer,
             "sizes": sizes,
+            "sub_sizes": sub_sizes,
             "structured": structured,
         }
 
@@ -1031,10 +1055,12 @@ class BinsSequencesParam(SequencesParam[BinsType]):
     def validate_bins_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
+            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             values = values.get("value")
         else:
             sizes = None
+            sub_sizes = None
             structured = False
 
         values = coerce_to_list(values)
@@ -1054,9 +1080,12 @@ class BinsSequencesParam(SequencesParam[BinsType]):
                     )
             normalized_outer.append(normalized_inner)
 
+        sub_sizes = validate_sequences_sizes(normalized_outer, sub_sizes, structured)
+
         return {
             "value": normalized_outer,
             "sizes": sizes,
+            "sub_sizes": sub_sizes,
             "structured": structured,
         }
 
