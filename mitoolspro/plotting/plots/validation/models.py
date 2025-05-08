@@ -469,9 +469,16 @@ class ColorSequencesParam(SequencesParam[ColorType]):
     @classmethod
     def validate_color_sequences(cls, values: Any) -> dict:
         if isinstance(values, dict):
+            sizes = values.get("sizes", None)
+            structured = values.get("structured", False)
             values = values["value"]
+        else:
+            sizes = None
+            structured = False
 
         values = coerce_to_list(values)
+        validate_sequence(values)
+        sizes = validate_sequence_sizes(values, sizes, structured)
 
         if not isinstance(values, Sequence) or isinstance(values, str):
             raise ArgumentValidationError(
@@ -500,7 +507,7 @@ class ColorSequencesParam(SequencesParam[ColorType]):
 
             normalized_outer.append(normalized_inner)
 
-        return {"value": normalized_outer}
+        return {"value": normalized_outer, "sizes": sizes, "structured": structured}
 
 
 class EdgeColorParam(Param[EdgeColorType]):

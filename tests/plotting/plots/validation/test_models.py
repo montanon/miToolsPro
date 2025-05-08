@@ -3105,6 +3105,129 @@ class TestColorSequencesParam(TestCase):
             ],
         )
 
+    def test_init_with_structured_true_and_valid_sizes(self):
+        param = ColorSequencesParam(
+            value=[["red", "#00FF00"], ["blue", "#0000FF"]], sizes=2, structured=True
+        )
+        self.assertEqual(param.value, [["red", "#00FF00"], ["blue", "#0000FF"]])
+        self.assertEqual(param.sizes, [2])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_valid_sequence_sizes(self):
+        param = ColorSequencesParam(
+            value=[["red"], ["blue", "green"], ["yellow", "#FF0000", "#00FF00"]],
+            sizes=3,
+            structured=True,
+        )
+        self.assertEqual(
+            param.value, [["red"], ["blue", "green"], ["yellow", "#FF0000", "#00FF00"]]
+        )
+        self.assertEqual(param.sizes, [3])
+        self.assertTrue(param.structured)
+
+    def test_init_with_structured_true_and_invalid_outer_size(self):
+        with self.assertRaises(ValidationError) as context:
+            ColorSequencesParam(
+                value=[["red", "#00FF00"], ["blue", "#0000FF"]],
+                sizes=3,
+                structured=True,
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_sequence_sizes_list(self):
+        with self.assertRaises(ValidationError) as context:
+            ColorSequencesParam(
+                value=[["red", "#00FF00"], ["blue", "#0000FF"]],
+                sizes=[2, 3],
+                structured=True,
+            )
+        self.assertIn(
+            "Validation of structured Sequence requires a single size: int",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_true_and_invalid_color(self):
+        with self.assertRaises(ValidationError) as context:
+            ColorSequencesParam(
+                value=[["red", "#00FF00"], ["blue", "invalid_color"]],
+                sizes=2,
+                structured=True,
+            )
+        self.assertIn(
+            "Invalid color format: 'invalid_color' at index [1, 1]",
+            str(context.exception),
+        )
+
+    def test_init_with_structured_false_and_valid_sizes(self):
+        param = ColorSequencesParam(
+            value=[["red"], ["blue", "green"]], sizes=[2, 3], structured=False
+        )
+        self.assertEqual(param.value, [["red"], ["blue", "green"]])
+        self.assertEqual(param.sizes, [2, 3])
+        self.assertFalse(param.structured)
+
+    def test_init_with_structured_default_value(self):
+        param = ColorSequencesParam(value=[["red"], ["blue", "green"]])
+        self.assertEqual(param.value, [["red"], ["blue", "green"]])
+        self.assertIsNone(param.sizes)
+        self.assertFalse(param.structured)
+
+    def test_init_with_dict_initialization_and_structured(self):
+        param = ColorSequencesParam.model_validate(
+            {
+                "value": [["red", "#00FF00"], ["blue", "#0000FF"]],
+                "sizes": 2,
+                "structured": True,
+            }
+        )
+        self.assertEqual(param.value, [["red", "#00FF00"], ["blue", "#0000FF"]])
+        self.assertEqual(param.sizes, [2])
+        self.assertTrue(param.structured)
+
+    def test_init_with_dict_initialization_structured_and_invalid_size(self):
+        with self.assertRaises(ValidationError) as context:
+            ColorSequencesParam.model_validate(
+                {
+                    "value": [["red", "#00FF00"], ["blue", "#0000FF"]],
+                    "sizes": 3,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Expected Sequence of sizes: [3], got size: 2 instead",
+            str(context.exception),
+        )
+
+    def test_init_with_dict_initialization_structured_and_invalid_color(self):
+        with self.assertRaises(ValidationError) as context:
+            ColorSequencesParam.model_validate(
+                {
+                    "value": [["red", "#00FF00"], ["blue", "invalid_color"]],
+                    "sizes": 2,
+                    "structured": True,
+                }
+            )
+        self.assertIn(
+            "Invalid color format: 'invalid_color' at index [1, 1]",
+            str(context.exception),
+        )
+
+    def test_init_with_mixed_color_formats_structured(self):
+        param = ColorSequencesParam(
+            value=[["red", "#00FF00", (0, 0, 1)], ["#FF0000", (0, 1, 0), "blue"]],
+            sizes=2,
+            structured=True,
+        )
+        self.assertEqual(
+            param.value,
+            [["red", "#00FF00", (0.0, 0.0, 1.0)], ["#FF0000", (0.0, 1.0, 0.0), "blue"]],
+        )
+        self.assertEqual(param.sizes, [2])
+        self.assertTrue(param.structured)
+
 
 class TestEdgeColorParams(TestCase):
     def test_edgecolor_param_valid_values(self):
