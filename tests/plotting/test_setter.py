@@ -749,5 +749,127 @@ class TestSetStrSequences(TestCase):
         self.assertEqual(plotter.label, ["Label A", "Label B", "Label C"])
 
 
+class TestSetNumericTupleSequences(TestCase):
+    class MockPlotter(SetterMixIn):
+        def __init__(self, x_data, multi_data):
+            self._x_data = x_data
+            self._multi_data = multi_data
+
+        @property
+        def x_data(self):
+            return self._x_data
+
+        @property
+        def multi_data(self):
+            return self._multi_data
+
+    # --------------- Single Sequence (multi_data=False) Tests ----------------
+    def test_single_sequence_single_numeric_tuple(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_numeric_tuple_sequences((1, 2), 2, "coordinates")
+        self.assertEqual(plotter.coordinates, (1, 2))
+
+    def test_single_sequence_numeric_tuple_sequence(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        plotter.set_numeric_tuple_sequences(
+            [(1, 2), (3, 4), (5, 6), (7, 8)], 2, "coordinates"
+        )
+        self.assertEqual(plotter.coordinates, [(1, 2), (3, 4), (5, 6), (7, 8)])
+
+    def test_single_sequence_invalid_tuple_length(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences((1, 2, 3), 2, "coordinates")
+
+    def test_single_sequence_invalid_nested(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences([[(1, 2)]], 2, "coordinates")
+
+    def test_single_sequence_mismatched_tuple_sizes(self):
+        plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences([(1, 2), (3, 4, 5)], 2, "coordinates")
+
+    # --------------- Multi-Sequence (multi_data=True) Tests ----------------
+    def test_multi_sequence_single_numeric_tuple(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_numeric_tuple_sequences((1, 2), 2, "coordinates")
+        self.assertEqual(plotter.coordinates, (1, 2))
+
+    def test_multi_sequence_numeric_tuple_sequence(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_numeric_tuple_sequences([(1, 2), (3, 4)], 2, "coordinates")
+        self.assertEqual(plotter.coordinates, [(1, 2), (3, 4)])
+
+    def test_multi_sequence_nested_numeric_tuples_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        plotter.set_numeric_tuple_sequences(
+            [[(1, 2), (3, 4)], [(5, 6), (7, 8)]],
+            2,
+            "coordinates",
+        )
+        self.assertEqual(
+            plotter.coordinates,
+            [[(1, 2), (3, 4)], [(5, 6), (7, 8)]],
+        )
+
+    def test_multi_sequence_invalid_length(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences([(1, 2)], 2, "coordinates")
+
+    def test_multi_sequence_invalid_tuple(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences([(1, 2), (3, 4, 5)], 2, "coordinates")
+
+    def test_multi_sequence_nested_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences(
+                [[(1, 2), (3, 4, 5)], [(5, 6)]],
+                2,
+                "coordinates",
+            )
+
+    # --------------- Structured = True (Strict Structure) Tests ----------------
+    def test_structured_true_valid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        plotter.set_numeric_tuple_sequences(
+            [[(1, 2), (3, 4)], [(5, 6), (7, 8), (9, 10)]],
+            2,
+            "coordinates",
+            structured=True,
+        )
+        self.assertEqual(
+            plotter.coordinates,
+            [[(1, 2), (3, 4)], [(5, 6), (7, 8), (9, 10)]],
+        )
+
+    def test_structured_true_invalid(self):
+        plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences(
+                [[(1, 2), (3, 4)], [(5, 6)]], 2, "coordinates", structured=True
+            )
+
+    # --------------- Invalid Cases ----------------
+    def test_invalid_numeric_tuple_value(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences("invalid", 2, "coordinates")
+
+    def test_empty_data(self):
+        plotter = self.MockPlotter([], multi_data=False)
+        with self.assertRaises(IndexError):
+            plotter.set_numeric_tuple_sequences((1, 2), 2, "coordinates")
+
+    def test_mixed_numeric_tuple_sizes(self):
+        plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
+        with self.assertRaises(ArgumentStructureError):
+            plotter.set_numeric_tuple_sequences([(1, 2), (3, 4, 5)], 2, "coordinates")
+
+
 if __name__ == "__main__":
     unittest.main()
