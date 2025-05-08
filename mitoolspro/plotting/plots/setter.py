@@ -153,6 +153,7 @@ class SetterMixIn(ABC):
         param_name: str,
         min_value: NumericType = None,
         max_value: NumericType = None,
+        structured: bool = True,
     ):
         has_range = min_value is not None or max_value is not None
         if has_range:
@@ -160,49 +161,51 @@ class SetterMixIn(ABC):
             max_value = max_value if max_value is not None else np.inf
         no_range = not has_range
 
+        sizes, sub_sizes = self._calculate_sizes()
+
         if self.multi_data:
             try:
                 sequences = (
                     NumericSequencesParam(
                         value=sequences,
-                        sizes=self.data_sizes,
-                        sub_sizes=self.data_sub_sizes,
-                        structured=True,
+                        sizes=sizes,
+                        sub_sizes=sub_sizes,
+                        structured=structured,
                     )
                     if no_range
                     else RangeSequencesParam(
                         value=sequences,
-                        sizes=self.data_sizes,
-                        sub_sizes=self.data_sub_sizes,
+                        sizes=sizes,
+                        sub_sizes=sub_sizes,
                         min_value=min_value,
                         max_value=max_value,
-                        structured=True,
+                        structured=structured,
                     )
                 ).value
                 setattr(self, param_name, sequences)
                 return self
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                last_error = str(e)
         try:
             sequences = (
                 NumericSequenceParam(
                     value=sequences,
-                    sizes=self.data_sizes,
-                    structured=True,
+                    sizes=sizes,
+                    structured=structured,
                 )
                 if no_range
                 else RangeSequenceParam(
                     value=sequences,
-                    sizes=self.data_sizes,
+                    sizes=sizes,
                     min_value=min_value,
                     max_value=max_value,
-                    structured=True,
+                    structured=structured,
                 )
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            last_error = str(e)
         try:
             sequences = (
                 NumericParam(value=sequences)
@@ -213,11 +216,21 @@ class SetterMixIn(ABC):
             ).value
             setattr(self, param_name, sequences)
             return self
-        except ValidationError:
-            pass
-        raise ArgumentStructureError(
-            f"Invalid {param_name}, must be a numeric value, numeric sequences, or sequence of numeric sequences."
-        )
+        except ValidationError as e:
+            last_error = str(e)
+
+        if self.multi_data:
+            msg = (
+                f"Invalid {param_name}. Expected a numeric value, a sequence of numeric values, "
+                f"or sequences of numeric values matching the data structure.\nLast Error: {last_error}"
+            )
+        else:
+            msg = (
+                f"Invalid {param_name}. Expected a numeric value, a sequence of numeric values, "
+                f"or sequence of numeric values matching the sequence length.\nLast Error: {last_error}"
+            )
+
+        raise ArgumentStructureError(msg)
 
     def set_literal_sequences(
         self,
