@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.colors import Normalize, get_named_colors_mapping, is_color_like
 from matplotlib.markers import MarkerStyle
 from matplotlib.transforms import Transform
-from numpy import ndarray
+from numpy import floating, integer, ndarray
 from pandas import Series
 from pydantic import BaseModel, ValidationError
 
@@ -40,15 +40,19 @@ def is_indexable(value: Any, index: Any) -> bool:
 
 
 def is_numeric(value: Any) -> bool:
-    return isinstance(value, NumericType)
+    return isinstance(value, (int, float, integer, floating))
 
 
 def is_numeric_sequence(value: Any) -> bool:
-    return isinstance(value, Sequence) and all(is_numeric(v) for v in value)
+    return isinstance(value, (Sequence, ndarray, Series)) and all(
+        is_numeric(v) for v in value
+    )
 
 
 def is_numeric_sequences(value: Any) -> bool:
-    return isinstance(value, Sequence) and all(is_numeric_sequence(v) for v in value)
+    return isinstance(value, (Sequence, ndarray, Series)) and all(
+        is_numeric_sequence(v) for v in value
+    )
 
 
 def is_value_in_range(value: Any, min_value: NumericType, max_value: NumericType):
