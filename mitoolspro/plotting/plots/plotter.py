@@ -7,25 +7,24 @@ from matplotlib.axes import Axes
 from pydantic import ValidationError
 
 from mitoolspro.exceptions import ArgumentStructureError
-from mitoolspro.plotting.plots.matplotlib_typing import (
-    Color,
+from mitoolspro.plotting.plots.plot_params import ParamsMixIn
+from mitoolspro.plotting.plots.setter import SetterMixIn
+from mitoolspro.plotting.plots.validation.functions import is_valid_model
+from mitoolspro.plotting.plots.validation.models import (
+    DataSequenceParam,
+    DataSequencesParam,
+    NumericParam,
+    NumericSequenceParam,
+    NumericSequencesParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
     ColorSequence,
     ColorSequences,
+    ColorType,
     NumericSequence,
     NumericSequences,
     NumericType,
     StrSequence,
-)
-from mitoolspro.plotting.plots.plot_params import ParamsMixIn
-from mitoolspro.plotting.plots.setter import SetterMixIn
-from mitoolspro.plotting.plots.validation.functions import (
-    is_numeric,
-    is_numeric_sequence,
-    is_numeric_sequences,
-)
-from mitoolspro.plotting.plots.validation.models import (
-    DataSequenceParam,
-    DataSequencesParam,
 )
 
 
@@ -119,7 +118,7 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
             )
         return x_data, y_data
 
-    def set_color(self, color: Union[ColorSequences, ColorSequence, Color]):
+    def set_color(self, color: Union[ColorSequences, ColorSequence, ColorType]):
         return self.set_color_sequences(color, param_name="color")
 
     def set_alpha(self, alpha: Union[NumericSequences, NumericSequence, NumericType]):
@@ -190,13 +189,13 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
     ) -> Any:
         if value is None:
             return None
-        if expected_size is not None and is_numeric(expected_size):
+        if expected_size is not None and NumericParam(value=expected_size):
             expected_size = (expected_size,)
-        if is_numeric_sequences(value):
+        if is_valid_model(NumericSequencesParam, value=value):
             if expected_size is not None:
                 if all(len(item) in expected_size for item in value):
                     return [tuple(val) for val in value]
-        elif is_numeric_sequence(value):
+        elif is_valid_model(NumericSequenceParam, value=value):
             if expected_size is not None:
                 if len(value) in expected_size:
                     return tuple(value)

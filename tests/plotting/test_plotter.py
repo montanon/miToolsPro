@@ -429,8 +429,8 @@ class TestPlotter(TestCase):
             "x_data": [[1, 2, 3]],
             "y_data": [[4, 5, 6]],
             "title": "Test Plot",
-            "xlim": [0, 10],
-            "ylim": [0, 5],
+            "xlim": (0, 10),
+            "ylim": (0, 5),
         }
         with patch(
             "builtins.open", unittest.mock.mock_open(read_data=json.dumps(data))
