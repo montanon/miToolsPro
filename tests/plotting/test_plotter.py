@@ -65,6 +65,29 @@ class TestPlotter(TestCase):
         self.assertFalse(plotter.multi_data)
         self.assertEqual(plotter.sub_sizes, None)
 
+    def test_init_invalid_y_data(self):
+        x_data = [1, 2, 3, 4]
+        y_data = ["a", "b", "c", "d"]
+        with self.assertRaises(ArgumentStructureError):
+            DummyPlotter(x_data, y_data)
+
+    def test_init_mixed_numeric_types(self):
+        x_data = [1, 2.0, 3, 4.0]
+        y_data = [4, 3, 2, 1]
+        plotter = DummyPlotter(x_data, y_data)
+        self.assertEqual(plotter.x_data, [x_data])
+        self.assertEqual(plotter.y_data, [y_data])
+
+    def test_init_empty_data(self):
+        with self.assertRaises(ArgumentStructureError):
+            DummyPlotter([], [])
+
+    def test_init_multi_sequence_mismatched_lengths(self):
+        x_data = [[1, 2, 3], [4, 5, 6, 7]]
+        y_data = [[6, 5, 4], [3, 2, 1]]
+        with self.assertRaises(ArgumentStructureError):
+            DummyPlotter(x_data, y_data)
+
     def test_init_invalid_x_data(self):
         x_data = ["a", "b", "c"]
         y_data = [1, 2, 3]
@@ -298,6 +321,9 @@ class TestPlotter(TestCase):
             self.plotter.set_color([1, 2, 3, 4, 5])
         with self.assertRaises(ArgumentStructureError):
             self.multi_plotter.set_color(["red", "green", "blue", "yellow", "black"])
+        colors = ["red", "green", "blue"]
+        with self.assertRaises(ArgumentStructureError):
+            self.multi_plotter.set_color([colors, colors[:2]])
 
     def test_set_alpha_single_value(self):
         self.plotter.set_alpha(0.5)
@@ -319,6 +345,8 @@ class TestPlotter(TestCase):
             self.plotter.set_alpha([1, 2, 3, 4, 5])
         with self.assertRaises(ArgumentStructureError):
             self.multi_plotter.set_alpha([0.5, 0.6, 0.7, 0.9, 0.6])
+        with self.assertRaises(ArgumentStructureError):
+            self.plotter.set_alpha("not_a_number")
 
     def test_set_label_single(self):
         self.plotter.set_label("Series 1")
@@ -383,6 +411,19 @@ class TestPlotter(TestCase):
             handle = mock_file()
             handle.write.assert_called()
 
+    def test_save_plot_invalid_path(self):
+        self.plotter.draw(show=False)
+        with self.assertRaises(PlotterException):
+            self.plotter.save_plot("/invalid_path/")
+
+    def test_from_json_missing_fields(self):
+        data = {"title": "Test Plot"}
+        with patch(
+            "builtins.open", unittest.mock.mock_open(read_data=json.dumps(data))
+        ):
+            with self.assertRaises(ArgumentStructureError):
+                DummyPlotter.from_json("plotter.json")
+
     def test_from_json(self):
         data = {
             "x_data": [[1, 2, 3]],
@@ -400,6 +441,18 @@ class TestPlotter(TestCase):
             self.assertEqual(plotter.title, {"label": data["title"]})
             self.assertEqual(plotter.xlim, tuple(data["xlim"]))
             self.assertEqual(plotter.ylim, tuple(data["ylim"]))
+
+    def test_from_json_invalid_file(self):
+        with patch("builtins.open", unittest.mock.mock_open(read_data="invalid_json")):
+            with self.assertRaises(json.JSONDecodeError):
+                DummyPlotter.from_json("plotter.json")
+
+    def test_reset_params_all(self):
+        self.plotter.set_title("Title")
+        self.plotter.set_color("red")
+        self.plotter.reset_params()
+        self.assertEqual(self.plotter.title, "")
+        self.assertIsNone(self.plotter.color)
 
 
 if __name__ == "__main__":
