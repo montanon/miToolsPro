@@ -157,11 +157,6 @@ class TestSetColorSequences(TestCase):
         with self.assertRaises(ArgumentStructureError):
             plotter.set_color_sequences("invalid_color", "color")
 
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_color_sequences("red", "color")
-
     def test_mixed_color_types(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         plotter.set_color_sequences([1, "red", (0, 0, 0)], "color")
@@ -270,11 +265,6 @@ class TestSetNumericSequences(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_numeric_sequences("invalid", "alpha")
-
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_numeric_sequences(0.5, "alpha")
 
     def test_mixed_numeric_types(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
@@ -410,11 +400,6 @@ class TestSetLiteralSequences(TestCase):
         with self.assertRaises(ArgumentStructureError):
             plotter.set_literal_sequences("invalid", self.VALID_OPTIONS, "label")
 
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_literal_sequences("red", self.VALID_OPTIONS, "label")
-
     def test_mixed_literal_types(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         plotter.set_literal_sequences(
@@ -530,11 +515,6 @@ class TestSetMarkerSequences(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_marker_sequences("invalid", "marker")
-
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_marker_sequences("o", "marker")
 
     def test_mixed_marker_types(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
@@ -658,11 +638,6 @@ class TestSetEdgeColorSequences(TestCase):
         with self.assertRaises(ArgumentStructureError):
             plotter.set_edgecolor_sequences("invalid", "edgecolor")
 
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_edgecolor_sequences("red", "edgecolor")
-
     def test_mixed_edgecolor_types(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         plotter.set_edgecolor_sequences(["red", (0, 0, 0), "#0000FF"], "edgecolor")
@@ -781,11 +756,6 @@ class TestSetStrSequences(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_str_sequences(123, "label")
-
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_str_sequences("Label", "label")
 
     def test_mixed_string_types(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
@@ -908,11 +878,6 @@ class TestSetNumericTupleSequences(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_numeric_tuple_sequences("invalid", 2, "coordinates")
-
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_numeric_tuple_sequences((1, 2), 2, "coordinates")
 
     def test_mixed_numeric_tuple_sizes(self):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
@@ -1101,11 +1066,6 @@ class TestSetNormSequence(TestCase):
         with self.assertRaises(ArgumentStructureError):
             plotter.set_norm_sequence("invalid", "norm")
 
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_norm_sequence(Normalize(), "norm")
-
     def test_mixed_normalization_types(self):
         plotter = self.MockPlotter(
             [[1, 2, 3], [2, 3, 4, 5, 6], [1, 2]], multi_data=True
@@ -1205,11 +1165,6 @@ class TestSetBinsSequence(TestCase):
         with self.assertRaises(ArgumentStructureError):
             plotter.set_bins_sequence("invalid", "bins")
 
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_bins_sequence(10, "bins")
-
     def test_mixed_bin_types(self):
         plotter = self.MockPlotter([[1, 2, 3], [1, 2], [3, 4, 5, 6]], multi_data=True)
         plotter.set_bins_sequence([5, "auto", 15], "bins")
@@ -1300,11 +1255,6 @@ class TestSetBoolSequence(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_bool_sequence("invalid", "visible")
-
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_bool_sequence(True, "visible")
 
     def test_mixed_boolean_types(self):
         plotter = self.MockPlotter(
@@ -1407,11 +1357,6 @@ class TestSetDictSequence(TestCase):
         plotter = self.MockPlotter([[1, 2, 3]], multi_data=False)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_dict_sequence("invalid", "props")
-
-    def test_empty_data(self):
-        plotter = self.MockPlotter([], multi_data=False)
-        with self.assertRaises(IndexError):
-            plotter.set_dict_sequence({"a": 1}, "props")
 
 
 if __name__ == "__main__":
