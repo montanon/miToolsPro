@@ -11,7 +11,10 @@ from matplotlib.axes import Axes
 from mitoolspro.exceptions import AxesComposerException
 from mitoolspro.plotting.plots.plot_params import FigureParamsMixIn, ParamsMixIn
 from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import validate_type
+from mitoolspro.plotting.plots.validation.models import (
+    Param,
+    SequenceParam,
+)
 
 
 class PlotComposerException(Exception):
@@ -51,12 +54,12 @@ class PlotComposer(ParamsMixIn):
             self.add_plotters(plotters)
 
     def add_plotter(self, plotter: Plotter) -> "PlotComposer":
-        validate_type(plotter, Plotter, "plotter")
+        Param[Plotter](value=plotter)
         self.plotters.append(plotter)
         return self
 
     def add_plotters(self, plotters: Sequence[Plotter]) -> "PlotComposer":
-        validate_type(plotters, (list, tuple), "plotters")
+        SequenceParam[Plotter](value=plotters)
         for plotter in plotters:
             self.add_plotter(plotter)
         return self
@@ -144,8 +147,8 @@ class AxesComposer(FigureParamsMixIn):
         plots: Sequence[Union[PlotComposer, Plotter]],
         **kwargs,
     ):
-        validate_type(axes, (list, tuple, np.ndarray), "axes")
-        validate_type(plots, (list, tuple), "plots")
+        Param[Union[list, tuple, np.ndarray]](value=axes)
+        Param[Union[list, tuple]](value=plots)
         if isinstance(axes, np.ndarray):
             axes = axes.flat
         if len(axes) != len(plots):
@@ -157,8 +160,8 @@ class AxesComposer(FigureParamsMixIn):
         super().__init__(figure=axes[0].figure, **kwargs)
 
     def add_plot(self, ax: Axes, plot: Union[PlotComposer, Plotter]) -> "AxesComposer":
-        validate_type(ax, Axes, "ax")
-        validate_type(plot, (PlotComposer, Plotter), "plot")
+        Param[Axes](value=ax)
+        Param[Union[PlotComposer, Plotter]](value=plot)
         self.axes.append(ax)
         self.plots.append(plot)
         return self

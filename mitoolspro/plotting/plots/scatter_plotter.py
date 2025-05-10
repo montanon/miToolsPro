@@ -2,28 +2,25 @@ from typing import Union
 
 from matplotlib.axes import Axes
 
-from mitoolspro.plotting.plots.matplotlib_typing import (
-    Cmap,
-    CmapSequence,
-    Color,
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.models import BoolParam
+from mitoolspro.plotting.plots.validation.types import (
+    ColormapSequence,
+    ColormapType,
     ColorSequence,
     ColorSequences,
-    EdgeColor,
+    ColorType,
     EdgeColorSequence,
     EdgeColorSequences,
-    Marker,
+    EdgeColorType,
     MarkerSequence,
     MarkerSequences,
-    Norm,
-    NormSequence,
+    MarkerType,
+    NormalizationSequence,
+    NormalizationType,
     NumericSequence,
     NumericSequences,
     NumericType,
-)
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import (
-    NUMERIC_TYPES,
-    validate_type,
 )
 
 
@@ -51,7 +48,7 @@ class ScatterPlotter(Plotter):
             },
             "marker": {
                 "default": "o",
-                "type": Union[MarkerSequences, MarkerSequence, Marker],
+                "type": Union[MarkerSequences, MarkerSequence, MarkerType],
             },
             "linewidth": {
                 "default": None,
@@ -59,14 +56,20 @@ class ScatterPlotter(Plotter):
             },
             "edgecolor": {
                 "default": None,
-                "type": Union[EdgeColorSequences, EdgeColorSequence, EdgeColor],
+                "type": Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType],
             },
             "facecolor": {
                 "default": None,
-                "type": Union[ColorSequences, ColorSequence, Color],
+                "type": Union[ColorSequences, ColorSequence, ColorType],
             },
-            "colormap": {"default": None, "type": Union[CmapSequence, Cmap]},
-            "normalization": {"default": None, "type": Union[NormSequence, Norm]},
+            "colormap": {
+                "default": None,
+                "type": Union[ColormapSequence, ColormapType],
+            },
+            "normalization": {
+                "default": None,
+                "type": Union[NormalizationSequence, NormalizationType],
+            },
             "vmin": {"default": None, "type": Union[NumericSequence, NumericType]},
             "vmax": {"default": None, "type": Union[NumericSequence, NumericType]},
         }
@@ -74,19 +77,19 @@ class ScatterPlotter(Plotter):
         self._set_init_params(**kwargs)
 
     def set_plot_non_finite(self, plot_non_finite: bool):
-        validate_type(plot_non_finite, bool, "plot_non_finite")
+        BoolParam(value=plot_non_finite)
         self.plot_non_finite = plot_non_finite
         return self
 
     def set_hover(self, hover: bool):
-        validate_type(hover, bool, "hover")
+        BoolParam(value=hover)
         self.hover = hover
         return self
 
     def set_size(self, size: Union[NumericSequences, NumericSequence, NumericType]):
         return self.set_numeric_sequences(size, param_name="size")
 
-    def set_marker(self, markers: Union[MarkerSequences, MarkerSequence, Marker]):
+    def set_marker(self, markers: Union[MarkerSequences, MarkerSequence, MarkerType]):
         return self.set_marker_sequences(markers, param_name="marker")
 
     def set_linewidth(
@@ -95,24 +98,26 @@ class ScatterPlotter(Plotter):
         return self.set_numeric_sequences(linewidths, param_name="linewidth")
 
     def set_edgecolor(
-        self, edgecolors: Union[EdgeColorSequences, EdgeColorSequence, EdgeColor]
+        self, edgecolors: Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType]
     ):
         return self.set_edgecolor_sequences(edgecolors, param_name="edgecolor")
 
-    def set_facecolor(self, facecolor: Union[ColorSequences, ColorSequence, Color]):
+    def set_facecolor(self, facecolor: Union[ColorSequences, ColorSequence, ColorType]):
         return self.set_color_sequences(facecolor, param_name="facecolor")
 
-    def set_colormap(self, colormaps: Union[CmapSequence, Cmap]):
+    def set_colormap(self, colormaps: Union[ColormapSequence, ColormapType]):
         return self.set_colormap_sequence(colormaps, param_name="colormap")
 
-    def set_normalization(self, normalization: Union[NormSequence, Norm]):
+    def set_normalization(
+        self, normalization: Union[NormalizationSequence, NormalizationType]
+    ):
         return self.set_norm_sequence(normalization, param_name="normalization")
 
     def set_vmin(self, vmin: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(vmin, "vmin")
+        return self.set_numeric_sequences(vmin, "vmin")
 
     def set_vmax(self, vmax: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(vmax, "vmax")
+        return self.set_numeric_sequences(vmax, "vmax")
 
     def set_normalization_range(
         self,
@@ -143,7 +148,7 @@ class ScatterPlotter(Plotter):
             "plotnonfinite": self.plot_non_finite,
         }
         if (
-            not isinstance(scatter_kwargs.get("alpha", []), NUMERIC_TYPES)
+            not isinstance(scatter_kwargs.get("alpha", []), NumericType)
             and len(scatter_kwargs.get("alpha", [])) == 1
         ):
             scatter_kwargs["alpha"] = scatter_kwargs["alpha"][0]

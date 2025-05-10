@@ -3,7 +3,14 @@ from typing import Callable, Dict, Literal, Sequence, Union
 from matplotlib.axes import Axes
 
 from mitoolspro.exceptions import ArgumentStructureError
-from mitoolspro.plotting.plots.matplotlib_typing import (
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.functions import is_valid_model
+from mitoolspro.plotting.plots.validation.models import (
+    DictSequenceParam,
+    Param,
+    SequenceParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
     HATCHES,
     BoolSequence,
     DictSequence,
@@ -11,18 +18,11 @@ from mitoolspro.plotting.plots.matplotlib_typing import (
     LiteralSequences,
     NumericSequence,
     NumericSequences,
-    NumericTuple,
     NumericTupleSequence,
+    NumericTupleType,
     NumericType,
     StrSequence,
     StrSequences,
-)
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import (
-    is_dict_sequence,
-    is_sequence,
-    validate_sequence_type,
-    validate_type,
 )
 
 
@@ -72,7 +72,7 @@ class PiePlotter(Plotter):
             "textprops": {"default": None, "type": Union[DictSequence, Dict]},
             "center": {
                 "default": (0, 0),
-                "type": Union[NumericTupleSequence, NumericTuple],
+                "type": Union[NumericTupleSequence, NumericTupleType],
             },
             "frame": {"default": False, "type": Union[BoolSequence, bool]},
             "rotatelabels": {"default": False, "type": Union[BoolSequence, bool]},
@@ -87,7 +87,6 @@ class PiePlotter(Plotter):
     def set_frame(self, frame: bool):
         if isinstance(frame, bool):
             self.frame = frame
-            self.multi_params_structure["frame"] = "value"
             return self
 
     def set_explode(
@@ -109,40 +108,33 @@ class PiePlotter(Plotter):
             Sequence[Union[str, Callable, None]], Union[str, Callable, None]
         ],
     ):
-        if is_sequence(autopct):
-            validate_sequence_type(
-                autopct,
-                (str, Callable),
-                "autopct",
-            )
+        if is_valid_model(SequenceParam[(str, Callable)], value=autopct):
             self.autopct = autopct
-            self.multi_params_structure["autopct"] = "sequence"
         else:
-            validate_type(autopct, (str, Callable), "autopct")
+            Param[(str, Callable)](value=autopct)
             self.autopct = autopct
-            self.multi_params_structure["autopct"] = "value"
         return self
 
     def set_pctdistance(self, pctdistance: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(pctdistance, "pctdistance")
+        return self.set_numeric_sequences(pctdistance, "pctdistance")
 
     def set_labeldistance(self, labeldistance: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(labeldistance, "labeldistance", min_value=0)
+        return self.set_numeric_sequences(labeldistance, "labeldistance", min_value=0)
 
     def set_shadow(self, shadow: Union[BoolSequence, bool]):
         return self.set_bool_sequence(shadow, "shadow")
 
     def set_startangle(self, startangle: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(startangle, "startangle")
+        return self.set_numeric_sequences(startangle, "startangle")
 
     def set_radius(self, radius: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(radius, "radius", min_value=0)
+        return self.set_numeric_sequences(radius, "radius", min_value=0)
 
     def set_counterclock(self, counterclock: Union[BoolSequence, bool]):
         return self.set_bool_sequence(counterclock, "counterclock")
 
     def set_wedgeprops(self, kwargs: Union[DictSequence, Dict]):
-        if is_dict_sequence(kwargs):
+        if is_valid_model(DictSequenceParam, value=kwargs):
             self.multi_params_structure["wedgeprops"] = "sequence"
         elif isinstance(kwargs, dict) or kwargs is None:
             self.multi_params_structure["wedgeprops"] = "value"
@@ -152,7 +144,7 @@ class PiePlotter(Plotter):
         return self
 
     def set_textprops(self, kwargs: Union[DictSequence, Dict]):
-        if is_dict_sequence(kwargs):
+        if is_valid_model(DictSequenceParam, value=kwargs):
             self.multi_params_structure["textprops"] = "sequence"
         elif isinstance(kwargs, dict) or kwargs is None:
             self.multi_params_structure["textprops"] = "value"
@@ -161,8 +153,8 @@ class PiePlotter(Plotter):
         self.textprops = kwargs
         return self
 
-    def set_center(self, center: Union[NumericTupleSequence, NumericTuple]):
-        return self.set_numeric_tuple_sequence(center, 2, "center")
+    def set_center(self, center: Union[NumericTupleSequence, NumericTupleType]):
+        return self.set_numeric_tuple_sequences(center, 2, "center")
 
     def set_rotatelabels(self, rotatelabels: Union[BoolSequence, bool]):
         return self.set_bool_sequence(rotatelabels, "rotatelabels")

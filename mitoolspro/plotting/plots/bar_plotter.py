@@ -3,29 +3,28 @@ from typing import Dict, Literal, Sequence, Union
 import numpy as np
 from matplotlib.axes import Axes
 
-from mitoolspro.plotting.plots.matplotlib_typing import (
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.models import (
+    BoolParam,
+    LiteralParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
     BARS_ALIGN,
     HATCHES,
     LINESTYLES,
     ORIENTATIONS,
-    Color,
     ColorSequence,
     ColorSequences,
+    ColorType,
     DictSequence,
-    EdgeColor,
     EdgeColorSequence,
     EdgeColorSequences,
+    EdgeColorType,
     LiteralSequence,
     LiteralSequences,
     NumericSequence,
     NumericSequences,
     NumericType,
-)
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import (
-    NUMERIC_TYPES,
-    validate_literal,
-    validate_type,
 )
 
 
@@ -64,7 +63,7 @@ class BarPlotter(Plotter):
             },
             "edgecolor": {
                 "default": None,
-                "type": Union[EdgeColorSequence, EdgeColor],
+                "type": Union[EdgeColorSequence, EdgeColorType],
             },
             "linewidth": {
                 "default": None,
@@ -80,7 +79,7 @@ class BarPlotter(Plotter):
             },
             "ecolor": {
                 "default": None,
-                "type": Union[ColorSequences, ColorSequence, Color],
+                "type": Union[ColorSequences, ColorSequence, ColorType],
             },
             "capsize": {
                 "default": None,
@@ -89,7 +88,7 @@ class BarPlotter(Plotter):
             "error_kw": {"default": None, "type": Union[DictSequence, Dict]},
             "facecolor": {
                 "default": None,
-                "type": Union[ColorSequence, Color],
+                "type": Union[ColorSequence, ColorType],
             },
             "fill": {"default": True, "type": Union[Sequence[bool], bool]},
             "hatch": {
@@ -111,12 +110,12 @@ class BarPlotter(Plotter):
         return self._kind
 
     def set_log(self, log: bool):
-        validate_type(log, bool, "log")
+        BoolParam(value=log)
         self.log = log
         return self
 
     def set_orientation(self, orientation: Literal["horizontal", "vertical"]):
-        validate_literal(orientation, ORIENTATIONS)
+        LiteralParam(value=orientation, options=ORIENTATIONS)
         self.orientation = orientation
         return self
 
@@ -129,15 +128,15 @@ class BarPlotter(Plotter):
         return self.set_numeric_sequences(bottoms, "bottom")
 
     def set_align(self, align: Union[LiteralSequence, Literal["center", "edge"]]):
-        return self.set_literal_sequence(align, BARS_ALIGN, "align")
+        return self.set_literal_sequences(align, BARS_ALIGN, "align")
 
     def set_edgecolor(
-        self, edgecolors: Union[EdgeColorSequences, EdgeColorSequence, EdgeColor]
+        self, edgecolors: Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType]
     ):
         return self.set_edgecolor_sequences(edgecolors, "edgecolor")
 
     def set_linewidth(self, linewidths: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(linewidths, "linewidth")
+        return self.set_numeric_sequences(linewidths, "linewidth")
 
     def set_xerr(self, xerrs: Union[NumericSequences, NumericSequence, NumericType]):
         return self.set_numeric_sequences(xerrs, "xerr")
@@ -145,17 +144,17 @@ class BarPlotter(Plotter):
     def set_yerr(self, yerrs: Union[NumericSequences, NumericSequence, NumericType]):
         return self.set_numeric_sequences(yerrs, "yerr")
 
-    def set_ecolor(self, ecolors: Union[ColorSequences, ColorSequence, Color]):
+    def set_ecolor(self, ecolors: Union[ColorSequences, ColorSequence, ColorType]):
         return self.set_color_sequences(ecolors, "ecolor")
 
     def set_capsize(self, capsize: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(capsize, "capsize")
+        return self.set_numeric_sequences(capsize, "capsize")
 
     def set_error_kw(self, error_kw: Union[DictSequence, Dict]):
         return self.set_dict_sequence(error_kw, "error_kw")
 
-    def set_facecolor(self, facecolors: Union[ColorSequence, Color]):
-        return self.set_color_sequence(facecolors, "facecolor")
+    def set_facecolor(self, facecolors: Union[ColorSequence, ColorType]):
+        return self.set_color_sequences(facecolors, "facecolor")
 
     def set_fill(self, fill: Union[Sequence[bool], bool]):
         return self.set_bool_sequence(fill, "fill")
@@ -169,7 +168,7 @@ class BarPlotter(Plotter):
         self,
         linestyles: Union[LiteralSequence, Literal["linestyles"]],
     ):
-        return self.set_literal_sequence(linestyles, LINESTYLES, "linestyle")
+        return self.set_literal_sequences(linestyles, LINESTYLES, "linestyle")
 
     def _create_bar_kwargs(self, n_sequence: int):
         bar_kwargs = {
@@ -194,7 +193,7 @@ class BarPlotter(Plotter):
             "zorder": self.get_sequences_param("zorder", n_sequence),
         }
         if (
-            not isinstance(bar_kwargs.get("alpha", []), NUMERIC_TYPES)
+            not isinstance(bar_kwargs.get("alpha", []), NumericType)
             and len(bar_kwargs.get("alpha", [])) == 1
         ):
             bar_kwargs["alpha"] = bar_kwargs["alpha"][0]
