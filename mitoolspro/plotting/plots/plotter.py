@@ -74,6 +74,10 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         x_data: Union[NumericSequence, NumericSequences],
         y_data: Union[NumericSequence, NumericSequences, None],
     ) -> tuple[NumericSequences, NumericSequences | None]:
+        if isinstance(x_data, list) and not x_data:
+            raise ArgumentStructureError("x_data cannot be empty")
+        if isinstance(y_data, list) and not y_data:
+            raise ArgumentStructureError("y_data cannot be empty")
         try:
             x_data = DataSequencesParam(value=x_data).value
             x_data_size = len(x_data)
@@ -107,7 +111,12 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
                 raise ArgumentStructureError(
                     "Invalid y_data, must be a sequence of sequences or a sequence of numeric values"
                 )
-
+        if len(x_data) != len(y_data):
+            raise ArgumentStructureError("x_data and y_data must have the same length")
+        if not all(len(x) == len(y) for x, y in zip(x_data, y_data)):
+            raise ArgumentStructureError(
+                "x_data and y_data must have the same sub structure"
+            )
         return x_data, y_data
 
     def set_color(self, color: Union[ColorSequences, ColorSequence, Color]):
