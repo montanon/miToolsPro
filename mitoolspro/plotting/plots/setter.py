@@ -90,6 +90,17 @@ class SetterMixIn(ABC):
     def multi_data(self) -> bool:
         pass
 
+    def _calculate_sizes(
+        self, x_data: Sequence[Sequence[Any]], multi_data: bool
+    ) -> tuple[SizesType, SizesType]:
+        if multi_data:
+            sizes = len(x_data)
+            sub_sizes = [len(seq) for seq in x_data]
+        else:
+            sizes = len(x_data[0])
+            sub_sizes = None
+        return sizes, sub_sizes
+
     def set_color_sequences(
         self,
         colors: Union[
