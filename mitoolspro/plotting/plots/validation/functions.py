@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Sequence, Type
 
 import numpy as np
 from matplotlib.colors import Normalize, get_named_colors_mapping, is_color_like
@@ -7,6 +7,7 @@ from matplotlib.markers import MarkerStyle
 from matplotlib.transforms import Transform
 from numpy import ndarray
 from pandas import Series
+from pydantic import BaseModel, ValidationError
 
 from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.types import (
@@ -20,6 +21,14 @@ COLORS = set(get_named_colors_mapping().keys())
 MARKERS = set(MarkerStyle.markers.keys()).union(set(MarkerStyle.filled_markers))
 MARKERS_FILLSTYLES = set(MarkerStyle.fillstyles)
 BINS = ["auto", "fd", "doane", "scott", "stone", "rice", "sturges", "sqrt"]
+
+
+def is_valid_model(model_class: Type[BaseModel], **kwargs) -> bool:
+    try:
+        model_class(**kwargs)
+        return True
+    except ValidationError:
+        return False
 
 
 def is_indexable(value: Any, index: Any) -> bool:
