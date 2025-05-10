@@ -9,11 +9,7 @@ from matplotlib.figure import Figure
 from numpy.testing import assert_array_equal
 from pydantic import ValidationError
 
-from mitoolspro.exceptions import (
-    ArgumentStructureError,
-    ArgumentTypeError,
-    ArgumentValueError,
-)
+from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.plotter import Plotter, PlotterException
 
 
@@ -35,9 +31,9 @@ class TestPlotter(TestCase):
         plotter = DummyPlotter(x_data, y_data)
         self.assertEqual(plotter.x_data, [x_data.tolist()])
         self.assertEqual(plotter.y_data, [y_data])
-        self.assertEqual(plotter._n_sequences, 1)
-        self.assertFalse(plotter._multi_data)
-        self.assertEqual(plotter.data_size, 4)
+        self.assertEqual(plotter.sizes, 4)
+        self.assertFalse(plotter.multi_data)
+        self.assertEqual(plotter.sub_sizes, None)
 
     def test_init_multi_sequence(self):
         x_data = np.asarray([[1, 2, 3], [4, 5, 6]])
@@ -45,9 +41,19 @@ class TestPlotter(TestCase):
         plotter = DummyPlotter(x_data, y_data)
         assert_array_equal(plotter.x_data, x_data)
         assert_array_equal(plotter.y_data, y_data)
-        self.assertEqual(plotter._n_sequences, 2)
-        self.assertTrue(plotter._multi_data)
-        self.assertEqual(plotter.data_size, 3)
+        self.assertEqual(plotter.sizes, 2)
+        self.assertTrue(plotter.multi_data)
+        self.assertEqual(plotter.sub_sizes, [3, 3])
+
+    def test_init_multi_sequence_with_sub_sizes(self):
+        x_data = [[1, 2, 3], [4, 5], [1, 2, 3, 4]]
+        y_data = [[6, 5, 4], [3, 2], [1, 0, 1, 2]]
+        plotter = DummyPlotter(x_data, y_data)
+        self.assertEqual(plotter.x_data, x_data)
+        self.assertEqual(plotter.y_data, y_data)
+        self.assertEqual(plotter.sizes, 3)
+        self.assertTrue(plotter.multi_data)
+        self.assertEqual(plotter.sub_sizes, [3, 2, 4])
 
     def test_init_y_data_none(self):
         x_data = np.array([[1, 2, 3, 4]])
@@ -55,9 +61,9 @@ class TestPlotter(TestCase):
         plotter = DummyPlotter(x_data, y_data)
         assert_array_equal(plotter.x_data, x_data)
         self.assertIsNone(plotter.y_data)
-        self.assertEqual(plotter._n_sequences, 1)
-        self.assertFalse(plotter._multi_data)
-        self.assertEqual(plotter.data_size, 4)
+        self.assertEqual(plotter.sizes, 4)
+        self.assertFalse(plotter.multi_data)
+        self.assertEqual(plotter.sub_sizes, None)
 
     def test_init_invalid_x_data(self):
         x_data = ["a", "b", "c"]
