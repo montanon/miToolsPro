@@ -16,6 +16,9 @@ from mitoolspro.plotting.plots.validation.models import (
     NumericParam,
     NumericSequenceParam,
     NumericSequencesParam,
+    Param,
+    SequenceParam,
+    SequencesParam,
 )
 from mitoolspro.plotting.plots.validation.types import (
     ColorSequence,
@@ -221,3 +224,14 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
             if key in params:
                 params[key] = cls._convert_list_to_tuple(params[key], size)
         return cls(x_data=x_data, y_data=y_data, **params)
+
+    def get_sequences_param(self, param_name: str, n_sequence: int):
+        param_value = getattr(self, param_name)
+        if self._multi_data:
+            if is_valid_model(SequencesParam[Any], value=param_value) or is_valid_model(
+                SequenceParam, value=param_value
+            ):
+                return param_value[n_sequence]
+            elif is_valid_model(Param[Any], value=param_value):
+                return param_value
+        return param_value
