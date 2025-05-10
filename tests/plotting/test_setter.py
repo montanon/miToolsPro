@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, Sequence
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
@@ -6,6 +7,19 @@ from matplotlib.colors import LogNorm, Normalize, SymLogNorm
 
 from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.setter import SetterMixIn
+from mitoolspro.plotting.plots.validation.types import SizesType
+
+
+def _calculate_sizes(
+    x_data: Sequence[Sequence[Any]], multi_data: bool
+) -> tuple[SizesType, SizesType]:
+    if multi_data:
+        sizes = len(x_data)
+        sub_sizes = [len(seq) for seq in x_data]
+    else:
+        sizes = len(x_data[0])
+        sub_sizes = None
+    return sizes, sub_sizes
 
 
 class TestSetColorSequences(TestCase):
@@ -13,10 +27,15 @@ class TestSetColorSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -154,10 +173,15 @@ class TestSetNumericSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -263,10 +287,15 @@ class TestSetLiteralSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -399,10 +428,15 @@ class TestSetMarkerSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -513,10 +547,15 @@ class TestSetEdgeColorSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -638,10 +677,15 @@ class TestSetStrSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -754,10 +798,15 @@ class TestSetNumericTupleSequences(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -876,10 +925,15 @@ class TestSetColormapSequence(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -952,10 +1006,15 @@ class TestSetNormSequence(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -1063,10 +1122,15 @@ class TestSetBinsSequence(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -1157,10 +1221,15 @@ class TestSetBoolSequence(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):
@@ -1250,10 +1319,15 @@ class TestSetDictSequence(TestCase):
         def __init__(self, x_data, multi_data):
             self._x_data = x_data
             self._multi_data = multi_data
+            self._sizes, self._sub_sizes = _calculate_sizes(x_data, multi_data)
 
         @property
-        def x_data(self):
-            return self._x_data
+        def sizes(self):
+            return self._sizes
+
+        @property
+        def sub_sizes(self):
+            return self._sub_sizes
 
         @property
         def multi_data(self):

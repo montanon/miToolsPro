@@ -77,22 +77,18 @@ from mitoolspro.plotting.plots.validation.types import (
 class SetterMixIn(ABC):
     @property
     @abstractmethod
-    def x_data(self) -> Sequence[Sequence[Any]]:
+    def sizes(self) -> SizesType:
+        pass
+
+    @property
+    @abstractmethod
+    def sub_sizes(self) -> SizesType:
         pass
 
     @property
     @abstractmethod
     def multi_data(self) -> bool:
         pass
-
-    def _calculate_sizes(self) -> tuple[SizesType, SizesType]:
-        if self.multi_data:
-            sizes = len(self.x_data)
-            sub_sizes = [len(seq) for seq in self.x_data]
-        else:
-            sizes = len(self.x_data[0])
-            sub_sizes = None
-        return sizes, sub_sizes
 
     def set_color_sequences(
         self,
