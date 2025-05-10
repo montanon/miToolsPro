@@ -7,7 +7,6 @@ from matplotlib.transforms import Transform
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mitoolspro.exceptions import ArgumentValidationError
-from mitoolspro.plotting.plots.matplotlib_typing import BINS, CMAPS, NORMALIZATIONS
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
     is_bins,
@@ -29,6 +28,9 @@ from mitoolspro.plotting.plots.validation.functions import (
     validate_tuple_sizes,
 )
 from mitoolspro.plotting.plots.validation.types import (
+    BINS,
+    COLORMAPS,
+    NORMALIZATIONS,
     BinsType,
     ColormapType,
     ColorSequence,
@@ -937,9 +939,9 @@ class ColormapParam(Param[ColormapType]):
         if isinstance(values, Colormap):
             return {"value": values}
 
-        if not is_literal(values, CMAPS):
+        if not is_literal(values, COLORMAPS):
             raise ArgumentValidationError(
-                f"Invalid colormap: {values!r}. Allowed options: {CMAPS}."
+                f"Invalid colormap: {values!r}. Allowed options: {COLORMAPS}."
             )
 
         return {"value": values}
@@ -964,11 +966,11 @@ class ColormapSequenceParam(SequenceParam[ColormapType]):
         for idx, value in enumerate(values):
             if isinstance(value, Colormap):
                 normalized.append(value)
-            elif is_literal(value, CMAPS):
+            elif is_literal(value, COLORMAPS):
                 normalized.append(value)
             else:
                 raise ArgumentValidationError(
-                    f"Invalid colormap at index {idx}: {value!r}. Allowed options: {CMAPS}."
+                    f"Invalid colormap at index {idx}: {value!r}. Allowed options: {COLORMAPS}."
                 )
 
         return {
@@ -1003,11 +1005,11 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
             for inner_idx, value in enumerate(outer):
                 if isinstance(value, Colormap):
                     normalized_inner.append(value)
-                elif is_literal(value, CMAPS):
+                elif is_literal(value, COLORMAPS):
                     normalized_inner.append(value)
                 else:
                     raise ArgumentValidationError(
-                        f"Invalid colormap at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {CMAPS}."
+                        f"Invalid colormap at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {COLORMAPS}."
                     )
             normalized_outer.append(normalized_inner)
 
