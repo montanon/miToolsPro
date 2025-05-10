@@ -42,9 +42,10 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         **kwargs,
     ):
         self.x_data, self.y_data = self._validate_data(x_data, y_data)
-        self._n_sequences = len(self.x_data)
-        self._multi_data = self._n_sequences > 1
-        self._data_size = max(len(x) for x in self.x_data)
+        self._multi_data = len(self.x_data) > 1
+        self._sizes, self._sub_sizes = self._calculate_sizes(
+            self.x_data, self.multi_data
+        )
         # Specific Parameters that are based on the number of data sequences
         self._multi_data_params = {
             "color": None,
@@ -52,26 +53,21 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
             "label": None,
             "zorder": None,
         }
-        self._multi_params_structure = {}
         super().__init__(ax=ax, **kwargs)
         self._init_params.update(self._multi_data_params)
         self._set_init_params(**kwargs)
 
     @property
-    def data_size(self) -> int:
-        return self._data_size
+    def sizes(self):
+        return self._sizes
 
     @property
-    def n_sequences(self) -> int:
-        return self._n_sequences
+    def sub_sizes(self):
+        return self._sub_sizes
 
     @property
     def multi_data(self) -> bool:
         return self._multi_data
-
-    @property
-    def multi_params_structure(self) -> dict:
-        return self._multi_params_structure
 
     def _validate_data(
         self,
@@ -175,7 +171,7 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
             json.dump(init_params, f, indent=4)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}(n_sequences={self.n_sequences}, data_size={self.data_size}, multi_data={self.multi_data})>"
+        return f"<{self.__class__.__name__}(size={self.sizes}, sub_sizes={self.sub_sizes}, multi_data={self.multi_data})>"
 
     @classmethod
     def _convert_list_to_tuple(
