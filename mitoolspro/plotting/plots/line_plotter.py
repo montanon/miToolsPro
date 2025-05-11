@@ -32,65 +32,57 @@ class LinePlotter(Plotter):
     ):
         self._line_params = {
             # Specific Parameters that are based on the number of data sequences
-            "marker": {
-                "default": "",
-                "type": Union[MarkerSequence, MarkerType],
-            },
-            "markersize": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "markeredgewidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "markeredgecolor": {
-                "default": None,
-                "type": Union[EdgeColorSequence, EdgeColorType],
-            },
-            "markerfacecolor": {
-                "default": None,
-                "type": Union[ColorSequence, ColorType],
-            },
-            "linestyle": {
-                "default": "-",
-                "type": Union[LiteralSequence, Literal["linestyles"]],
-            },
-            "linewidth": {"default": None, "type": Union[NumericSequence, NumericType]},
+            "marker": "",
+            "markersize": None,
+            "markeredgewidth": None,
+            "markeredgecolor": None,
+            "markerfacecolor": None,
+            "linestyle": "-",
+            "linewidth": None,
         }
         super().__init__(x_data, y_data, ax=ax, **kwargs)
         self._init_params.update(self._line_params)
         self._set_init_params(**kwargs)
 
     def set_marker(self, markers: Union[MarkerSequence, MarkerType]):
-        return self.set_marker_sequences(markers, param_name="marker")
+        return self.set_marker_sequences(
+            markers, param_name="marker", multi_param=False
+        )
 
     def set_markersize(self, markersize: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequences(markersize, param_name="markersize")
+        return self.set_numeric_sequences(
+            markersize, param_name="markersize", multi_param=False
+        )
 
     def set_markeredgewidth(self, markeredgewidth: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequences(markeredgewidth, param_name="markeredgewidth")
+        return self.set_numeric_sequences(
+            markeredgewidth, param_name="markeredgewidth", multi_param=False
+        )
 
     def set_markeredgecolor(
         self, markeredgecolor: Union[EdgeColorSequence, EdgeColorType]
     ):
         return self.set_edgecolor_sequences(
-            markeredgecolor, param_name="markeredgecolor"
+            markeredgecolor, param_name="markeredgecolor", multi_param=False
         )
 
     def set_markerfacecolor(self, markerfacecolor: Union[ColorSequence, ColorType]):
-        return self.set_color_sequences(markerfacecolor, param_name="markerfacecolor")
+        return self.set_color_sequences(
+            markerfacecolor, param_name="markerfacecolor", multi_param=False
+        )
 
     def set_linestyle(
         self,
         linestyles: Union[LiteralSequence, Literal["linestyles"]],
     ):
         return self.set_literal_sequences(
-            linestyles, options=LINESTYLES, param_name="linestyle"
+            linestyles, options=LINESTYLES, param_name="linestyle", multi_param=False
         )
 
     def set_linewidth(self, linewidths: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequences(linewidths, param_name="linewidth")
+        return self.set_numeric_sequences(
+            linewidths, param_name="linewidth", multi_param=False
+        )
 
     def _create_line_kwargs(self, n_sequence: int):
         line_kwargs = {
