@@ -1,3 +1,4 @@
+import warnings
 from typing import Union
 
 from matplotlib.axes import Axes
@@ -39,39 +40,18 @@ class ScatterPlotter(Plotter):
         super().__init__(x_data, y_data, ax=ax, **kwargs)
         self._scatter_params = {
             # General Axes.scatter Parameters that are independent of the number of data sequences
-            "plot_non_finite": {"default": False, "type": bool},
-            "hover": {"default": False, "type": bool},
+            "plot_non_finite": False,
+            "hover": False,
             # Specific Parameters that are based on the number of data sequences
-            "size": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "marker": {
-                "default": "o",
-                "type": Union[MarkerSequences, MarkerSequence, MarkerType],
-            },
-            "linewidth": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "edgecolor": {
-                "default": None,
-                "type": Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType],
-            },
-            "facecolor": {
-                "default": None,
-                "type": Union[ColorSequences, ColorSequence, ColorType],
-            },
-            "colormap": {
-                "default": None,
-                "type": Union[ColormapSequence, ColormapType],
-            },
-            "normalization": {
-                "default": None,
-                "type": Union[NormalizationSequence, NormalizationType],
-            },
-            "vmin": {"default": None, "type": Union[NumericSequence, NumericType]},
-            "vmax": {"default": None, "type": Union[NumericSequence, NumericType]},
+            "size": None,
+            "marker": "o",
+            "linewidth": None,
+            "edgecolor": None,
+            "facecolor": None,
+            "colormap": None,
+            "normalization": None,
+            "vmin": None,
+            "vmax": None,
         }
         self._init_params.update(self._scatter_params)
         self._set_init_params(**kwargs)
@@ -90,7 +70,9 @@ class ScatterPlotter(Plotter):
         return self.set_numeric_sequences(size, param_name="size")
 
     def set_marker(self, markers: Union[MarkerSequences, MarkerSequence, MarkerType]):
-        return self.set_marker_sequences(markers, param_name="marker")
+        return self.set_marker_sequences(
+            markers, param_name="marker", multi_param=False
+        )
 
     def set_linewidth(
         self, linewidths: Union[NumericSequences, NumericSequence, NumericType]
@@ -159,7 +141,9 @@ class ScatterPlotter(Plotter):
             scatter_kwargs = self._create_scatter_kwargs(n_sequence)
             scatter_kwargs = {k: v for k, v in scatter_kwargs.items() if v is not None}
             try:
-                self.ax.scatter(**scatter_kwargs)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    self.ax.scatter(**scatter_kwargs)
             except Exception as e:
                 raise ScatterPlotterException(f"Error while creating scatter plot: {e}")
         if self.hover and self.label is not None:
