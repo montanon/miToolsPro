@@ -2,30 +2,26 @@ from typing import Literal, Sequence, Union
 
 from matplotlib.axes import Axes
 
-from mitoolspro.plotting.plots.matplotlib_typing import (
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.models import BoolParam, LiteralParam
+from mitoolspro.plotting.plots.validation.types import (
     HATCHES,
     HIST_ALIGN,
     HIST_HISTTYPE,
     LINESTYLES,
     ORIENTATIONS,
-    Bins,
     BinsSequence,
-    Color,
+    BinsType,
     ColorSequence,
-    EdgeColor,
+    ColorType,
     EdgeColorSequence,
+    EdgeColorType,
     LiteralSequence,
     NumericSequence,
     NumericSequences,
-    NumericTuple,
     NumericTupleSequence,
+    NumericTupleType,
     NumericType,
-)
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import (
-    NUMERIC_TYPES,
-    validate_literal,
-    validate_type,
 )
 
 
@@ -44,90 +40,48 @@ class HistogramPlotter(Plotter):
         super().__init__(x_data=x_data, y_data=None, ax=ax, **kwargs)
         self._hist_params = {
             # General Axes.scatter Parameters that are independent of the number of data sequences
-            "orientation": {
-                "default": "vertical",
-                "type": Literal["horizontal", "vertical"],
-            },
-            "stacked": {"default": False, "type": bool},
-            "log": {"default": False, "type": bool},
+            "orientation": "vertical",
+            "stacked": False,
+            "log": False,
             # Specific Parameters that are based on the number of data sequences
-            "bins": {
-                "default": "auto",
-                "type": Union[BinsSequence, Bins],
-            },
-            "range": {
-                "default": None,
-                "type": Union[Sequence[NumericTuple], NumericTuple, None],
-            },
-            "weights": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, None],
-            },
-            "cumulative": {"default": False, "type": Union[Sequence[bool], bool]},
-            "bottom": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType, None],
-            },
-            "histtype": {
-                "default": "bar",
-                "type": Union[
-                    LiteralSequence,
-                    Literal["bar", "barstacked", "step", "stepfilled"],
-                ],
-            },
-            "align": {
-                "default": "mid",
-                "type": Union[LiteralSequence, Literal["left", "mid", "right"]],
-            },
-            "rwidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType, None],
-            },
-            "edgecolor": {
-                "default": None,
-                "type": Union[EdgeColorSequence, EdgeColor],
-            },
-            "facecolor": {
-                "default": None,
-                "type": Union[ColorSequence, Color],
-            },
-            "fill": {"default": True, "type": Union[Sequence[bool], bool]},
-            "linestyle": {
-                "default": "-",
-                "type": Union[LiteralSequence, Literal["linestyles"]],
-            },
-            "linewidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "hatch": {
-                "default": None,
-                "type": Union[LiteralSequence, Literal["hatches"]],
-            },
+            "bins": "auto",
+            "range": None,
+            "weights": None,
+            "cumulative": False,
+            "bottom": None,
+            "histtype": "bar",
+            "align": "mid",
+            "rwidth": None,
+            "edgecolor": None,
+            "facecolor": None,
+            "fill": True,
+            "linestyle": "-",
+            "linewidth": None,
+            "hatch": None,
         }
         self._init_params.update(self._hist_params)
         self._set_init_params(**kwargs)
 
     def set_orientation(self, orientation: Literal["horizontal", "vertical"]):
-        validate_literal(orientation, ORIENTATIONS)
+        LiteralParam(value=orientation, options=ORIENTATIONS)
         self.orientation = orientation
         return self
 
     def set_stacked(self, stacked: bool):
-        validate_type(stacked, bool, "stacked")
+        BoolParam(value=stacked)
         self.stacked = stacked
         return self
 
     def set_log(self, log: bool):
-        validate_type(log, bool, "log")
+        BoolParam(value=log)
         self.log = log
         return self
 
-    def set_bins(self, bins: Union[BinsSequence, Bins]):
+    def set_bins(self, bins: Union[BinsSequence, BinsType]):
         return self.set_bins_sequence(bins, "bins")
 
-    def set_range(self, range: Union[NumericTupleSequence, NumericTuple, None]):
-        return self.set_numeric_tuple_sequence(range, 2, "range")
+    def set_range(self, range: Union[NumericTupleSequence, NumericTupleType, None]):
+        return self.set_numeric_tuple_sequences(range, 2, "range", multi_param=False)
 
     def set_weights(self, weights: Union[NumericSequences, NumericSequence, None]):
         return self.set_numeric_sequences(weights, "weights")
@@ -147,19 +101,21 @@ class HistogramPlotter(Plotter):
             Literal["bar", "barstacked", "step", "stepfilled"],
         ],
     ):
-        return self.set_literal_sequence(histtype, HIST_HISTTYPE, "histtype")
+        return self.set_literal_sequences(
+            histtype, HIST_HISTTYPE, "histtype", multi_param=False
+        )
 
     def set_align(self, align: Union[LiteralSequence, Literal["left", "mid", "right"]]):
-        return self.set_literal_sequence(align, HIST_ALIGN, "align")
+        return self.set_literal_sequences(align, HIST_ALIGN, "align", multi_param=False)
 
     def set_rwidth(self, rwidth: Union[NumericSequence, NumericType, None]):
-        return self.set_numeric_sequence(rwidth, "rwidth")
+        return self.set_numeric_sequences(rwidth, "rwidth", multi_param=False)
 
-    def set_edgecolor(self, edgecolors: Union[EdgeColorSequence, EdgeColor]):
-        return self.set_edgecolor_sequence(edgecolors, "edgecolor")
+    def set_edgecolor(self, edgecolors: Union[EdgeColorSequence, EdgeColorType]):
+        return self.set_edgecolor_sequences(edgecolors, "edgecolor", multi_param=False)
 
-    def set_facecolor(self, facecolors: Union[ColorSequence, Color]):
-        return self.set_color_sequence(facecolors, "facecolor")
+    def set_facecolor(self, facecolors: Union[ColorSequence, ColorType]):
+        return self.set_color_sequences(facecolors, "facecolor", multi_param=False)
 
     def set_fill(self, fill: Union[Sequence[bool], bool]):
         return self.set_bool_sequence(fill, "fill")
@@ -168,13 +124,15 @@ class HistogramPlotter(Plotter):
         self,
         linestyles: Union[LiteralSequence, Literal["linestyles"]],
     ):
-        return self.set_literal_sequence(linestyles, LINESTYLES, "linestyle")
+        return self.set_literal_sequences(
+            linestyles, LINESTYLES, "linestyle", multi_param=False
+        )
 
     def set_linewidth(self, linewidths: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(linewidths, "linewidth")
+        return self.set_numeric_sequences(linewidths, "linewidth", multi_param=False)
 
     def set_hatch(self, hatches: Union[LiteralSequence, Literal["hatches"]]):
-        return self.set_literal_sequence(hatches, HATCHES, "hatch")
+        return self.set_literal_sequences(hatches, HATCHES, "hatch", multi_param=False)
 
     def _create_hist_kwargs(self, n_sequence: int):
         hist_kwargs = {
@@ -201,7 +159,7 @@ class HistogramPlotter(Plotter):
             "zorder": self.get_sequences_param("zorder", n_sequence),
         }
         if (
-            not isinstance(hist_kwargs.get("alpha", []), NUMERIC_TYPES)
+            not isinstance(hist_kwargs.get("alpha", []), NumericType)
             and len(hist_kwargs.get("alpha", [])) == 1
         ):
             hist_kwargs["alpha"] = hist_kwargs["alpha"][0]

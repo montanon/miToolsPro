@@ -6,32 +6,34 @@ from matplotlib.patches import PathPatch
 from mitoolspro.exceptions import (
     ArgumentStructureError,
 )
-from mitoolspro.plotting.plots.matplotlib_typing import (
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.functions import (
+    is_numeric,
+    is_numeric_sequence,
+    is_numeric_sequences,
+    is_valid_model,
+)
+from mitoolspro.plotting.plots.validation.models import (
+    LiteralParam,
+    NumericParam,
+    NumericTupleParam,
+    NumericTupleSequenceParam,
+    NumericTupleSequencesParam,
+    StrParam,
+    StrSequenceParam,
+)
+from mitoolspro.plotting.plots.validation.types import (
     ORIENTATIONS,
     BoolSequence,
     DictSequence,
     NumericSequence,
     NumericSequences,
-    NumericTuple,
     NumericTupleSequence,
     NumericTupleSequences,
+    NumericTupleType,
     NumericType,
     StrSequence,
     StrSequences,
-)
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import (
-    NUMERIC_TYPES,
-    is_numeric,
-    is_numeric_sequence,
-    is_numeric_sequences,
-    is_numeric_tuple,
-    is_numeric_tuple_sequence,
-    is_numeric_tuple_sequences,
-    is_str,
-    is_str_sequence,
-    validate_literal,
-    validate_type,
 )
 
 
@@ -106,12 +108,13 @@ class BoxPlotter(Plotter):
         )
 
     def set_bootstrap(self, bootstrap: Union[NumericType, None]):
-        validate_type(bootstrap, (*NUMERIC_TYPES, type(None)), "bootstrap")
+        if bootstrap is not None:
+            NumericParam(value=bootstrap)
         self.bootstrap = bootstrap
         return self
 
     def set_orientation(self, orientation: Literal["vertical", "horizontal"]):
-        validate_literal(orientation, ORIENTATIONS)
+        LiteralParam(value=orientation, options=ORIENTATIONS)
         self.orientation = orientation
         return self
 
@@ -119,30 +122,30 @@ class BoxPlotter(Plotter):
         return self.set_bool_sequence(notch, "notch")
 
     def set_sym(self, sym: str):
-        if is_str_sequence(sym):
+        if is_valid_model(StrSequenceParam, sym):
             self.sym = sym
-            self.multi_params_structure["sym"] = "sequence"
             return self
-        elif is_str(sym):
+        elif is_valid_model(StrParam, sym):
             self.sym = sym
-            self.multi_params_structure["sym"] = "value"
             return self
         raise ArgumentStructureError("sym must be a string or a sequence of strings")
 
     def set_whis(
         self,
-        whis: Union[NumericSequence, NumericTupleSequence, NumericType, NumericTuple],
+        whis: Union[
+            NumericSequence, NumericTupleSequence, NumericType, NumericTupleType
+        ],
     ):
         if (
-            is_numeric_tuple_sequences(whis)
-            or is_numeric_tuple_sequence(whis)
-            or is_numeric_tuple(whis, 2)
+            is_valid_model(NumericTupleSequencesParam, value=whis)
+            or is_valid_model(NumericTupleSequenceParam, value=whis)
+            or is_valid_model(NumericTupleParam, value=whis)
         ):
-            return self.set_numeric_tuple_sequence(whis, 2, "whis")
+            return self.set_numeric_tuple_sequences(whis, 2, "whis")
         elif (
             is_numeric_sequences(whis) or is_numeric_sequence(whis) or is_numeric(whis)
         ):
-            return self.set_numeric_sequence(whis, "whis")
+            return self.set_numeric_sequences(whis, "whis")
         raise ArgumentStructureError(
             "whis must be a number or tuple, or sequence of numbers or tuples, or sequence of sequences of numbers or tuples."
         )

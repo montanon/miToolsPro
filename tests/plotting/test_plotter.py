@@ -203,17 +203,9 @@ class TestPlotter(TestCase):
         self.plotter.set_background("blue")
         self.assertEqual(self.plotter.background, "blue")
 
-    def test_set_background_invalid(self):
-        with self.assertRaises(ValidationError):
-            self.plotter.set_background(123)
-
     def test_set_figure_background(self):
         self.plotter.set_figure_background("white")
         self.assertEqual(self.plotter.figure_background, "white")
-
-    def test_set_figure_background_invalid(self):
-        with self.assertRaises(ValidationError):
-            self.plotter.set_figure_background(456)
 
     def test_set_suptitle(self):
         self.plotter.set_suptitle("Super Title", fontsize=14)
@@ -429,8 +421,8 @@ class TestPlotter(TestCase):
             "x_data": [[1, 2, 3]],
             "y_data": [[4, 5, 6]],
             "title": "Test Plot",
-            "xlim": [0, 10],
-            "ylim": [0, 5],
+            "xlim": (0, 10),
+            "ylim": (0, 5),
         }
         with patch(
             "builtins.open", unittest.mock.mock_open(read_data=json.dumps(data))
@@ -453,6 +445,47 @@ class TestPlotter(TestCase):
         self.plotter.reset_params()
         self.assertEqual(self.plotter.title, "")
         self.assertIsNone(self.plotter.color)
+
+    def test_get_sequences_param_single_data(self):
+        self.plotter.set_color("red")
+        self.plotter.set_alpha(0.5)
+        self.plotter.set_label("Test")
+        self.plotter.set_zorder(2)
+
+        self.assertEqual(self.plotter.get_sequences_param("color", 0), "red")
+        self.assertEqual(self.plotter.get_sequences_param("alpha", 0), 0.5)
+        self.assertEqual(self.plotter.get_sequences_param("label", 0), "Test")
+        self.assertEqual(self.plotter.get_sequences_param("zorder", 0), 2)
+
+    def test_get_sequences_param_multi_data_sequence(self):
+        self.multi_plotter.set_color(["red", "blue"])
+        self.multi_plotter.set_alpha([0.5, 0.7])
+        self.multi_plotter.set_label(["Series 1", "Series 2"])
+        self.multi_plotter.set_zorder([1, 2])
+
+        self.assertEqual(self.multi_plotter.get_sequences_param("color", 0), "red")
+        self.assertEqual(self.multi_plotter.get_sequences_param("color", 1), "blue")
+        self.assertEqual(self.multi_plotter.get_sequences_param("alpha", 0), 0.5)
+        self.assertEqual(self.multi_plotter.get_sequences_param("alpha", 1), 0.7)
+        self.assertEqual(self.multi_plotter.get_sequences_param("label", 0), "Series 1")
+        self.assertEqual(self.multi_plotter.get_sequences_param("label", 1), "Series 2")
+        self.assertEqual(self.multi_plotter.get_sequences_param("zorder", 0), 1)
+        self.assertEqual(self.multi_plotter.get_sequences_param("zorder", 1), 2)
+
+    def test_get_sequences_param_multi_data_single_value(self):
+        self.multi_plotter.set_color("red")
+        self.multi_plotter.set_alpha(0.5)
+        self.multi_plotter.set_label("Test")
+        self.multi_plotter.set_zorder(2)
+
+        self.assertEqual(self.multi_plotter.get_sequences_param("color", 0), "red")
+        self.assertEqual(self.multi_plotter.get_sequences_param("color", 1), "red")
+        self.assertEqual(self.multi_plotter.get_sequences_param("alpha", 0), 0.5)
+        self.assertEqual(self.multi_plotter.get_sequences_param("alpha", 1), 0.5)
+        self.assertEqual(self.multi_plotter.get_sequences_param("label", 0), "Test")
+        self.assertEqual(self.multi_plotter.get_sequences_param("label", 1), "Test")
+        self.assertEqual(self.multi_plotter.get_sequences_param("zorder", 0), 2)
+        self.assertEqual(self.multi_plotter.get_sequences_param("zorder", 1), 2)
 
 
 if __name__ == "__main__":

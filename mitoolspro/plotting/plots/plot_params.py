@@ -228,13 +228,13 @@ class ParamsMixIn:
 
     def set_xticklabels(self, xticklabels: Optional[StrSequence] = None):
         if xticklabels is not None:
-            StrSequenceParam(value=xticklabels)
+            SequenceParam[str | None | int | float](value=xticklabels)
         self.xticklabels = xticklabels
         return self
 
     def set_yticklabels(self, yticklabels: Optional[StrSequence] = None):
         if yticklabels is not None:
-            StrSequenceParam(value=yticklabels)
+            SequenceParam[str | None | int | float](value=yticklabels)
         self.yticklabels = yticklabels
         return self
 
@@ -532,6 +532,8 @@ class ParamsMixIn:
                 joinstyle=value.get_joinstyle(),
             )
             return marker
+        elif isinstance(value, SpinesParam):
+            return value.model_dump()
 
         return value
 

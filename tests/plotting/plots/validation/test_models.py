@@ -2356,12 +2356,9 @@ class TestColorParam(TestCase):
             ColorParam(value=[255, 0, 0, 1.1])
 
     def test_init_with_invalid_single_int(self):
-        with self.assertRaises(ValidationError):
-            ColorParam(value=256)
-
-    def test_init_with_invalid_single_float(self):
-        with self.assertRaises(ValidationError):
-            ColorParam(value=1.1)
+        # Color can be a number representing a color scale
+        ColorParam(value=256)
+        ColorParam(value=1.1)
 
     def test_init_with_invalid_numpy_array_shape(self):
         with self.assertRaises(ValidationError):
@@ -3833,12 +3830,6 @@ class TestLiteralParam(TestCase):
             )
         with self.assertRaises(ValidationError):
             LiteralParam.model_validate({"value": "option1", "options": []})
-
-    def test_init_with_missing_fields(self):
-        with self.assertRaises(ValidationError):
-            LiteralParam.model_validate({"value": "option1"})
-        with self.assertRaises(ValidationError):
-            LiteralParam.model_validate({"options": ["option1"]})
 
     def test_init_with_invalid_types(self):
         with self.assertRaises(ValidationError):

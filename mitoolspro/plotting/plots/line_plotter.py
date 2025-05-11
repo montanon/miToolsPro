@@ -2,21 +2,20 @@ from typing import Literal, Union
 
 from matplotlib.axes import Axes
 
-from mitoolspro.plotting.plots.matplotlib_typing import (
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.types import (
     LINESTYLES,
-    Color,
     ColorSequence,
-    EdgeColor,
+    ColorType,
     EdgeColorSequence,
+    EdgeColorType,
     LiteralSequence,
-    Marker,
     MarkerSequence,
+    MarkerType,
     NumericSequence,
     NumericSequences,
     NumericType,
 )
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import NUMERIC_TYPES
 
 
 class LinePlotterException(Exception):
@@ -33,63 +32,57 @@ class LinePlotter(Plotter):
     ):
         self._line_params = {
             # Specific Parameters that are based on the number of data sequences
-            "marker": {
-                "default": "",
-                "type": Union[MarkerSequence, Marker],
-            },
-            "markersize": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "markeredgewidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "markeredgecolor": {
-                "default": None,
-                "type": Union[EdgeColorSequence, EdgeColor],
-            },
-            "markerfacecolor": {
-                "default": None,
-                "type": Union[ColorSequence, Color],
-            },
-            "linestyle": {
-                "default": "-",
-                "type": Union[LiteralSequence, Literal["linestyles"]],
-            },
-            "linewidth": {"default": None, "type": Union[NumericSequence, NumericType]},
+            "marker": "",
+            "markersize": None,
+            "markeredgewidth": None,
+            "markeredgecolor": None,
+            "markerfacecolor": None,
+            "linestyle": "-",
+            "linewidth": None,
         }
         super().__init__(x_data, y_data, ax=ax, **kwargs)
         self._init_params.update(self._line_params)
         self._set_init_params(**kwargs)
 
-    def set_marker(self, markers: Union[MarkerSequence, Marker]):
-        return self.set_marker_sequence(markers, param_name="marker")
-
-    def set_markersize(self, markersize: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(markersize, param_name="markersize")
-
-    def set_markeredgewidth(self, markeredgewidth: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(markeredgewidth, param_name="markeredgewidth")
-
-    def set_markeredgecolor(self, markeredgecolor: Union[EdgeColorSequence, EdgeColor]):
-        return self.set_edgecolor_sequence(
-            markeredgecolor, param_name="markeredgecolor"
+    def set_marker(self, markers: Union[MarkerSequence, MarkerType]):
+        return self.set_marker_sequences(
+            markers, param_name="marker", multi_param=False
         )
 
-    def set_markerfacecolor(self, markerfacecolor: Union[ColorSequence, Color]):
-        return self.set_color_sequence(markerfacecolor, param_name="markerfacecolor")
+    def set_markersize(self, markersize: Union[NumericSequence, NumericType]):
+        return self.set_numeric_sequences(
+            markersize, param_name="markersize", multi_param=False
+        )
+
+    def set_markeredgewidth(self, markeredgewidth: Union[NumericSequence, NumericType]):
+        return self.set_numeric_sequences(
+            markeredgewidth, param_name="markeredgewidth", multi_param=False
+        )
+
+    def set_markeredgecolor(
+        self, markeredgecolor: Union[EdgeColorSequence, EdgeColorType]
+    ):
+        return self.set_edgecolor_sequences(
+            markeredgecolor, param_name="markeredgecolor", multi_param=False
+        )
+
+    def set_markerfacecolor(self, markerfacecolor: Union[ColorSequence, ColorType]):
+        return self.set_color_sequences(
+            markerfacecolor, param_name="markerfacecolor", multi_param=False
+        )
 
     def set_linestyle(
         self,
         linestyles: Union[LiteralSequence, Literal["linestyles"]],
     ):
-        return self.set_literal_sequence(
-            linestyles, options=LINESTYLES, param_name="linestyle"
+        return self.set_literal_sequences(
+            linestyles, options=LINESTYLES, param_name="linestyle", multi_param=False
         )
 
     def set_linewidth(self, linewidths: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(linewidths, param_name="linewidth")
+        return self.set_numeric_sequences(
+            linewidths, param_name="linewidth", multi_param=False
+        )
 
     def _create_line_kwargs(self, n_sequence: int):
         line_kwargs = {
@@ -106,7 +99,7 @@ class LinePlotter(Plotter):
             "zorder": self.get_sequences_param("zorder", n_sequence),
         }
         if (
-            not isinstance(line_kwargs.get("alpha", []), NUMERIC_TYPES)
+            not isinstance(line_kwargs.get("alpha", []), NumericType)
             and len(line_kwargs.get("alpha", [])) == 1
         ):
             line_kwargs["alpha"] = line_kwargs["alpha"][0]

@@ -109,9 +109,10 @@ class SetterMixIn(ABC):
             ColorType,
         ],
         param_name: str,
+        multi_param: bool = True,
         structured: bool = True,
     ) -> Any:
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 validated = ColorSequencesParam(
                     value=colors,
@@ -157,6 +158,7 @@ class SetterMixIn(ABC):
         self,
         sequences: Union[NumericSequences, NumericSequence, NumericType],
         param_name: str,
+        multi_param: bool = True,
         min_value: NumericType = None,
         max_value: NumericType = None,
         structured: bool = True,
@@ -167,7 +169,7 @@ class SetterMixIn(ABC):
             max_value = max_value if max_value is not None else np.inf
         no_range = not has_range
 
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 sequences = (
                     NumericSequencesParam(
@@ -241,9 +243,10 @@ class SetterMixIn(ABC):
         sequences: Union[LiteralSequences, LiteralSequence, LiteralType],
         options: Sequence[str],
         param_name: str,
+        multi_param: bool = True,
         structured: bool = True,
     ):
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 sequences = LiteralSequencesParam(
                     value=sequences,
@@ -291,9 +294,10 @@ class SetterMixIn(ABC):
         self,
         sequences: Union[MarkerSequences, MarkerSequence, MarkerType],
         param_name: str,
+        multi_param: bool = True,
         structured: bool = True,
     ):
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 sequences = MarkerSequencesParam(
                     value=sequences,
@@ -338,9 +342,10 @@ class SetterMixIn(ABC):
         self,
         sequences: Union[EdgeColorSequences, EdgeColorSequence, EdgeColorType],
         param_name: str,
+        multi_param: bool = True,
         structured: bool = True,
     ):
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 sequences = EdgeColorSequencesParam(
                     value=sequences,
@@ -385,9 +390,10 @@ class SetterMixIn(ABC):
         self,
         sequences: Union[StrSequences, StrSequence, str],
         param_name: str,
+        multi_param: bool = True,
         structured: bool = True,
     ):
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 sequences = StrSequencesParam(
                     value=sequences,
@@ -433,9 +439,10 @@ class SetterMixIn(ABC):
         sequences: Union[NumericTupleSequences, NumericTupleSequence, NumericTupleType],
         tuple_sizes: Union[Sequence[int], int],
         param_name: str,
+        multi_param: bool = True,
         structured: bool = True,
     ):
-        if self.multi_data:
+        if self.multi_data and multi_param:
             try:
                 sequences = NumericTupleSequencesParam(
                     value=sequences,

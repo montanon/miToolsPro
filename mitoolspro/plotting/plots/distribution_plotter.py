@@ -9,26 +9,21 @@ from scipy import stats
 from mitoolspro.exceptions import (
     ArgumentTypeError,
 )
-from mitoolspro.plotting.plots.matplotlib_typing import (
+from mitoolspro.plotting.plots.plotter import Plotter
+from mitoolspro.plotting.plots.validation.models import LiteralParam, RangeParam
+from mitoolspro.plotting.plots.validation.types import (
     BANDWIDTH_METHODS,
     HATCHES,
     KERNELS,
     LINESTYLES,
     ORIENTATIONS,
     BoolSequence,
-    Color,
     ColorSequence,
+    ColorType,
     LiteralSequence,
     NumericSequence,
     NumericSequences,
     NumericType,
-)
-from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validations import (
-    NUMERIC_TYPES,
-    validate_literal,
-    validate_numeric,
-    validate_value_in_range,
 )
 
 
@@ -70,7 +65,7 @@ class DistributionPlotter(Plotter):
             },
             "facecolor": {
                 "default": None,
-                "type": Union[ColorSequence, Color],
+                "type": Union[ColorSequence, ColorType],
             },
             "hatch": {
                 "default": None,
@@ -81,33 +76,31 @@ class DistributionPlotter(Plotter):
         self._set_init_params(**kwargs)
 
     def set_kernel(self, kernel: str):
-        validate_literal(kernel, KERNELS)
+        LiteralParam(value=kernel, options=KERNELS)
         self.kernel = kernel
         return self
 
     def set_bandwidth(self, bandwidth: Union[Literal["bandwidth_methods"], float]):
         if isinstance(bandwidth, str):
-            validate_literal(bandwidth, BANDWIDTH_METHODS)
+            LiteralParam(value=bandwidth, options=BANDWIDTH_METHODS)
             self.bandwidth = bandwidth
-        elif isinstance(bandwidth, NUMERIC_TYPES):
-            validate_value_in_range(bandwidth, 1e-9, np.inf, "bandwidth")
+        elif isinstance(bandwidth, NumericType):
+            RangeParam(value=bandwidth, min=1e-9, max=np.inf)
             self.bandwidth = float(bandwidth)
         return self
 
     def set_gridsize(self, gridsize: NumericType):
-        validate_numeric(gridsize, "gridsize")
-        validate_value_in_range(gridsize, 1, np.inf, "gridsize")
+        RangeParam(value=gridsize, min=1, max=np.inf)
         self.gridsize = int(gridsize)
         return self
 
     def set_cut(self, cut: NumericType):
-        validate_numeric(cut, "cut")
-        validate_value_in_range(cut, 0, np.inf, "cut")
+        RangeParam(value=cut, min=0, max=np.inf)
         self.cut = float(cut)
         return self
 
     def set_orientation(self, orientation: Literal["horizontal", "vertical"]):
-        validate_literal(orientation, ORIENTATIONS)
+        LiteralParam(value=orientation, options=ORIENTATIONS)
         self.orientation = orientation
         return self
 
@@ -118,16 +111,16 @@ class DistributionPlotter(Plotter):
         self,
         linestyles: Union[LiteralSequence, Literal["linestyles"]],
     ):
-        return self.set_literal_sequence(linestyles, LINESTYLES, "linestyles")
+        return self.set_literal_sequences(linestyles, LINESTYLES, "linestyles")
 
     def set_linewidth(self, linewidths: Union[NumericSequence, NumericType]):
-        return self.set_numeric_sequence(linewidths, "linewidth")
+        return self.set_numeric_sequences(linewidths, "linewidth")
 
-    def set_facecolor(self, facecolors: Union[ColorSequence, Color]):
-        return self.set_color_sequence(facecolors, "facecolor")
+    def set_facecolor(self, facecolors: Union[ColorSequence, ColorType]):
+        return self.set_color_sequences(facecolors, "facecolor")
 
     def set_hatch(self, hatches: Union[LiteralSequence, Literal["hatches"]]):
-        return self.set_literal_sequence(hatches, HATCHES, "hatch")
+        return self.set_literal_sequences(hatches, HATCHES, "hatch")
 
     def _compute_kde(self, data):
         kde = stats.gaussian_kde(

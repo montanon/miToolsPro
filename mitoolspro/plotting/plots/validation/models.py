@@ -7,7 +7,6 @@ from matplotlib.transforms import Transform
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mitoolspro.exceptions import ArgumentValidationError
-from mitoolspro.plotting.plots.matplotlib_typing import BINS, CMAPS, NORMALIZATIONS
 from mitoolspro.plotting.plots.validation.functions import (
     coerce_to_list,
     is_bins,
@@ -29,6 +28,9 @@ from mitoolspro.plotting.plots.validation.functions import (
     validate_tuple_sizes,
 )
 from mitoolspro.plotting.plots.validation.types import (
+    BINS,
+    COLORMAPS,
+    NORMALIZATIONS,
     BinsType,
     ColormapType,
     ColorSequence,
@@ -702,7 +704,7 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
         }
 
 
-class LiteralParam(StrParam):
+class LiteralParam(Param[str | None]):
     options: StrSequence = Field(..., description="Allowed options for the literal.")
 
     @model_validator(mode="before")
@@ -729,7 +731,7 @@ class LiteralParam(StrParam):
         return {"value": value, "options": options}
 
 
-class LiteralSequenceParam(SequenceParam[str]):
+class LiteralSequenceParam(SequenceParam[Union[str, None]]):
     options: Optional[StrSequence] = None
 
     @model_validator(mode="before")
@@ -737,13 +739,11 @@ class LiteralSequenceParam(SequenceParam[str]):
     def validate_literal_sequence(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
-            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             options = values.get("options", None)
             values = values["value"]
         else:
             sizes = None
-            sub_sizes = None
             structured = False
             options = None
 
@@ -766,18 +766,15 @@ class LiteralSequenceParam(SequenceParam[str]):
                     f"Invalid literal at index {idx}: {v!r}. Allowed options: {options}."
                 )
 
-        sub_sizes = validate_sequences_sizes(values, sub_sizes, structured)
-
         return {
             "value": values,
             "options": options,
             "sizes": sizes,
-            "sub_sizes": sub_sizes,
             "structured": structured,
         }
 
 
-class LiteralSequencesParam(SequencesParam[str]):
+class LiteralSequencesParam(SequencesParam[Union[str, None]]):
     options: Optional[StrSequences] = None
 
     @model_validator(mode="before")
@@ -937,9 +934,9 @@ class ColormapParam(Param[ColormapType]):
         if isinstance(values, Colormap):
             return {"value": values}
 
-        if not is_literal(values, CMAPS):
+        if not is_literal(values, COLORMAPS):
             raise ArgumentValidationError(
-                f"Invalid colormap: {values!r}. Allowed options: {CMAPS}."
+                f"Invalid colormap: {values!r}. Allowed options: {COLORMAPS}."
             )
 
         return {"value": values}
@@ -964,11 +961,11 @@ class ColormapSequenceParam(SequenceParam[ColormapType]):
         for idx, value in enumerate(values):
             if isinstance(value, Colormap):
                 normalized.append(value)
-            elif is_literal(value, CMAPS):
+            elif is_literal(value, COLORMAPS):
                 normalized.append(value)
             else:
                 raise ArgumentValidationError(
-                    f"Invalid colormap at index {idx}: {value!r}. Allowed options: {CMAPS}."
+                    f"Invalid colormap at index {idx}: {value!r}. Allowed options: {COLORMAPS}."
                 )
 
         return {
@@ -1003,11 +1000,11 @@ class ColormapSequencesParam(SequencesParam[ColormapType]):
             for inner_idx, value in enumerate(outer):
                 if isinstance(value, Colormap):
                     normalized_inner.append(value)
-                elif is_literal(value, CMAPS):
+                elif is_literal(value, COLORMAPS):
                     normalized_inner.append(value)
                 else:
                     raise ArgumentValidationError(
-                        f"Invalid colormap at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {CMAPS}."
+                        f"Invalid colormap at [{outer_idx}, {inner_idx}]: {value!r}. Allowed options: {COLORMAPS}."
                     )
             normalized_outer.append(normalized_inner)
 

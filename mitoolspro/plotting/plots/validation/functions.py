@@ -1,12 +1,13 @@
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Sequence, Type
 
 import numpy as np
 from matplotlib.colors import Normalize, get_named_colors_mapping, is_color_like
 from matplotlib.markers import MarkerStyle
 from matplotlib.transforms import Transform
-from numpy import ndarray
+from numpy import floating, integer, ndarray
 from pandas import Series
+from pydantic import BaseModel, ValidationError
 
 from mitoolspro.exceptions import ArgumentValidationError
 from mitoolspro.plotting.plots.validation.types import (
@@ -22,6 +23,14 @@ MARKERS_FILLSTYLES = set(MarkerStyle.fillstyles)
 BINS = ["auto", "fd", "doane", "scott", "stone", "rice", "sturges", "sqrt"]
 
 
+def is_valid_model(model_class: Type[BaseModel], **kwargs) -> bool:
+    try:
+        model_class(**kwargs)
+        return True
+    except ValidationError:
+        return False
+
+
 def is_indexable(value: Any, index: Any) -> bool:
     try:
         value[index]
@@ -31,15 +40,19 @@ def is_indexable(value: Any, index: Any) -> bool:
 
 
 def is_numeric(value: Any) -> bool:
-    return isinstance(value, NumericType)
+    return isinstance(value, (int, float, integer, floating))
 
 
 def is_numeric_sequence(value: Any) -> bool:
-    return isinstance(value, Sequence) and all(is_numeric(v) for v in value)
+    return isinstance(value, (Sequence, ndarray, Series)) and all(
+        is_numeric(v) for v in value
+    )
 
 
 def is_numeric_sequences(value: Any) -> bool:
-    return isinstance(value, Sequence) and all(is_numeric_sequence(v) for v in value)
+    return isinstance(value, (Sequence, ndarray, Series)) and all(
+        is_numeric_sequence(v) for v in value
+    )
 
 
 def is_value_in_range(value: Any, min_value: NumericType, max_value: NumericType):
@@ -112,7 +125,10 @@ def is_color_numeric_scalar(value: Any) -> bool:
 
 def is_color(value: Any) -> bool:
     return (
-        is_color_like(value) or is_color_none(value) or is_color_numeric_scalar(value)
+        is_color_like(value)
+        or is_color_none(value)
+        or is_color_numeric_scalar(value)
+        or is_numeric(value)
     )
 
 
@@ -252,17 +268,17 @@ def validate_sequences_sizes(
     if sub_sizes is not None:
         sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
         for idx, value in enumerate(values):
-            if len(value) not in sub_sizes:
+            if len(value) != 1 and len(value) not in sub_sizes:
                 raise ArgumentValidationError(
                     f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
                 )
         if structured:
-            if len(values) != len(sub_sizes):
+            if len(values) != 1 and len(values) != len(sub_sizes):
                 raise ArgumentValidationError(
                     f"Mismatch in structured Sequence of length: {len(values)}, got sizes: {sub_sizes} instead"
                 )
             for idx, value in enumerate(values):
-                if len(value) != sub_sizes[idx]:
+                if len(value) != 1 and len(value) != sub_sizes[idx]:
                     raise ArgumentValidationError(
                         f"Expected sub Sequences of size: {sub_sizes[idx]}, got size: {len(value)} at index={idx}"
                     )

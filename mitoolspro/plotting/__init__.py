@@ -9,17 +9,17 @@ from mitoolspro.plotting.plots.distribution_plotter import DistributionPlotter
 from mitoolspro.plotting.plots.error_plotter import ErrorPlotter
 from mitoolspro.plotting.plots.histogram_plotter import HistogramPlotter
 from mitoolspro.plotting.plots.line_plotter import LinePlotter
-from mitoolspro.plotting.plots.matplotlib_typing import (
-    COLORS,
-    Cmap,
-    Color,
-    EdgeColor,
-    MarkerStyle,
-    Norm,
-    Scale,
-)
 from mitoolspro.plotting.plots.pie_plotter import PiePlotter
 from mitoolspro.plotting.plots.plotter import Plotter
 from mitoolspro.plotting.plots.sankey_plotter import SankeyPlotter
 from mitoolspro.plotting.plots.scatter_plotter import ScatterPlotter
 from mitoolspro.plotting.plots.validation import models
+from mitoolspro.plotting.plots.validation.types import (
+    COLORS,
+    ColormapType,
+    ColorType,
+    EdgeColorType,
+    MarkerStyle,
+    NormalizationType,
+    ScaleType,
+)
