@@ -125,7 +125,10 @@ def is_color_numeric_scalar(value: Any) -> bool:
 
 def is_color(value: Any) -> bool:
     return (
-        is_color_like(value) or is_color_none(value) or is_color_numeric_scalar(value)
+        is_color_like(value)
+        or is_color_none(value)
+        or is_color_numeric_scalar(value)
+        or is_numeric(value)
     )
 
 
@@ -265,17 +268,17 @@ def validate_sequences_sizes(
     if sub_sizes is not None:
         sub_sizes = sub_sizes if isinstance(sub_sizes, Sequence) else [sub_sizes]
         for idx, value in enumerate(values):
-            if len(value) not in sub_sizes:
+            if len(value) != 1 and len(value) not in sub_sizes:
                 raise ArgumentValidationError(
                     f"Expected sub Sequences of sizes: {sub_sizes} got size: {len(value)} at index={idx}"
                 )
         if structured:
-            if len(values) != len(sub_sizes):
+            if len(values) != 1 and len(values) != len(sub_sizes):
                 raise ArgumentValidationError(
                     f"Mismatch in structured Sequence of length: {len(values)}, got sizes: {sub_sizes} instead"
                 )
             for idx, value in enumerate(values):
-                if len(value) != sub_sizes[idx]:
+                if len(value) != 1 and len(value) != sub_sizes[idx]:
                     raise ArgumentValidationError(
                         f"Expected sub Sequences of size: {sub_sizes[idx]}, got size: {len(value)} at index={idx}"
                     )
