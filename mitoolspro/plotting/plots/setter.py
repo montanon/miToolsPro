@@ -159,6 +159,7 @@ class SetterMixIn(ABC):
         sequences: Union[NumericSequences, NumericSequence, NumericType],
         param_name: str,
         multi_param: bool = True,
+        single_param: bool = True,
         min_value: NumericType = None,
         max_value: NumericType = None,
         structured: bool = True,
@@ -212,18 +213,19 @@ class SetterMixIn(ABC):
             return self
         except ValidationError as e:
             last_error = str(e)
-        try:
-            sequences = (
-                NumericParam(value=sequences)
-                if no_range
-                else RangeParam(
-                    value=sequences, min_value=min_value, max_value=max_value
-                )
-            ).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        if single_param:
+            try:
+                sequences = (
+                    NumericParam(value=sequences)
+                    if no_range
+                    else RangeParam(
+                        value=sequences, min_value=min_value, max_value=max_value
+                    )
+                ).value
+                setattr(self, param_name, sequences)
+                return self
+            except ValidationError as e:
+                last_error = str(e)
 
         if self.multi_data:
             msg = (
