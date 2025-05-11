@@ -532,6 +532,8 @@ class ParamsMixIn:
                 joinstyle=value.get_joinstyle(),
             )
             return marker
+        elif isinstance(value, SpinesParam):
+            return value.model_dump()
 
         return value
 
