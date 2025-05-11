@@ -704,7 +704,7 @@ class MarkerSequencesParam(SequencesParam[MarkerParam]):
         }
 
 
-class LiteralParam(StrParam):
+class LiteralParam(Param[str | None]):
     options: StrSequence = Field(..., description="Allowed options for the literal.")
 
     @model_validator(mode="before")
@@ -731,7 +731,7 @@ class LiteralParam(StrParam):
         return {"value": value, "options": options}
 
 
-class LiteralSequenceParam(SequenceParam[str]):
+class LiteralSequenceParam(SequenceParam[Union[str, None]]):
     options: Optional[StrSequence] = None
 
     @model_validator(mode="before")
@@ -739,13 +739,11 @@ class LiteralSequenceParam(SequenceParam[str]):
     def validate_literal_sequence(cls, values: Any) -> dict:
         if isinstance(values, dict):
             sizes = values.get("sizes", None)
-            sub_sizes = values.get("sub_sizes", None)
             structured = values.get("structured", False)
             options = values.get("options", None)
             values = values["value"]
         else:
             sizes = None
-            sub_sizes = None
             structured = False
             options = None
 
@@ -768,18 +766,15 @@ class LiteralSequenceParam(SequenceParam[str]):
                     f"Invalid literal at index {idx}: {v!r}. Allowed options: {options}."
                 )
 
-        sub_sizes = validate_sequences_sizes(values, sub_sizes, structured)
-
         return {
             "value": values,
             "options": options,
             "sizes": sizes,
-            "sub_sizes": sub_sizes,
             "structured": structured,
         }
 
 
-class LiteralSequencesParam(SequencesParam[str]):
+class LiteralSequencesParam(SequencesParam[Union[str, None]]):
     options: Optional[StrSequences] = None
 
     @model_validator(mode="before")
