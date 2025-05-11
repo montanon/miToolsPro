@@ -48,6 +48,7 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
         self._sizes, self._sub_sizes = self._calculate_sizes(
             self.x_data, self.multi_data
         )
+        self._n_sequences = len(self.x_data) if self.multi_data else 1
         # Specific Parameters that are based on the number of data sequences
         self._multi_data_params = {
             "color": None,
@@ -70,6 +71,10 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
     @property
     def multi_data(self) -> bool:
         return self._multi_data
+
+    @property
+    def n_sequences(self) -> int:
+        return self._n_sequences
 
     def _validate_data(
         self,
@@ -192,7 +197,9 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
     ) -> Any:
         if value is None:
             return None
-        if expected_size is not None and NumericParam(value=expected_size):
+        if expected_size is not None and is_valid_model(
+            NumericParam, value=expected_size
+        ):
             expected_size = (expected_size,)
         if is_valid_model(NumericSequencesParam, value=value):
             if expected_size is not None:
