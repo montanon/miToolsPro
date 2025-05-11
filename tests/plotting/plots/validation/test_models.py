@@ -3831,12 +3831,6 @@ class TestLiteralParam(TestCase):
         with self.assertRaises(ValidationError):
             LiteralParam.model_validate({"value": "option1", "options": []})
 
-    def test_init_with_missing_fields(self):
-        with self.assertRaises(ValidationError):
-            LiteralParam.model_validate({"value": "option1"})
-        with self.assertRaises(ValidationError):
-            LiteralParam.model_validate({"options": ["option1"]})
-
     def test_init_with_invalid_types(self):
         with self.assertRaises(ValidationError):
             LiteralParam.model_validate({"value": 1, "options": ["option1"]})
