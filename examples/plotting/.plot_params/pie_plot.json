@@ -1,21 +1,13 @@
 {
+    "alpha": 1.0,
+    "aspect": null,
     "title": "",
+    "suptitle": "",
+    "transform": null,
     "xlabel": "",
     "ylabel": "",
-    "legend": null,
-    "figsize": [
-        10,
-        8
-    ],
-    "style": null,
-    "grid": null,
-    "tight_layout": false,
-    "texts": null,
     "xscale": null,
     "yscale": null,
-    "background": "white",
-    "figure_background": "white",
-    "suptitle": null,
     "xlim": null,
     "ylim": null,
     "xticks": null,
@@ -25,13 +17,24 @@
     "xtickparams": null,
     "ytickparams": null,
     "spines": {},
+    "legend": null,
+    "texts": null,
+    "grid": null,
+    "facecolor": null,
+    "background": "white",
+    "figure_background": "white",
+    "figsize": [
+        10,
+        8
+    ],
+    "tight_layout": false,
+    "style": null,
     "color": [
         "red",
         "green",
         "blue",
         "yellow"
     ],
-    "alpha": 1.0,
     "label": null,
     "zorder": null,
     "explode": [

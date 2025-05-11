@@ -6,7 +6,6 @@ from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.plotter import Plotter
 from mitoolspro.plotting.plots.validation.functions import is_valid_model
 from mitoolspro.plotting.plots.validation.models import (
-    DictSequenceParam,
     Param,
     SequenceParam,
 )
@@ -40,43 +39,22 @@ class PiePlotter(Plotter):
     ):
         self._pie_params = {
             # Specific Parameters that are based on the number of data sequences
-            "explode": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "labels": {"default": None, "type": Union[StrSequences, StrSequence]},
-            "hatch": {
-                "default": None,
-                "type": Union[LiteralSequences, LiteralSequence, Literal["hatches"]],
-            },
-            "autopct": {
-                "default": None,
-                "type": Union[Sequence[Union[str, callable]], Union[str, callable]],
-            },
-            "pctdistance": {
-                "default": 0.6,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "labeldistance": {
-                "default": 1.1,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "shadow": {"default": False, "type": Union[BoolSequence, bool]},
-            "startangle": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "radius": {"default": None, "type": Union[NumericSequence, NumericType]},
-            "counterclock": {"default": True, "type": Union[BoolSequence, bool]},
-            "wedgeprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "textprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "center": {
-                "default": (0, 0),
-                "type": Union[NumericTupleSequence, NumericTupleType],
-            },
-            "frame": {"default": False, "type": Union[BoolSequence, bool]},
-            "rotatelabels": {"default": False, "type": Union[BoolSequence, bool]},
-            "normalize": {"default": True, "type": Union[BoolSequence, bool]},
+            "explode": None,
+            "labels": None,
+            "hatch": None,
+            "autopct": None,
+            "pctdistance": 0.6,
+            "labeldistance": 1.1,
+            "shadow": False,
+            "startangle": None,
+            "radius": None,
+            "counterclock": True,
+            "wedgeprops": None,
+            "textprops": None,
+            "center": (0, 0),
+            "frame": False,
+            "rotatelabels": False,
+            "normalize": True,
         }
         super().__init__(x_data=x_data, y_data=None, ax=ax, **kwargs)
         self._init_params.update(self._pie_params)
@@ -108,10 +86,10 @@ class PiePlotter(Plotter):
             Sequence[Union[str, Callable, None]], Union[str, Callable, None]
         ],
     ):
-        if is_valid_model(SequenceParam[(str, Callable)], value=autopct):
+        if is_valid_model(SequenceParam[Union[str, Callable, None]], value=autopct):
             self.autopct = autopct
         else:
-            Param[(str, Callable)](value=autopct)
+            Param[Union[str, Callable, None]](value=autopct)
             self.autopct = autopct
         return self
 
@@ -134,24 +112,26 @@ class PiePlotter(Plotter):
         return self.set_bool_sequence(counterclock, "counterclock")
 
     def set_wedgeprops(self, kwargs: Union[DictSequence, Dict]):
-        if is_valid_model(DictSequenceParam, value=kwargs):
-            self.multi_params_structure["wedgeprops"] = "sequence"
-        elif isinstance(kwargs, dict) or kwargs is None:
-            self.multi_params_structure["wedgeprops"] = "value"
+        if (
+            is_valid_model(SequenceParam[Dict | None], value=kwargs)
+            or isinstance(kwargs, dict)
+            or kwargs is None
+        ):
+            self.wedgeprops = kwargs
+            return self
         else:
             raise ArgumentStructureError("Invalid wedgeprops")
-        self.wedgeprops = kwargs
-        return self
 
     def set_textprops(self, kwargs: Union[DictSequence, Dict]):
-        if is_valid_model(DictSequenceParam, value=kwargs):
-            self.multi_params_structure["textprops"] = "sequence"
-        elif isinstance(kwargs, dict) or kwargs is None:
-            self.multi_params_structure["textprops"] = "value"
+        if (
+            is_valid_model(SequenceParam[Dict | None], value=kwargs)
+            or isinstance(kwargs, dict)
+            or kwargs is None
+        ):
+            self.textprops = kwargs
+            return self
         else:
             raise ArgumentStructureError("Invalid textprops")
-        self.textprops = kwargs
-        return self
 
     def set_center(self, center: Union[NumericTupleSequence, NumericTupleType]):
         return self.set_numeric_tuple_sequences(center, 2, "center")
