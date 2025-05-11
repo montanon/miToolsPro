@@ -235,8 +235,9 @@ class Plotter(ParamsMixIn, SetterMixIn, ABC):
     def get_sequences_param(self, param_name: str, n_sequence: int):
         param_value = getattr(self, param_name)
         if self._multi_data:
-            if is_valid_model(SequencesParam[Any], value=param_value) or is_valid_model(
-                SequenceParam, value=param_value
+            if not isinstance(param_value, tuple) and (
+                is_valid_model(SequencesParam[Any], value=param_value)
+                or is_valid_model(SequenceParam, value=param_value)
             ):
                 return param_value[n_sequence]
             elif is_valid_model(Param[Any], value=param_value):
