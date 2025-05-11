@@ -1,4 +1,6 @@
 {
+    "alpha": 1.0,
+    "aspect": null,
     "title": {
         "label": "a) Standard Errors Plot:",
         "fontsize": 24,
@@ -7,36 +9,16 @@
         "x": -0.15,
         "y": 1.05
     },
+    "suptitle": "",
+    "transform": null,
     "xlabel": {
         "xlabel": "Coefficient Value",
         "fontsize": 16,
         "color": "k"
     },
     "ylabel": "",
-    "legend": {
-        "show": true,
-        "kwargs": {
-            "loc": "lower left",
-            "ncol": 1,
-            "frameon": true,
-            "fancybox": true,
-            "framealpha": 0.8,
-            "facecolor": "inherit"
-        }
-    },
-    "figsize": [
-        7,
-        12
-    ],
-    "style": null,
-    "grid": null,
-    "tight_layout": false,
-    "texts": null,
     "xscale": null,
     "yscale": null,
-    "background": null,
-    "figure_background": null,
-    "suptitle": null,
     "xlim": null,
     "ylim": null,
     "xticks": null,
@@ -82,16 +64,6 @@
             "bounds": null,
             "capstyle": null
         },
-        "bottom": {
-            "visible": true,
-            "position": null,
-            "color": "k",
-            "linewidth": 1.5,
-            "linestyle": "-",
-            "alpha": null,
-            "bounds": null,
-            "capstyle": null
-        },
         "top": {
             "visible": true,
             "position": null,
@@ -101,14 +73,45 @@
             "alpha": null,
             "bounds": null,
             "capstyle": null
+        },
+        "bottom": {
+            "visible": true,
+            "position": null,
+            "color": "k",
+            "linewidth": 1.5,
+            "linestyle": "-",
+            "alpha": null,
+            "bounds": null,
+            "capstyle": null
         }
     },
+    "legend": {
+        "show": true,
+        "kwargs": {
+            "loc": "lower left",
+            "ncol": 1,
+            "frameon": true,
+            "fancybox": true,
+            "framealpha": 0.8,
+            "facecolor": "inherit"
+        }
+    },
+    "texts": null,
+    "grid": null,
+    "facecolor": null,
+    "background": null,
+    "figure_background": null,
+    "figsize": [
+        7,
+        12
+    ],
+    "tight_layout": false,
+    "style": null,
     "color": [
         "red",
         "green",
         "blue"
     ],
-    "alpha": 1.0,
     "label": [
         "Robust Method",
         "IID Method",
@@ -119,11 +122,11 @@
     "xerr": [
         [
             0.5,
-            1.0,
+            1,
             1.5,
-            2.0,
+            2,
             2.5,
-            3.0,
+            3,
             3.5
         ],
         [
@@ -147,7 +150,7 @@
     ],
     "yerr": null,
     "ecolor": null,
-    "elinewidth": 1.0,
+    "elinewidth": null,
     "capsize": 3.5,
     "capthick": 2.25,
     "barsabove": null,
@@ -165,13 +168,13 @@
     "linewidth": null,
     "x_data": [
         [
-            2.0,
-            -1.0,
-            0.0,
-            3.0,
-            4.0,
-            -3.0,
-            1.0
+            2,
+            -1,
+            0,
+            3,
+            4,
+            -3,
+            1
         ],
         [
             2.5,
@@ -183,7 +186,7 @@
             1.5
         ],
         [
-            3.0,
+            3,
             -1.5,
             0.5,
             3.5,
