@@ -84,7 +84,7 @@ class TestSetColorSequences(TestCase):
         plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_color_sequences(
-                [["red"], ["blue", "yellow"]], "color", structured=True
+                [["red", "blue", "green"], ["blue", "yellow"]], "color", structured=True
             )
 
     def test_multi_sequence_invalid_length(self):
@@ -117,15 +117,15 @@ class TestSetColorSequences(TestCase):
     def test_multi_sequence_mixed_nested(self):
         plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
-            plotter.set_color_sequences([["red"], ["blue", "yellow"]], "color")
+            plotter.set_color_sequences(
+                [["red", "green", "blue"], ["blue", "yellow"]], "color"
+            )
         plotter.set_color_sequences([["red", "blue"], ["blue", "yellow"]], "color")
         self.assertEqual(plotter.color, [["red", "blue"], ["blue", "yellow"]])
         with self.assertRaises(ArgumentStructureError):
-            plotter.set_color_sequences([["red", "blue"], ["yellow"]], "color")
-        with self.assertRaises(ArgumentStructureError):
-            plotter.set_color_sequences([["red", "blue"], ["yellow"]], "color")
-        with self.assertRaises(ArgumentStructureError):
-            plotter.set_color_sequences([["red", "blue"], "yellow"], "color")
+            plotter.set_color_sequences(
+                [["red", "blue"], ["yellow", "black", "white"]], "color"
+            )
         with self.assertRaises(ArgumentStructureError):
             plotter.set_color_sequences([["red", "blue", "green"], ["yellow"]], "color")
 
@@ -371,12 +371,22 @@ class TestSetLiteralSequences(TestCase):
             plotter.label,
             [["red", "green"], ["blue", "yellow", "green"]],
         )
+        plotter.set_literal_sequences(
+            [["red", "green"], ["blue"]],
+            self.VALID_OPTIONS,
+            "label",
+            structured=True,
+        )
+        self.assertEqual(
+            plotter.label,
+            [["red", "green"], ["blue"]],
+        )
 
     def test_structured_true_invalid(self):
         plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_literal_sequences(
-                [["red", "green"], ["blue"]],
+                [["red", "green"], ["blue", "red"]],
                 self.VALID_OPTIONS,
                 "label",
                 structured=True,
@@ -454,7 +464,7 @@ class TestSetMarkerSequences(TestCase):
     def test_multi_sequence_marker_sequence(self):
         plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
         plotter.set_marker_sequences(["o", "s"], "marker")
-        self.assertEqual(plotter.marker, ["o", "s"])
+        self.assertEqual(plotter.marker, [["o"], ["s"]])
 
     def test_multi_sequence_nested_markers_valid(self):
         plotter = self.MockPlotter([[1, 2], [3, 4]], multi_data=True)
@@ -492,11 +502,18 @@ class TestSetMarkerSequences(TestCase):
             plotter.marker,
             [["o", "s"], ["x", "d", "^"]],
         )
+        plotter.set_marker_sequences([["o", "s"], ["x"]], "marker", structured=True)
+        self.assertEqual(
+            plotter.marker,
+            [["o", "s"], ["x"]],
+        )
 
     def test_structured_true_invalid(self):
         plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
-            plotter.set_marker_sequences([["o", "s"], ["x"]], "marker", structured=True)
+            plotter.set_marker_sequences(
+                [["o", "s"], ["x", "o"]], "marker", structured=True
+            )
 
     # --------------- Invalid Cases ----------------
     def test_invalid_marker_value(self):
@@ -612,12 +629,26 @@ class TestSetEdgeColorSequences(TestCase):
             plotter.edgecolor,
             [["red", "green"], ["blue", "yellow", "cyan"]],
         )
+        plotter.set_edgecolor_sequences(
+            [["red", "green"], ["blue"]], "edgecolor", structured=True
+        )
+        self.assertEqual(
+            plotter.edgecolor,
+            [["red", "green"], ["blue"]],
+        )
+        plotter.set_edgecolor_sequences(
+            [["red"], ["blue"]], "edgecolor", structured=True
+        )
+        self.assertEqual(
+            plotter.edgecolor,
+            [["red"], ["blue"]],
+        )
 
     def test_structured_true_invalid(self):
         plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_edgecolor_sequences(
-                [["red", "green"], ["blue"]], "edgecolor", structured=True
+                [["red", "green"], ["blue", "green"]], "edgecolor", structured=True
             )
 
     # --------------- Invalid Cases ----------------
@@ -731,12 +762,19 @@ class TestSetStrSequences(TestCase):
             plotter.label,
             [["Label A", "Label B"], ["Label C", "Label D", "Label E"]],
         )
+        plotter.set_str_sequences(
+            [["Label A", "Label B"], ["Label C"]], "label", structured=True
+        )
+        self.assertEqual(
+            plotter.label,
+            [["Label A", "Label B"], ["Label C"]],
+        )
 
     def test_structured_true_invalid(self):
         plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_str_sequences(
-                [["Label A", "Label B"], ["Label C"]], "label", structured=True
+                [["Label A", "Label B"], ["Label C"] * 4], "label", structured=True
             )
 
     # --------------- Invalid Cases ----------------
@@ -853,12 +891,22 @@ class TestSetNumericTupleSequences(TestCase):
             plotter.coordinates,
             [[(1, 2), (3, 4)], [(5, 6), (7, 8), (9, 10)]],
         )
+        plotter.set_numeric_tuple_sequences(
+            [[(1, 2), (3, 4)], [(5, 6)]], 2, "coordinates", structured=True
+        )
+        self.assertEqual(
+            plotter.coordinates,
+            [[(1, 2), (3, 4)], [(5, 6)]],
+        )
 
     def test_structured_true_invalid(self):
         plotter = self.MockPlotter([[1, 2], [3, 4, 5]], multi_data=True)
         with self.assertRaises(ArgumentStructureError):
             plotter.set_numeric_tuple_sequences(
-                [[(1, 2), (3, 4)], [(5, 6)]], 2, "coordinates", structured=True
+                [[(1, 2), (3, 4)], [(5, 6), (2, 3), (5, 6), (0, 1)]],
+                2,
+                "coordinates",
+                structured=True,
             )
 
     # --------------- Invalid Cases ----------------

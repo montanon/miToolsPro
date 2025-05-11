@@ -316,12 +316,23 @@ class TestValidateSequencesSizes(TestCase):
             validate_sequences_sizes([[1, 2], [3, 4]], [2, 2], True), [2, 2]
         )
         self.assertEqual(validate_sequences_sizes([[1], [2]], [1, 1], True), [1, 1])
+        self.assertEqual(validate_sequences_sizes([[1], [2, 2]], [2, 2], True), [2, 2])
+
+    def test_valid_unitary_sizes(self):
+        self.assertEqual(
+            validate_sequences_sizes([[1], [3, 3, 4]], [3, 3], True), [3, 3]
+        )
+        self.assertEqual(
+            validate_sequences_sizes([[1], [2, 4, 3, 2]], [4, 4], True), [4, 4]
+        )
+        self.assertEqual(validate_sequences_sizes([[1], [2]], [5, 5], True), [5, 5])
+        self.assertEqual(validate_sequences_sizes([[1], [2]], [1, 1], True), [1, 1])
 
     def test_invalid_sizes(self):
         with self.assertRaises(ArgumentValidationError):
-            validate_sequences_sizes([[1, 2], [3]], 2, True)
+            validate_sequences_sizes([[1, 2], [3, 5, 4]], 2, True)
         with self.assertRaises(ArgumentValidationError):
-            validate_sequences_sizes([[1], [2]], [2, 1], True)
+            validate_sequences_sizes([[1, 2, 3], [2]], [2, 1], True)
 
 
 class TestStandardizeSequences(TestCase):

@@ -2356,12 +2356,9 @@ class TestColorParam(TestCase):
             ColorParam(value=[255, 0, 0, 1.1])
 
     def test_init_with_invalid_single_int(self):
-        with self.assertRaises(ValidationError):
-            ColorParam(value=256)
-
-    def test_init_with_invalid_single_float(self):
-        with self.assertRaises(ValidationError):
-            ColorParam(value=1.1)
+        # Color can be a number representing a color scale
+        ColorParam(value=256)
+        ColorParam(value=1.1)
 
     def test_init_with_invalid_numpy_array_shape(self):
         with self.assertRaises(ValidationError):

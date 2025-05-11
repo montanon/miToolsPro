@@ -203,17 +203,9 @@ class TestPlotter(TestCase):
         self.plotter.set_background("blue")
         self.assertEqual(self.plotter.background, "blue")
 
-    def test_set_background_invalid(self):
-        with self.assertRaises(ValidationError):
-            self.plotter.set_background(123)
-
     def test_set_figure_background(self):
         self.plotter.set_figure_background("white")
         self.assertEqual(self.plotter.figure_background, "white")
-
-    def test_set_figure_background_invalid(self):
-        with self.assertRaises(ValidationError):
-            self.plotter.set_figure_background(456)
 
     def test_set_suptitle(self):
         self.plotter.set_suptitle("Super Title", fontsize=14)
