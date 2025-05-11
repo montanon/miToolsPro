@@ -93,9 +93,7 @@ class ParamsMixIn:
     def _set_init_params(self, **kwargs):
         for param, default in self._init_params.items():
             setattr(self, param, default)
-            if param in kwargs and not (
-                kwargs[param] is None or kwargs[param] == default
-            ):
+            if param in kwargs and kwargs[param] is not None:
                 setter_name = f"set_{param}"
                 if hasattr(self, setter_name):
                     if (
