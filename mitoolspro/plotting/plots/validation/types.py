@@ -13,7 +13,7 @@ BinsType: TypeAlias = (
 )
 BinsSequence = Sequence[BinsType]
 BinsSequences = Sequence[BinsSequence]
-DictSequence = Sequence[dict]
+DictSequence = Sequence[dict | None]
 DictSequences = Sequence[DictSequence]
 MarkerType = MarkerStyle | Path | str | dict | int | None
 MarkerSequence = Sequence[MarkerType]
@@ -21,7 +21,7 @@ MarkerSequences = Sequence[MarkerSequence]
 LiteralType = Literal["options"]
 LiteralSequence = Sequence[LiteralType]
 LiteralSequences = Sequence[LiteralSequence]
-NumericType: TypeAlias = float | int
+NumericType: TypeAlias = float | int | None
 NumericSequence = Sequence[NumericType]
 NumericSequences = Sequence[NumericSequence]
 StrSequence = Sequence[str]
