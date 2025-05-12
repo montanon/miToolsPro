@@ -90,7 +90,7 @@ class NumericParam(Param[NumericType]):
     pass
 
 
-class DictParam(Param[dict]):
+class DictParam(Param[dict | None]):
     pass
 
 
@@ -143,7 +143,7 @@ class BoolSequenceParam(SequenceParam[bool]):
     pass
 
 
-class DictSequenceParam(SequenceParam[dict]):
+class DictSequenceParam(SequenceParam[dict | None]):
     pass
 
 
@@ -242,7 +242,7 @@ class BoolSequencesParam(SequencesParam[bool]):
     pass
 
 
-class DictSequencesParam(SequencesParam[dict]):
+class DictSequencesParam(SequencesParam[dict | None]):
     pass
 
 
