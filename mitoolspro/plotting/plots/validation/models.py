@@ -70,6 +70,10 @@ class RangeParam(Param[NumericType]):
     @model_validator(mode="after")
     def validate_range(self) -> "RangeParam":
         validate_numeric(self.value)
+        if self.min_value is None:
+            self.min_value = -np.inf
+        if self.max_value is None:
+            self.max_value = np.inf
         validate_range(self.value, self.max_value, self.min_value, self.strict)
         return self
 
@@ -168,6 +172,11 @@ class RangeSequenceParam(SequenceParam[NumericType]):
             min_value = -np.inf
             max_value = np.inf
             strict = False
+
+        if min_value is None:
+            min_value = -np.inf
+        if max_value is None:
+            max_value = np.inf
 
         values = coerce_to_list(values)
         validate_sequence(values)
