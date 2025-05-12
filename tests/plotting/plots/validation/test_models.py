@@ -188,13 +188,13 @@ class TestRangeParam(TestCase):
         with self.assertRaises(ValidationError):
             RangeParam(value=None)
 
-    def test_init_with_none_min_value(self):
+    def test_init_with_none_range_values(self):
         with self.assertRaises(ValidationError):
             RangeParam(value=5, min_value=None)
-
-    def test_init_with_none_max_value(self):
         with self.assertRaises(ValidationError):
             RangeParam(value=5, max_value=None)
+        with self.assertRaises(ValidationError):
+            RangeParam(value=5, min_value=None, max_value=None)
 
     def test_init_with_negative_infinity(self):
         param = RangeParam(value=-float("inf"))
@@ -321,12 +321,12 @@ class TestSpecializedParams(TestCase):
         self.assertEqual(param.value, 3.14)
         param = NumericParam(value=-1)
         self.assertEqual(param.value, -1)
+        param = NumericParam(value=None)
+        self.assertEqual(param.value, None)
 
     def test_numeric_param_invalid_values(self):
         with self.assertRaises(ValidationError):
             NumericParam(value="42")
-        with self.assertRaises(ValidationError):
-            NumericParam(value=None)
         with self.assertRaises(ValidationError):
             NumericParam(value=[])
 
@@ -337,12 +337,12 @@ class TestSpecializedParams(TestCase):
         self.assertEqual(param.value, {"key": "value"})
         param = DictParam(value={"nested": {"key": "value"}})
         self.assertEqual(param.value, {"nested": {"key": "value"}})
+        param = DictParam(value=None)
+        self.assertEqual(param.value, None)
 
     def test_dict_param_invalid_values(self):
         with self.assertRaises(ValidationError):
             DictParam(value="not_a_dict")
-        with self.assertRaises(ValidationError):
-            DictParam(value=None)
         with self.assertRaises(ValidationError):
             DictParam(value=[])
 
@@ -728,16 +728,14 @@ class TestSpecializedSequenceParams(TestCase):
         self.assertEqual(param.value, [1, 2, 3])
         param = NumericSequenceParam(value=[1.0, 2.0, 3.0])
         self.assertEqual(param.value, [1.0, 2.0, 3.0])
-        param = NumericSequenceParam(value=np.array([1, 2, 3]))
-        self.assertEqual(param.value, [1, 2, 3])
+        param = NumericSequenceParam(value=np.array([1, None, 3]))
+        self.assertEqual(param.value, [1, None, 3])
 
     def test_numeric_sequence_param_invalid_values(self):
         with self.assertRaises(ValidationError):
             NumericSequenceParam(value=["1", "2", "3"])
         with self.assertRaises(ValidationError):
             NumericSequenceParam(value=[True, False])
-        with self.assertRaises(ValidationError):
-            NumericSequenceParam(value=[None, None])
 
     def test_str_sequence_param_valid_values(self):
         param = StrSequenceParam(value=["a", "b", "c"])
@@ -774,14 +772,12 @@ class TestSpecializedSequenceParams(TestCase):
         self.assertEqual(param.value, [{"a": 1}, {"b": 2}])
         param = DictSequenceParam(value=[{}, {}])
         self.assertEqual(param.value, [{}, {}])
-        param = DictSequenceParam(value=[{"nested": {"key": "value"}}])
-        self.assertEqual(param.value, [{"nested": {"key": "value"}}])
+        param = DictSequenceParam(value=[{"nested": {"key": "value"}}, None])
+        self.assertEqual(param.value, [{"nested": {"key": "value"}}, None])
 
     def test_dict_sequence_param_invalid_values(self):
         with self.assertRaises(ValidationError):
             DictSequenceParam(value=["not_a_dict"])
-        with self.assertRaises(ValidationError):
-            DictSequenceParam(value=[None])
         with self.assertRaises(ValidationError):
             DictSequenceParam(value=[1, 2, 3])
 
@@ -1114,16 +1110,14 @@ class TestSpecializedSequencesParams(TestCase):
         self.assertEqual(param.value, [[1, 2], [3, 4]])
 
     def test_numeric_sequences_param_with_mixed_numeric_types(self):
-        param = NumericSequencesParam(value=[[1, 2.0], [3, 4.0]])
-        self.assertEqual(param.value, [[1.0, 2.0], [3.0, 4.0]])
+        param = NumericSequencesParam(value=[[1, 2.0], [3, 4.0, None]])
+        self.assertEqual(param.value, [[1.0, 2.0], [3.0, 4.0, None]])
 
     def test_numeric_sequences_param_invalid_values(self):
         with self.assertRaises(ValidationError):
             NumericSequencesParam(value=[["1", "2"], ["3", "4"]])
         with self.assertRaises(ValidationError):
             NumericSequencesParam(value=[[True, False], [False, True]])
-        with self.assertRaises(ValidationError):
-            NumericSequencesParam(value=[[None, None], [None, None]])
 
     def test_str_sequences_param_valid_values(self):
         param = StrSequencesParam(value=[["a", "b"], ["c", "d"]])
@@ -1160,14 +1154,12 @@ class TestSpecializedSequencesParams(TestCase):
         self.assertEqual(param.value, [[{"a": 1}], [{"b": 2}]])
         param = DictSequencesParam(value=[[{}, {}], [{}, {}]])
         self.assertEqual(param.value, [[{}, {}], [{}, {}]])
-        param = DictSequencesParam(value=[[{"nested": {"key": "value"}}]])
-        self.assertEqual(param.value, [[{"nested": {"key": "value"}}]])
+        param = DictSequencesParam(value=[[{"nested": {"key": "value"}}], [None]])
+        self.assertEqual(param.value, [[{"nested": {"key": "value"}}], [None]])
 
     def test_dict_sequences_param_invalid_values(self):
         with self.assertRaises(ValidationError):
             DictSequencesParam(value=[["not_a_dict"], ["not_a_dict"]])
-        with self.assertRaises(ValidationError):
-            DictSequencesParam(value=[[None], [None]])
         with self.assertRaises(ValidationError):
             DictSequencesParam(value=[[1, 2], [3, 4]])
 
