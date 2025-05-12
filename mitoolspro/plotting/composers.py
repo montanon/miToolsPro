@@ -11,10 +11,7 @@ from matplotlib.axes import Axes
 from mitoolspro.exceptions import AxesComposerException
 from mitoolspro.plotting.plots.plot_params import FigureParamsMixIn, ParamsMixIn
 from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validation.models import (
-    Param,
-    SequenceParam,
-)
+from mitoolspro.plotting.plots.validation.models import Param, SequenceParam
 
 
 class PlotComposerException(Exception):
