@@ -86,7 +86,7 @@ class BoolParam(Param[bool]):
     pass
 
 
-class NumericParam(Param[NumericType]):
+class NumericParam(Param[NumericType | None]):
     pass
 
 
@@ -131,7 +131,7 @@ class SequenceParam[T](Param[Sequence[T]]):
         return {"value": values, "sizes": sizes, "structured": structured}
 
 
-class NumericSequenceParam(SequenceParam[NumericType]):
+class NumericSequenceParam(SequenceParam[NumericType | None]):
     pass
 
 
@@ -230,7 +230,7 @@ class SequencesParam[T](Param[SequenceParam[SequenceParam[T]]]):
         }
 
 
-class NumericSequencesParam(SequencesParam[NumericType]):
+class NumericSequencesParam(SequencesParam[NumericType | None]):
     pass
 
 
