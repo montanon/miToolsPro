@@ -34,7 +34,6 @@ from mitoolspro.plotting.plots.validation.types import (
     NumericSequence,
     NumericSequences,
     NumericTupleSequence,
-    NumericTupleSequences,
     NumericTupleType,
     NumericType,
 )
@@ -54,74 +53,27 @@ class ErrorPlotter(Plotter):
     ):
         self._error_params = {
             # General Axes Parameters that are independent of the number of data sequences
-            "fmt": {"default": None, "type": str},
+            "fmt": None,
             # Specific Parameters that are based on the number of data sequences
-            "xerr": {
-                "default": None,
-                "type": Union[
-                    NumericTupleSequences,
-                    NumericSequences,
-                    NumericTupleSequence,
-                    NumericSequence,
-                    NumericType,
-                ],
-            },
-            "yerr": {
-                "default": None,
-                "type": Union[
-                    NumericTupleSequences,
-                    NumericSequences,
-                    NumericTupleSequence,
-                    NumericSequence,
-                    NumericType,
-                ],
-            },
-            "ecolor": {
-                "default": None,
-                "type": Union[ColorSequences, ColorSequence, ColorType],
-            },
-            "elinewidth": {
-                "default": 1.0,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "capsize": {"default": 1.0, "type": Union[NumericSequence, NumericType]},
-            "capthick": {"default": 1.0, "type": Union[NumericSequence, NumericType]},
-            "barsabove": {"default": None, "type": Union[BoolSequence, bool]},
-            "lolims": {"default": None, "type": Union[BoolSequence, bool]},
-            "uplims": {"default": None, "type": Union[BoolSequence, bool]},
-            "xuplims": {"default": None, "type": Union[BoolSequence, bool]},
-            "xlolims": {"default": None, "type": Union[BoolSequence, bool]},
-            "errorevery": {
-                "default": None,
-                "type": Union[
-                    NumericTupleSequence, NumericSequence, NumericTupleType, NumericType
-                ],
-            },
-            "marker": {
-                "default": "o",
-                "type": Union[MarkerSequence, MarkerType],
-            },
-            "markersize": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "markeredgewidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "markeredgecolor": {
-                "default": None,
-                "type": Union[EdgeColorSequence, EdgeColorType],
-            },
-            "markerfacecolor": {
-                "default": None,
-                "type": Union[ColorSequence, ColorType],
-            },
-            "linestyle": {
-                "default": "",
-                "type": Union[LiteralSequence, Literal["linestyles"]],
-            },
-            "linewidth": {"default": None, "type": Union[NumericSequence, NumericType]},
+            "xerr": None,
+            "yerr": None,
+            "ecolor": None,
+            "elinewidth": None,
+            "capsize": 1.0,
+            "capthick": 1.0,
+            "barsabove": None,
+            "lolims": None,
+            "uplims": None,
+            "xuplims": None,
+            "xlolims": None,
+            "errorevery": None,
+            "marker": "o",
+            "markersize": None,
+            "markeredgewidth": None,
+            "markeredgecolor": None,
+            "markerfacecolor": None,
+            "linestyle": "",
+            "linewidth": None,
         }
         super().__init__(x_data, y_data, ax=ax, **kwargs)
         self._init_params.update(self._error_params)
@@ -138,14 +90,16 @@ class ErrorPlotter(Plotter):
             or is_valid_model(NumericSequenceParam, value=xerrs)
             or is_valid_model(NumericParam, value=xerrs)
         ):
+            print("Numeric Sequences Xerr")
             return self.set_numeric_sequences(xerrs, "xerr")
         elif (
             isinstance(xerrs, np.ndarray)
             and xerrs.ndim == 2
             and xerrs.shape[0] == 2
-            and xerrs.shape[1] == self.sizes
+            and xerrs.shape[1] == self.n_sequences
         ):
             self.xerr = xerrs
+            print("Numeric Sequence Xerr 1")
             return self
         elif (
             isinstance(xerrs, np.ndarray)
@@ -154,6 +108,7 @@ class ErrorPlotter(Plotter):
             and xerrs.shape[1] == 2
             and xerrs.shape[2] == self.sizes
         ):
+            print("Numeric Sequence Xerr 2")
             self.xerr = xerrs
             return self
         elif (

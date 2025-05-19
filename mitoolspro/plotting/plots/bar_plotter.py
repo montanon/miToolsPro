@@ -4,10 +4,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from mitoolspro.plotting.plots.plotter import Plotter
-from mitoolspro.plotting.plots.validation.models import (
-    BoolParam,
-    LiteralParam,
-)
+from mitoolspro.plotting.plots.validation.models import BoolParam, LiteralParam
 from mitoolspro.plotting.plots.validation.types import (
     BARS_ALIGN,
     HATCHES,
@@ -43,62 +40,23 @@ class BarPlotter(Plotter):
     ):
         self._bar_params = {
             # General Axes Parameters that are independent of the number of data sequences
-            "log": {"default": False, "type": bool},
-            "orientation": {
-                "default": "vertical",
-                "type": Literal["vertical", "horizontal"],
-            },
+            "log": False,
+            "orientation": "vertical",
             # Specific Parameters that are based on the number of data sequences
-            "width": {
-                "default": 0.8,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "bottom": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "align": {
-                "default": "center",
-                "type": Union[LiteralSequence, Literal["center", "edge"]],
-            },
-            "edgecolor": {
-                "default": None,
-                "type": Union[EdgeColorSequence, EdgeColorType],
-            },
-            "linewidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "xerr": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "yerr": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "ecolor": {
-                "default": None,
-                "type": Union[ColorSequences, ColorSequence, ColorType],
-            },
-            "capsize": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "error_kw": {"default": None, "type": Union[DictSequence, Dict]},
-            "facecolor": {
-                "default": None,
-                "type": Union[ColorSequence, ColorType],
-            },
-            "fill": {"default": True, "type": Union[Sequence[bool], bool]},
-            "hatch": {
-                "default": None,
-                "type": Union[LiteralSequences, LiteralSequence, Literal["hatches"]],
-            },
-            "linestyle": {
-                "default": "-",
-                "type": Union[LiteralSequence, Literal["linestyles"]],
-            },
+            "width": 0.8,
+            "bottom": None,
+            "align": "center",
+            "edgecolor": None,
+            "linewidth": None,
+            "xerr": None,
+            "yerr": None,
+            "ecolor": None,
+            "capsize": None,
+            "error_kw": None,
+            "facecolor": None,
+            "fill": True,
+            "hatch": None,
+            "linestyle": "-",
         }
         super().__init__(x_data, y_data, ax=ax, **kwargs)
         self._init_params.update(self._bar_params)

@@ -3,9 +3,7 @@ from typing import Dict, Literal, Union
 from matplotlib.axes import Axes
 from matplotlib.patches import PathPatch
 
-from mitoolspro.exceptions import (
-    ArgumentStructureError,
-)
+from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.plotter import Plotter
 from mitoolspro.plotting.plots.validation.functions import (
     is_numeric,
@@ -51,53 +49,32 @@ class BoxPlotter(Plotter):
     ):
         self._box_params = {
             # General Axes Parameters that are independent of the number of data sequences
-            "bootstrap": {"default": None, "type": Union[NumericType, None]},
-            "orientation": {
-                "default": "vertical",
-                "type": Literal["vertical", "horizontal"],
-            },
+            "bootstrap": None,
+            "orientation": "vertical",
             # Specific Parameters that are based on the number of data sequences
-            "notch": {"default": False, "type": Union[BoolSequence, bool]},
-            "sym": {"default": None, "type": Union[StrSequence, str]},
-            "whis": {"default": 1.5, "type": Union[NumericSequence, NumericType]},
-            "usermedians": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence],
-            },
-            "conf_intervals": {
-                "default": None,
-                "type": Union[NumericTupleSequences, NumericTupleSequence],
-            },
-            "positions": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence],
-            },
-            "widths": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "patch_artist": {"default": False, "type": Union[BoolSequence, bool]},
-            "box_labels": {
-                "default": None,
-                "type": Union[StrSequences, StrSequence, str],
-            },
-            "manage_ticks": {"default": True, "type": Union[BoolSequence, bool]},
-            "autorange": {"default": False, "type": Union[BoolSequence, bool]},
-            "meanline": {"default": False, "type": Union[BoolSequence, bool]},
-            "showcaps": {"default": True, "type": Union[BoolSequence, bool]},
-            "showbox": {"default": True, "type": Union[BoolSequence, bool]},
-            "showfliers": {"default": True, "type": Union[BoolSequence, bool]},
-            "showmeans": {"default": False, "type": Union[BoolSequence, bool]},
-            "capprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "capwidths": {
-                "default": None,
-                "type": Union[NumericSequences, NumericSequence, NumericType],
-            },
-            "boxprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "whiskerprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "flierprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "medianprops": {"default": None, "type": Union[DictSequence, Dict]},
-            "meanprops": {"default": None, "type": Union[DictSequence, Dict]},
+            "notch": False,
+            "sym": None,
+            "whis": 1.5,
+            "usermedians": None,
+            "conf_intervals": None,
+            "positions": None,
+            "widths": None,
+            "patch_artist": False,
+            "box_labels": None,
+            "manage_ticks": True,
+            "autorange": False,
+            "meanline": False,
+            "showcaps": True,
+            "showbox": True,
+            "showfliers": True,
+            "showmeans": False,
+            "capprops": None,
+            "capwidths": None,
+            "boxprops": None,
+            "whiskerprops": None,
+            "flierprops": None,
+            "medianprops": None,
+            "meanprops": None,
         }
         super().__init__(x_data=x_data, y_data=None, ax=ax, **kwargs)
         self._init_params.update(self._box_params)
@@ -122,10 +99,10 @@ class BoxPlotter(Plotter):
         return self.set_bool_sequence(notch, "notch")
 
     def set_sym(self, sym: str):
-        if is_valid_model(StrSequenceParam, sym):
+        if is_valid_model(StrSequenceParam, value=sym):
             self.sym = sym
             return self
-        elif is_valid_model(StrParam, sym):
+        elif is_valid_model(StrParam, value=sym):
             self.sym = sym
             return self
         raise ArgumentStructureError("sym must be a string or a sequence of strings")
@@ -156,7 +133,7 @@ class BoxPlotter(Plotter):
         if usermedians is None:
             return self
         return self.set_numeric_sequences(
-            usermedians, "usermedians", single_value=False
+            usermedians, "usermedians", single_param=False
         )
 
     def set_conf_intervals(
@@ -167,7 +144,7 @@ class BoxPlotter(Plotter):
         return self.set_numeric_tuple_sequences(conf_intervals, 2, "conf_intervals")
 
     def set_positions(self, positions: Union[NumericSequences, NumericSequence]):
-        return self.set_numeric_sequences(positions, "positions", single_value=False)
+        return self.set_numeric_sequences(positions, "positions", single_param=False)
 
     def set_widths(self, widths: Union[NumericSequences, NumericSequence, NumericType]):
         return self.set_numeric_sequences(widths, "widths")

@@ -6,9 +6,7 @@ from numpy import ndarray
 from pandas import Series
 from scipy import stats
 
-from mitoolspro.exceptions import (
-    ArgumentTypeError,
-)
+from mitoolspro.exceptions import ArgumentTypeError
 from mitoolspro.plotting.plots.plotter import Plotter
 from mitoolspro.plotting.plots.validation.models import LiteralParam, RangeParam
 from mitoolspro.plotting.plots.validation.types import (
@@ -42,35 +40,17 @@ class DistributionPlotter(Plotter):
         super().__init__(x_data=x_data, y_data=None, ax=ax, **kwargs)
         self._dist_params = {
             # General Axes.scatter Parameters that are independent of the number of data sequences
-            "kernel": {"default": "gaussian", "type": Literal["kernels"]},
-            "bandwidth": {
-                "default": "scott",
-                "type": Union[Literal["bandwidth_methods"], float],
-            },
-            "gridsize": {"default": 1_000, "type": int},
-            "cut": {"default": 3, "type": float},
-            "orientation": {
-                "default": "vertical",
-                "type": Literal["horizontal", "vertical"],
-            },
+            "kernel": "gaussian",
+            "bandwidth": "scott",
+            "gridsize": 1_000,
+            "cut": 3,
+            "orientation": "vertical",
             # Specific Parameters that are based on the number of data sequences
-            "fill": {"default": True, "type": Union[BoolSequence, bool]},
-            "linestyle": {
-                "default": "-",
-                "type": Union[LiteralSequence, Literal["linestyles"]],
-            },
-            "linewidth": {
-                "default": None,
-                "type": Union[NumericSequence, NumericType],
-            },
-            "facecolor": {
-                "default": None,
-                "type": Union[ColorSequence, ColorType],
-            },
-            "hatch": {
-                "default": None,
-                "type": Union[LiteralSequence, Literal["hatches"]],
-            },
+            "fill": True,
+            "linestyle": "-",
+            "linewidth": None,
+            "facecolor": None,
+            "hatch": None,
         }
         self._init_params.update(self._dist_params)
         self._set_init_params(**kwargs)
@@ -85,17 +65,17 @@ class DistributionPlotter(Plotter):
             LiteralParam(value=bandwidth, options=BANDWIDTH_METHODS)
             self.bandwidth = bandwidth
         elif isinstance(bandwidth, NumericType):
-            RangeParam(value=bandwidth, min=1e-9, max=np.inf)
+            RangeParam(value=bandwidth, min_value=1e-9, max_value=np.inf)
             self.bandwidth = float(bandwidth)
         return self
 
     def set_gridsize(self, gridsize: NumericType):
-        RangeParam(value=gridsize, min=1, max=np.inf)
+        RangeParam(value=gridsize, min_value=1, max_value=np.inf)
         self.gridsize = int(gridsize)
         return self
 
     def set_cut(self, cut: NumericType):
-        RangeParam(value=cut, min=0, max=np.inf)
+        RangeParam(value=cut, min_value=0, max_value=np.inf)
         self.cut = float(cut)
         return self
 
