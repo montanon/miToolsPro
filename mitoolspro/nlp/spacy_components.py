@@ -382,19 +382,19 @@ class SentenceRegexTagger:
                 matches = list(pattern.finditer(text))
                 if matches:
                     setattr(sent._, cat, True)
-                    if self.keep_tags:
-                        for match in matches:
+                    for match in matches:
+                        if self.keep_tags:
                             sent._.get(f"{cat}_tags").append(match.group())
                             sent._.get(f"{cat}_matches").append(
                                 [match.start(), match.end()]
                             )
-                            for token in sent:
-                                if (
-                                    token.idx - sent.start_char >= match.start()
-                                    and token.idx - sent.start_char + len(token.text)
-                                    <= match.end()
-                                ):
-                                    token._.set(cat, True)
+                        for token in sent:
+                            if (
+                                token.idx - sent.start_char >= match.start()
+                                and token.idx - sent.start_char + len(token.text)
+                                <= match.end()
+                            ):
+                                token._.set(cat, True)
         return doc
 
 
@@ -455,16 +455,16 @@ class DocRegexTagger:
             matches = list(pattern.finditer(text))
             if matches:
                 setattr(doc._, cat, True)
-                if self.keep_tags:
-                    for match in matches:
+                for match in matches:
+                    if self.keep_tags:
                         doc._.get(f"{cat}_tags").append(match.group())
                         doc._.get(f"{cat}_matches").append([match.start(), match.end()])
-                        for token in doc:
-                            if (
-                                token.idx >= match.start()
-                                and token.idx + len(token.text) <= match.end()
-                            ):
-                                token._.set(cat, True)
+                    for token in doc:
+                        if (
+                            token.idx >= match.start()
+                            and token.idx + len(token.text) <= match.end()
+                        ):
+                            token._.set(cat, True)
         return doc
 
 

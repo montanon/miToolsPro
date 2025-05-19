@@ -85,22 +85,35 @@ class TestSentenceLemmaTagger(unittest.TestCase):
 
     def test_sentence_lemma_tagger_basic(self):
         doc = self.nlp("I like apples and coffee.")
-        self.assertTrue(doc[3].sent._.food)
-        self.assertTrue(doc[5].sent._.drink)
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(list(doc.sents)[0]._.drink)
+        self.assertTrue(doc[2]._.food)
+        self.assertTrue(doc[4]._.drink)
+        self.assertFalse(doc[1]._.food)
+        self.assertFalse(doc[1]._.drink)
+        self.assertFalse(doc[3]._.food)
+        self.assertFalse(doc[3]._.drink)
 
     def test_sentence_lemma_tagger_multiple_sentences(self):
         doc = self.nlp("I like apples. I drink coffee.")
-        self.assertTrue(doc[3].sent._.food)
-        self.assertTrue(doc[7].sent._.drink)
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(list(doc.sents)[1]._.drink)
+        self.assertTrue(doc[2]._.food)
+        self.assertFalse(doc[2]._.drink)
+        self.assertTrue(doc[6]._.drink)
+        self.assertFalse(doc[6]._.food)
 
     def test_sentence_lemma_tagger_no_match(self):
         doc = self.nlp("I like cars.")
-        self.assertFalse(doc[2].sent._.food)
-        self.assertFalse(doc[2].sent._.drink)
+        self.assertFalse(list(doc.sents)[0]._.food)
+        self.assertFalse(list(doc.sents)[0]._.drink)
+        self.assertFalse(doc[2]._.food)
+        self.assertFalse(doc[2]._.drink)
 
     def test_sentence_lemma_tagger_ignore_case(self):
         doc = self.nlp("I like APPLE.")
-        self.assertTrue(doc[2].sent._.food)
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(doc[2]._.food)
 
     def test_sentence_lemma_tagger_keep_tags(self):
         nlp = spacy.load("en_core_web_sm")
@@ -115,13 +128,15 @@ class TestSentenceLemmaTagger(unittest.TestCase):
             },
         )
         doc = nlp("I like apples and bananas with coffee.")
-        self.assertTrue(doc[3].sent._.food)
-        self.assertTrue(doc[5].sent._.food)
-        self.assertTrue(doc[7].sent._.drink)
-        self.assertEqual(doc[3].sent._.food_tags, ["apples", "bananas"])
-        self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
-        self.assertEqual(doc[3].sent._.food_matches, [[7, 13], [18, 25]])
-        self.assertEqual(doc[7].sent._.drink_matches, [[31, 37]])
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(list(doc.sents)[0]._.drink)
+        self.assertTrue(doc[2]._.food)
+        self.assertTrue(doc[4]._.food)
+        self.assertTrue(doc[6]._.drink)
+        self.assertEqual(list(doc.sents)[0]._.food_tags, ["apples", "bananas"])
+        self.assertEqual(list(doc.sents)[0]._.drink_tags, ["coffee"])
+        self.assertEqual(list(doc.sents)[0]._.food_matches, [[7, 13], [18, 25]])
+        self.assertEqual(list(doc.sents)[0]._.drink_matches, [[31, 37]])
 
 
 class TestBuildWordPatterns(unittest.TestCase):
@@ -161,22 +176,31 @@ class TestSentenceWordTagger(unittest.TestCase):
 
     def test_sentence_word_tagger_basic(self):
         doc = self.nlp("I like apple and coffee.")
-        self.assertTrue(doc[3].sent._.food)
-        self.assertTrue(doc[5].sent._.drink)
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(list(doc.sents)[0]._.drink)
+        self.assertTrue(doc[2]._.food)
+        self.assertTrue(doc[4]._.drink)
 
     def test_sentence_word_tagger_multiple_sentences(self):
         doc = self.nlp("I like apple. I drink coffee.")
-        self.assertTrue(doc[3].sent._.food)
-        self.assertTrue(doc[7].sent._.drink)
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertFalse(list(doc.sents)[0]._.drink)
+        self.assertTrue(list(doc.sents)[1]._.drink)
+        self.assertFalse(list(doc.sents)[1]._.food)
+        self.assertTrue(doc[2]._.food)
+        self.assertTrue(doc[6]._.drink)
 
     def test_sentence_word_tagger_no_match(self):
         doc = self.nlp("I like cars.")
-        self.assertFalse(doc[2].sent._.food)
-        self.assertFalse(doc[2].sent._.drink)
+        self.assertFalse(list(doc.sents)[0]._.food)
+        self.assertFalse(list(doc.sents)[0]._.drink)
+        self.assertFalse(doc[2]._.food)
+        self.assertFalse(doc[2]._.drink)
 
     def test_sentence_word_tagger_ignore_case(self):
         doc = self.nlp("I like APPLE.")
-        self.assertTrue(doc[2].sent._.food)
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(doc[2]._.food)
 
     def test_sentence_word_tagger_keep_tags(self):
         nlp = spacy.load("en_core_web_sm")
@@ -190,13 +214,15 @@ class TestSentenceWordTagger(unittest.TestCase):
             },
         )
         doc = nlp("I like apple and banana with coffee.")
-        self.assertTrue(doc[3].sent._.food)
-        self.assertTrue(doc[5].sent._.food)
-        self.assertTrue(doc[7].sent._.drink)
-        self.assertEqual(doc[3].sent._.food_tags, ["apple", "banana"])
-        self.assertEqual(doc[7].sent._.drink_tags, ["coffee"])
-        self.assertEqual(doc[3].sent._.food_matches, [[7, 12], [17, 23]])
-        self.assertEqual(doc[7].sent._.drink_matches, [[29, 35]])
+        self.assertTrue(list(doc.sents)[0]._.food)
+        self.assertTrue(list(doc.sents)[0]._.drink)
+        self.assertTrue(doc[2]._.food)
+        self.assertTrue(doc[4]._.food)
+        self.assertTrue(doc[6]._.drink)
+        self.assertEqual(list(doc.sents)[0]._.food_tags, ["apple", "banana"])
+        self.assertEqual(list(doc.sents)[0]._.drink_tags, ["coffee"])
+        self.assertEqual(list(doc.sents)[0]._.food_matches, [[7, 12], [17, 23]])
+        self.assertEqual(list(doc.sents)[0]._.drink_matches, [[29, 35]])
 
     def test_sentence_multiple_matches(self):
         text = "Comparece, chileno, soltero, contratista comuna de Vallenar Vallenar, en calle, de Vallenar."
@@ -255,27 +281,62 @@ class TestSentenceRegexTagger(unittest.TestCase):
             "phone": [r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b"],
         }
         self.nlp.add_pipe(
-            "sentence_regex_tagger", config={"categories": self.categories}
+            "sentence_regex_tagger",
+            config={"categories": self.categories, "keep_tags": True},
         )
 
     def test_sentence_regex_tagger_basic(self):
         doc = self.nlp("Contact me at test@example.com or 123-456-7890.")
-        self.assertTrue(doc[4].sent._.email)
-        self.assertTrue(doc[4].sent._.phone)
+        self.assertTrue(list(doc.sents)[0]._.email)
+        self.assertTrue(list(doc.sents)[0]._.phone)
+        self.assertFalse(doc[0]._.email)
+        self.assertFalse(doc[0]._.phone)
+        self.assertFalse(doc[1]._.email)
+        self.assertFalse(doc[1]._.phone)
+        self.assertFalse(doc[2]._.email)
+        self.assertFalse(doc[2]._.phone)
+        self.assertTrue(doc[3]._.email)
+        self.assertFalse(doc[3]._.phone)
+        self.assertFalse(doc[4]._.email)
+        self.assertFalse(doc[4]._.phone)
+        self.assertTrue(doc[5]._.phone)
+        self.assertFalse(doc[5]._.email)
+        self.assertTrue(doc[6]._.phone)
+        self.assertFalse(doc[6]._.email)
+        self.assertTrue(doc[7]._.phone)
+        self.assertFalse(doc[7]._.email)
+        self.assertTrue(doc[8]._.phone)
+        self.assertFalse(doc[8]._.email)
+        self.assertTrue(doc[9]._.phone)
+        self.assertFalse(doc[9]._.email)
+        self.assertFalse(doc[10]._.email)
+        self.assertFalse(doc[10]._.phone)
 
     def test_sentence_regex_tagger_multiple_sentences(self):
         doc = self.nlp("Email: test@example.com. Phone: 123-456-7890.")
-        self.assertTrue(doc[1].sent._.email)
-        self.assertTrue(doc[4].sent._.phone)
+        self.assertTrue(list(doc.sents)[0]._.email)
+        self.assertTrue(list(doc.sents)[1]._.phone)
+        self.assertEqual(list(doc.sents)[0]._.email_tags, ["test@example.com"])
+        self.assertEqual(list(doc.sents)[1]._.phone_tags, ["123-456-7890"])
+        self.assertEqual(list(doc.sents)[0]._.email_matches, [[7, 23]])
+        self.assertEqual(list(doc.sents)[1]._.phone_matches, [[7, 19]])
+        self.assertTrue(doc[2]._.email)
+        self.assertTrue(doc[6]._.phone)
+        self.assertTrue(doc[7]._.phone)
+        self.assertTrue(doc[8]._.phone)
+        self.assertTrue(doc[9]._.phone)
 
     def test_sentence_regex_tagger_no_match(self):
         doc = self.nlp("No contact information here.")
-        self.assertFalse(doc[0].sent._.email)
-        self.assertFalse(doc[0].sent._.phone)
+        self.assertFalse(list(doc.sents)[0]._.email)
+        self.assertFalse(list(doc.sents)[0]._.phone)
+        self.assertFalse(doc[0]._.email)
+        self.assertFalse(doc[0]._.phone)
 
     def test_sentence_regex_tagger_ignore_case(self):
         doc = self.nlp("Email: TEST@EXAMPLE.COM")
-        self.assertTrue(doc[1].sent._.email)
+        self.assertTrue(list(doc.sents)[0]._.email)
+        self.assertTrue(doc[2]._.email)
 
     def test_sentence_regex_tagger_keep_tags(self):
         nlp = spacy.load("en_core_web_sm")
@@ -291,8 +352,13 @@ class TestSentenceRegexTagger(unittest.TestCase):
         doc = nlp(
             "Contact me at test@example.com or 123-456-7890 and test2@example.com."
         )
-        self.assertTrue(doc[4].sent._.email)
-        self.assertTrue(doc[4].sent._.phone)
+        self.assertTrue(list(doc.sents)[0]._.email)
+        self.assertTrue(list(doc.sents)[0]._.phone)
+        self.assertTrue(doc[3]._.email)
+        self.assertTrue(doc[5]._.phone)
+        self.assertTrue(doc[6]._.phone)
+        self.assertTrue(doc[7]._.phone)
+        self.assertTrue(doc[11]._.email)
         self.assertEqual(
             doc[4].sent._.email_tags, ["test@example.com", "test2@example.com"]
         )
@@ -427,20 +493,27 @@ class TestDocRegexTagger(unittest.TestCase):
         doc = self.nlp("Contact me at test@example.com or 123-456-7890.")
         self.assertTrue(doc._.email)
         self.assertTrue(doc._.phone)
+        self.assertTrue(doc[3]._.email)
+        self.assertTrue(doc[5]._.phone)
 
     def test_doc_regex_tagger_multiple_sentences(self):
         doc = self.nlp("Email: test@example.com. Phone: 123-456-7890.")
         self.assertTrue(doc._.email)
         self.assertTrue(doc._.phone)
+        self.assertTrue(doc[6]._.phone)
+        self.assertTrue(doc[2]._.email)
 
     def test_doc_regex_tagger_no_match(self):
         doc = self.nlp("No contact information here.")
         self.assertFalse(doc._.email)
         self.assertFalse(doc._.phone)
+        self.assertFalse(doc[0]._.email)
+        self.assertFalse(doc[0]._.phone)
 
     def test_doc_regex_tagger_ignore_case(self):
         doc = self.nlp("Email: TEST@EXAMPLE.COM")
         self.assertTrue(doc._.email)
+        self.assertTrue(doc[2]._.email)
 
     def test_doc_regex_tagger_keep_tags(self):
         nlp = spacy.load("en_core_web_sm")
