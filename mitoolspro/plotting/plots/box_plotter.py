@@ -153,7 +153,7 @@ class BoxPlotter(Plotter):
         return self.set_bool_sequence(patch_artist, "patch_artist")
 
     def set_box_labels(self, box_labels: Union[StrSequences, StrSequence, str]):
-        return self.set_str_sequences(box_labels, "box_labels")
+        return self.set_str_sequences(box_labels, "box_labels", single_param=False)
 
     def set_manage_ticks(self, manage_ticks: Union[BoolSequence, bool]):
         return self.set_bool_sequence(manage_ticks, "manage_ticks")
@@ -204,7 +204,7 @@ class BoxPlotter(Plotter):
             "x": [self.x_data[n_sequence]],
             "notch": self.get_sequences_param("notch", n_sequence),
             "sym": self.get_sequences_param("sym", n_sequence),
-            "vert": self.orientation == "vertical",
+            "orientation": self.orientation,
             "whis": self.get_sequences_param("whis", n_sequence),
             "bootstrap": self.get_sequences_param("bootstrap", n_sequence),
             "usermedians": self.get_sequences_param("usermedians", n_sequence),
@@ -212,7 +212,7 @@ class BoxPlotter(Plotter):
             "positions": self.get_sequences_param("positions", n_sequence),
             "widths": self.get_sequences_param("widths", n_sequence),
             "patch_artist": self.get_sequences_param("patch_artist", n_sequence),
-            "labels": self.get_sequences_param("box_labels", n_sequence),
+            "tick_labels": self.get_sequences_param("box_labels", n_sequence),
             "manage_ticks": self.get_sequences_param("manage_ticks", n_sequence),
             "autorange": self.get_sequences_param("autorange", n_sequence),
             "meanline": self.get_sequences_param("meanline", n_sequence),

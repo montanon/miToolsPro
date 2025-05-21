@@ -38,7 +38,7 @@ class StringMapper:
         for pretty, ugly in relations.items():
             self.add_relation(pretty, ugly)
 
-    def validate_relation(self, pretty: str, ugly: str) -> (str, str):
+    def validate_relation(self, pretty: str, ugly: str) -> tuple[str, str]:
         if not self.case_sensitive:
             pretty, ugly = pretty.lower(), ugly.lower()
         if pretty in self.pretty_to_ugly or ugly in self.ugly_to_pretty:

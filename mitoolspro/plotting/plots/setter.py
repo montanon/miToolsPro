@@ -90,6 +90,11 @@ class SetterMixIn(ABC):
     def multi_data(self) -> bool:
         pass
 
+    @property
+    @abstractmethod
+    def n_sequences(self) -> int:
+        pass
+
     def _calculate_sizes(
         self, x_data: Sequence[Sequence[Any]], multi_data: bool
     ) -> tuple[SizesType, SizesType]:
@@ -197,13 +202,13 @@ class SetterMixIn(ABC):
             sequences = (
                 NumericSequenceParam(
                     value=sequences,
-                    sizes=self.sizes,
+                    sizes=self.sizes if single_param else self.n_sequences,
                     structured=structured,
                 )
                 if no_range
                 else RangeSequenceParam(
                     value=sequences,
-                    sizes=self.sizes,
+                    sizes=self.sizes if single_param else self.n_sequences,
                     min_value=min_value,
                     max_value=max_value,
                     structured=structured,
@@ -393,6 +398,7 @@ class SetterMixIn(ABC):
         sequences: Union[StrSequences, StrSequence, str],
         param_name: str,
         multi_param: bool = True,
+        single_param: bool = True,
         structured: bool = True,
     ):
         if self.multi_data and multi_param:
@@ -410,19 +416,20 @@ class SetterMixIn(ABC):
         try:
             sequences = StrSequenceParam(
                 value=sequences,
-                sizes=self.sizes,
+                sizes=self.sizes if single_param else self.n_sequences,
                 structured=structured,
             ).value
             setattr(self, param_name, sequences)
             return self
         except ValidationError as e:
             last_error = str(e)
-        try:
-            sequences = StrParam(value=sequences).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        if single_param:
+            try:
+                sequences = StrParam(value=sequences).value
+                setattr(self, param_name, sequences)
+                return self
+            except ValidationError as e:
+                last_error = str(e)
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a string, a sequence of strings, "

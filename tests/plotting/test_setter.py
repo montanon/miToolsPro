@@ -29,6 +29,10 @@ class TestSetColorSequences(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_color(self):
         plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
@@ -170,6 +174,10 @@ class TestSetNumericSequences(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_value(self):
         plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
@@ -278,6 +286,10 @@ class TestSetLiteralSequences(TestCase):
         @property
         def multi_data(self):
             return self._multi_data
+
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
 
     VALID_OPTIONS = ["red", "blue", "green", "yellow"]
 
@@ -425,6 +437,10 @@ class TestSetMarkerSequences(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     VALID_MARKERS = ["o", "s", "x", "d", "^", "v", "<", ">"]
 
     # --------------- Single Sequence (multi_data=False) Tests ----------------
@@ -545,6 +561,10 @@ class TestSetEdgeColorSequences(TestCase):
         @property
         def multi_data(self):
             return self._multi_data
+
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
 
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_edgecolor(self):
@@ -685,6 +705,10 @@ class TestSetStrSequences(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_string(self):
         plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
@@ -807,6 +831,10 @@ class TestSetNumericTupleSequences(TestCase):
         @property
         def multi_data(self):
             return self._multi_data
+
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
 
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_numeric_tuple(self):
@@ -940,6 +968,10 @@ class TestSetColormapSequence(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     # List of valid colormap names in matplotlib
     VALID_COLORMAPS = list(plt.colormaps())
 
@@ -1020,6 +1052,10 @@ class TestSetNormSequence(TestCase):
         @property
         def multi_data(self):
             return self._multi_data
+
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
 
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_normalization(self):
@@ -1132,6 +1168,10 @@ class TestSetBinsSequence(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_bin(self):
         plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
@@ -1226,6 +1266,10 @@ class TestSetBoolSequence(TestCase):
         def multi_data(self):
             return self._multi_data
 
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
+
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_boolean(self):
         plotter = self.MockPlotter([[1, 2, 3, 4]], multi_data=False)
@@ -1318,6 +1362,10 @@ class TestSetDictSequence(TestCase):
         @property
         def multi_data(self):
             return self._multi_data
+
+        @property
+        def n_sequences(self):
+            return len(self._x_data) if self.multi_data else 1
 
     # --------------- Single Sequence (multi_data=False) Tests ----------------
     def test_single_sequence_single_dict(self):

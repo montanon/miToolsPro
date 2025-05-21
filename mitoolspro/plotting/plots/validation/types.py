@@ -13,7 +13,7 @@ BinsType: TypeAlias = (
 )
 BinsSequence = Sequence[BinsType]
 BinsSequences = Sequence[BinsSequence]
-DictSequence = Sequence[dict]
+DictSequence = Sequence[dict | None]
 DictSequences = Sequence[DictSequence]
 MarkerType = MarkerStyle | Path | str | dict | int | None
 MarkerSequence = Sequence[MarkerType]
