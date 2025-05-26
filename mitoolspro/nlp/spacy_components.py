@@ -1,7 +1,7 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from itertools import islice
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
@@ -758,3 +758,118 @@ class CacheSentenceIndices:
 @Language.factory("sentence_indices")
 def create_cache_sentence_indices(nlp: Language, name: str):
     return CacheSentenceIndices(nlp, name)
+
+
+@Language.factory("regex_replacer")
+def create_regex_replacer(
+    nlp: Language,
+    name: str,
+    patterns: Dict[str, List[str]],
+    ignore_case: bool = False,
+    strip_accents: bool = False,
+):
+    return RegexReplacer(
+        nlp, patterns, ignore_case=ignore_case, strip_accents=strip_accents
+    )
+
+
+class RegexReplacer:
+    def __init__(
+        self,
+        nlp: Language,
+        patterns: Dict[str, List[str]],
+        ignore_case: bool = False,
+        strip_accents: bool = False,
+    ):
+        self.nlp = nlp
+        self.ignore_case = ignore_case
+        self.strip_accents = strip_accents
+        self.patterns = self._compile_patterns(patterns)
+        if not Doc.has_extension("replacements"):
+            Doc.set_extension("replacements", default=[])
+
+    def _compile_patterns(
+        self, patterns: Dict[str, List[str]]
+    ) -> Dict[str, List[re.Pattern]]:
+        flags = re.IGNORECASE if self.ignore_case else 0
+        return {
+            label: [re.compile(pat, flags=flags) for pat in pats]
+            for label, pats in patterns.items()
+        }
+
+    def resolve_overlaps(sefl, matches):
+        # Sort by: longest match first, then highest priority, then earliest start
+        matches.sort(key=lambda x: (-(x[1] - x[0]), x[4], x[0]))
+
+        selected = []
+        occupied = set()
+
+        for start, end, label, text, priority in matches:
+            if not any(i in occupied for i in range(start, end)):
+                selected.append((start, end, label, text))
+                occupied.update(range(start, end))
+
+        return sorted(selected, key=lambda x: x[0])
+
+    def _normalize(self, text: str) -> str:
+        text = text.lower() if self.ignore_case else text
+        text = _strip_accents(text) if self.strip_accents else text
+        return text
+
+    def __call__(self, doc: Doc) -> Doc:
+        original_text = doc.text
+        norm_text = self._normalize(original_text)
+
+        matches = []
+        for priority, (label, patterns) in enumerate(self.patterns.items()):
+            for pattern in patterns:
+                for match in pattern.finditer(norm_text):
+                    start, end = match.start(), match.end()
+                    matches.append((start, end, label, match.group(), priority))
+
+        # Resolve overlaps: longer matches first, then by priority
+        selected = self.resolve_overlaps(matches)
+
+        # Perform replacements
+        new_text = []
+        last_idx = 0
+        replacements = []
+
+        for start, end, label, original in selected:
+            prefix = original_text[last_idx:start]
+            suffix = original_text[end : end + 1]
+
+            # Ensure spacing around replacement
+            needs_left_pad = prefix and prefix[-1].isalnum()
+            needs_right_pad = suffix and suffix[0].isalnum()
+
+            replacement = label
+            if needs_left_pad:
+                replacement = " " + replacement
+            if needs_right_pad:
+                replacement = replacement + " "
+
+            new_text.append(original_text[last_idx:start])
+            new_text.append(replacement)
+            replacements.append((start, end, label, original))
+            last_idx = end
+
+        new_text.append(original_text[last_idx:])
+        replaced_text = "".join(new_text)
+
+        new_doc = self.nlp.make_doc(replaced_text)
+        new_doc._.replacements = replacements
+
+        # Optional: set span-level metadata
+        for start, end, label, original in replacements:
+            try:
+                ext_name = f"{label}_original"
+                if not Span.has_extension(ext_name):
+                    Span.set_extension(ext_name, default=None)
+                span = new_doc.char_span(start, start + len(label))
+                if span:
+                    setattr(span._, ext_name, original)
+            except Exception:
+                pass  # extension errors or span alignment mismatches
+
+        return new_doc
