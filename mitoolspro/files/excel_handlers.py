@@ -20,8 +20,9 @@ def auto_adjust_sheet_columns_width(sheet: Worksheet) -> None:
             continue
         for cell in column:
             try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
+                cell_len = max([len(line) for line in str(cell.value).split("\n")])
+                if cell_len > max_length:
+                    max_length = cell_len
             except Exception:
                 pass
         adjusted_width = max_length + 1  # Adding a little extra width
