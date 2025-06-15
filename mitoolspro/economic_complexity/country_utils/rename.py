@@ -1,9 +1,12 @@
 import logging
 
-import country_converter as coco
 import pandas as pd
 
-coco_logger = coco.logging.getLogger()
+from mitoolspro.economic_complexity.country_utils.country_converter import (
+    CountryConverter,
+)
+
+coco_logger = logging.getLogger()
 coco_logger.setLevel(logging.CRITICAL)
 
 custom_data = pd.DataFrame.from_dict(
@@ -21,4 +24,4 @@ custom_data = pd.DataFrame.from_dict(
     }
 )
 
-name_converter = coco.CountryConverter(additional_data=custom_data)
+name_converter = CountryConverter(additional_data=custom_data)
