@@ -1,7 +1,7 @@
 [project]
 name = "mitoolspro"
 version = "0.1.0"
-description = "Add your description here"
+description = "miToolsPro is a collection of tools for data analysis and visualization."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
