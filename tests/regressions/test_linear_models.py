@@ -9,7 +9,7 @@ from statsmodels.robust.norms import HuberT
 from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.regressions.linear_models import (
     OLSModel,
-    QuantileRegressionModel,
+    QuantilesRegressionModel,
     RLMModel,
     RollingOLSModel,
 )
@@ -142,7 +142,7 @@ class TestQuantileRegressionModel(TestCase):
         )
 
     def test_init_with_defaults(self):
-        model = QuantileRegressionModel(self.data, dependent_variable="y")
+        model = QuantilesRegressionModel(self.data, dependent_variable="y")
         self.assertEqual(model.dependent_variable, "y")
         self.assertEqual(model.independent_variables, ["x1", "x2"])
         self.assertEqual(model.control_variables, [])
@@ -153,14 +153,14 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_init_with_formula(self):
         formula = "y ~ x1 + x2"
-        model = QuantileRegressionModel(self.data, formula=formula)
+        model = QuantilesRegressionModel(self.data, formula=formula)
         self.assertEqual(model.formula, formula)
         self.assertEqual(model.dependent_variable, "")
         self.assertEqual(model.independent_variables, [])
         self.assertEqual(model.control_variables, [])
 
     def test_init_with_variables(self):
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -172,7 +172,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_init_with_multiple_quantiles(self):
         quantiles = [0.25, 0.5, 0.75]
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             quantiles=quantiles,
@@ -181,7 +181,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_fit_with_formula(self):
         formula = "y ~ x1 + x2"
-        model = QuantileRegressionModel(self.data, formula=formula)
+        model = QuantilesRegressionModel(self.data, formula=formula)
         results = model.fit()
 
         self.assertTrue(model.fitted)
@@ -190,7 +190,7 @@ class TestQuantileRegressionModel(TestCase):
         self.assertEqual(len(results.params), 3)  # const + x1 + x2
 
     def test_fit_with_variables(self):
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -204,7 +204,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_fit_with_multiple_quantiles(self):
         quantiles = [0.25, 0.5, 0.75]
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -220,12 +220,12 @@ class TestQuantileRegressionModel(TestCase):
             self.assertIsNotNone(results[q].params)
 
     def test_predict_before_fit(self):
-        model = QuantileRegressionModel(self.data, dependent_variable="y")
+        model = QuantilesRegressionModel(self.data, dependent_variable="y")
         with self.assertRaises(ArgumentValueError):
             model.predict()
 
     def test_predict_after_fit(self):
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -238,7 +238,7 @@ class TestQuantileRegressionModel(TestCase):
         self.assertTrue(np.all(np.isfinite(predictions[0.5])))
 
     def test_predict_with_new_data(self):
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -260,7 +260,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_predict_with_specific_quantile(self):
         quantiles = [0.25, 0.5, 0.75]
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -275,7 +275,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_predict_with_invalid_quantile(self):
         quantiles = [0.25, 0.5, 0.75]
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -288,7 +288,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_summary_with_multiple_quantiles(self):
         quantiles = [0.25, 0.5, 0.75]
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],
@@ -303,7 +303,7 @@ class TestQuantileRegressionModel(TestCase):
 
     def test_summary_with_specific_quantile(self):
         quantiles = [0.25, 0.5, 0.75]
-        model = QuantileRegressionModel(
+        model = QuantilesRegressionModel(
             self.data,
             dependent_variable="y",
             independent_variables=["x1", "x2"],

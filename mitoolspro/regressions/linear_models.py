@@ -33,7 +33,7 @@ class OLSModel(BaseRegressionModel):
         return self.results
 
 
-class QuantileRegressionModel(BaseRegressionModel):
+class QuantilesRegressionModel(BaseRegressionModel):
     def __init__(
         self,
         data: DataFrame,
