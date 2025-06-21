@@ -7,6 +7,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from mitoolspro.regressions.wrappers.base import (
+    BaseRegressionResult,
     BaseRegressionSpecs,
     BaseRegressionStrs,
 )
@@ -180,7 +181,7 @@ class QuantilesRegressionSpecs(BaseRegressionSpecs):
             pickle.dump(self, file)
 
 
-class QuantilesRegression:
+class QuantilesRegressionResults(BaseRegressionResult):
     def __init__(self, coeffs, stats):
         self.coeffs = coeffs
         self.stats = stats
