@@ -1,3 +1,4 @@
+from mitoolspro.economic_complexity import plots
 from mitoolspro.economic_complexity.country_utils import name_converter
 from mitoolspro.economic_complexity.economic_complexity import (
     calculate_economic_complexity,
