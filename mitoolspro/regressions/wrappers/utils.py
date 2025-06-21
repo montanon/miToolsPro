@@ -1,6 +1,26 @@
 import hashlib
 from typing import List, Optional
 
+from mitoolspro.utils.objects import StringMapper
+
+
+def prettify_index_level(
+    mapper: StringMapper,
+    pattern: str,
+    level: str,
+    level_name: str,
+    levels_to_remap: List[str],
+) -> str:
+    if level_name in levels_to_remap:
+        return level.map(lambda x: prettify_with_pattern(x, mapper, pattern))
+    return level
+
+
+def prettify_with_pattern(string: str, mapper: StringMapper, pattern: str) -> str:
+    base_string, pattern_str, _ = string.partition(pattern)
+    remapped_base = mapper.prettify_str(base_string)
+    return f"{remapped_base}{pattern}" if pattern_str else remapped_base
+
 
 def create_regression_id(
     regression_type: str,

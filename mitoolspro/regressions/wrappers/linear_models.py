@@ -1,18 +1,24 @@
-import hashlib
 import pickle
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
 from pandas import DataFrame
 
+from mitoolspro.regressions.wrappers.base import (
+    BaseRegressionSpecs,
+    BaseRegressionStrs,
+)
+from mitoolspro.regressions.wrappers.utils import (
+    create_regression_id,
+    prettify_index_level,
+    regex_symbol_replacement,
+)
 from mitoolspro.utils.objects import StringMapper
 
 
-@dataclass(frozen=True)
-class QuantileRegressionStrs:
+class QuantileRegressionStrs(BaseRegressionStrs):
     UNNAMED: str = "Unnamed: 0"
     COEF: str = "coef"
     T_VALUE: str = "t"
@@ -51,7 +57,7 @@ class QuantileRegressionStrs:
     SKEWNESS: str = "Skewness"
 
 
-class QuantilesRegressionSpecs:
+class QuantilesRegressionSpecs(BaseRegressionSpecs):
     def __init__(
         self,
         dependent_variable: str,
@@ -174,39 +180,204 @@ class QuantilesRegressionSpecs:
             pickle.dump(self, file)
 
 
-def regex_symbol_replacement(match):
-    return rf"\{match.group(0)}"
+class QuantilesRegression:
+    def __init__(self, coeffs, stats):
+        self.coeffs = coeffs
+        self.stats = stats
 
+        self.id = self.coeffs.index.get_level_values(
+            QuantileRegressionStrs.ID
+        ).tolist()[0]
+        self.group = self.coeffs.columns.tolist()[0]
 
-def create_regression_id(
-    regression_type: str,
-    regression_degree: str,
-    regression_dependent_var: str,
-    regression_indep_vars: List[str],
-    control_variables: List[str],
-    id_len: Optional[int] = 6,
-) -> str:
-    str_to_hash = " ".join(
-        [
-            regression_type,
-            regression_degree if regression_degree else "linear",
+        self.dependent_variables = self.coeffs.index.get_level_values(
+            QuantileRegressionStrs.DEPENDENT_VAR
+        ).tolist()[0]
+
+        self.independent_variables = (
+            self.coeffs.loc[
+                self.coeffs.index.get_level_values(QuantileRegressionStrs.VARIABLE_TYPE)
+                == QuantileRegressionStrs.EXOG_VAR
+            ]
+            .index.get_level_values(QuantileRegressionStrs.INDEPENDENT_VARS)
+            .unique()
+            .tolist()
+        )
+        self.control_variables = (
+            self.coeffs.loc[
+                self.coeffs.index.get_level_values(QuantileRegressionStrs.VARIABLE_TYPE)
+                == QuantileRegressionStrs.CONTROL_VAR
+            ]
+            .index.get_level_values(QuantileRegressionStrs.INDEPENDENT_VARS)
+            .unique()
+            .tolist()
+        )
+
+        self.quantiles = (
+            self.coeffs.index.get_level_values(QuantileRegressionStrs.QUANTILE)
+            .unique()
+            .tolist()
+        )
+        self.quadratic = (
+            self.coeffs.index.get_level_values(
+                QuantileRegressionStrs.REGRESSION_DEGREE
+            ).tolist()[0]
+            == QuantileRegressionStrs.QUADRATIC_REG
+        )
+        self.regression_type = self.coeffs.index.get_level_values(
+            QuantileRegressionStrs.REGRESSION_TYPE
+        ).tolist()[0]
+
+    def coefficients(self, quantiles: Optional[List[float]] = None):
+        if quantiles is None:
+            return self.coeffs
+        return self.coeffs.loc[
+            self.coeffs.index.get_level_values(QuantileRegressionStrs.QUANTILE).isin(
+                quantiles
+            )
         ]
-    )
-    id_hasher = hashlib.md5()
-    id_hasher.update(rf"{str_to_hash}".encode("utf-8"))
-    kind_id = id_hasher.hexdigest()[:id_len]
 
-    id_hasher = hashlib.md5()
-    id_hasher.update(rf"{regression_dependent_var}".encode("utf-8"))
-    dep_id = id_hasher.hexdigest()[:id_len]
+    def n_obs(self, quantiles: Optional[List[float]] = None):
+        if quantiles is None:
+            stats = self.stats.loc[
+                (slice(None), QuantileRegressionStrs.N_OBSERVATIONS), :
+            ]
+        else:
+            stats = self.stats.loc[
+                (quantiles, QuantileRegressionStrs.N_OBSERVATIONS), :
+            ]
+        stats.index = stats.index.droplevel(QuantileRegressionStrs.STATS)
+        stats.columns = [QuantileRegressionStrs.N_OBSERVATIONS]
+        return stats
 
-    str_to_hash = " ".join([v for v in regression_indep_vars if "_square" not in v])
-    id_hasher = hashlib.md5()
-    id_hasher.update(rf"{str_to_hash}".encode("utf-8"))
-    indep_id = id_hasher.hexdigest()[:id_len]
+    def r_squared(self, quantiles: Optional[List[float]] = None):
+        if quantiles is None:
+            stats = self.stats.loc[
+                (slice(None), QuantileRegressionStrs.PSEUDO_R_SQUARED), :
+            ]
+        else:
+            stats = self.stats.loc[
+                (quantiles, QuantileRegressionStrs.PSEUDO_R_SQUARED), :
+            ]
+        stats.index = stats.index.droplevel(QuantileRegressionStrs.STATS)
+        stats.columns = [QuantileRegressionStrs.PSEUDO_R_SQUARED]
+        return stats
 
-    control_vars_str = " ".join([v for v in control_variables])
-    id_hasher = hashlib.md5()
-    id_hasher.update(rf"{control_vars_str}".encode("utf-8"))
-    control_vars_id = id_hasher.hexdigest()[:id_len] if control_variables else "None"
-    return f"{kind_id}-{dep_id}-{indep_id}-{control_vars_id}"
+    def coefficients_quantiles_table(self, quantiles: Optional[List[float]] = None):
+        table = self.coeffs.unstack(level=QuantileRegressionStrs.QUANTILE)
+        if quantiles is not None:
+            table = table.loc[:, (slice(None), quantiles)]
+        return table.sort_index(
+            axis=0,
+            level=[
+                QuantileRegressionStrs.VARIABLE_TYPE,
+                QuantileRegressionStrs.INDEPENDENT_VARS,
+            ],
+            ascending=[False, True],
+        )
+
+    def coefficients_quantiles_latex_table(
+        self,
+        quantiles: Optional[List[float]] = None,
+        note: Optional[bool] = False,
+        str_mapper: Optional[StringMapper] = None,
+    ):
+        table = self.coefficients_quantiles_table(quantiles).droplevel(
+            [
+                QuantileRegressionStrs.ID,
+                QuantileRegressionStrs.REGRESSION_TYPE,
+                QuantileRegressionStrs.REGRESSION_DEGREE,
+                QuantileRegressionStrs.VARIABLE_TYPE,
+            ],
+            axis=0,
+        )
+        if str_mapper is not None:
+            levels_to_remap = [
+                QuantileRegressionStrs.DEPENDENT_VAR,
+                QuantileRegressionStrs.INDEPENDENT_VARS,
+            ]
+            pretty_index = table.index.set_levels(
+                [
+                    prettify_index_level(
+                        str_mapper,
+                        QuantileRegressionStrs.QUADRATIC_VAR_SUFFIX,
+                        level,
+                        level_id,
+                        levels_to_remap,
+                    )
+                    for level, level_id in zip(table.index.levels, table.index.names)
+                ],
+                level=table.index.names,
+            )
+            table.index = pretty_index
+        symbols_pattern = r"([\ \_\-\&\%\$\#])"
+        table = table.rename(
+            columns=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
+            if isinstance(x, str)
+            else str(round(x, 1)),
+            index=lambda x: re.sub(symbols_pattern, regex_symbol_replacement, x)
+            if isinstance(x, str)
+            else str(round(x, 1)),
+        ).to_latex(multirow=True, multicolumn=True, multicolumn_format="c")
+        table_text = (
+            "\\begin{adjustbox}{width=\\textwidth,center}\n"
+            + f"{table}"
+            + "\end{adjustbox}\n"
+        )
+        table_text = (
+            table_text
+            + "{\\centering\\tiny Note: * p\\textless0.05, ** p\\textless0.01, *** p\\textless0.001\\par}"
+            if note
+            else table_text
+        )
+        print(table_text)
+
+    def model_specification(self, str_mapper: Optional[StringMapper] = None):
+        if str_mapper:
+            independent_variables = [
+                str_mapper.prettify_str(var)
+                if QuantileRegressionStrs.QUADRATIC_VAR_SUFFIX not in var
+                else f"{str_mapper.prettify_str(var.replace(QuantileRegressionStrs.QUADRATIC_VAR_SUFFIX, ''))}{QuantileRegressionStrs.QUADRATIC_VAR_SUFFIX}"
+                for var in self.independent_variables
+            ]
+            control_variables = [
+                str_mapper.prettify_str(var) for var in self.control_variables
+            ]
+        else:
+            independent_variables = self.independent_variables
+            control_variables = self.control_variables
+        model_specification = f"{self.dependent_variables if not str_mapper else str_mapper.prettify_str(self.dependent_variables)}"
+        model_specification += f" ~ {' + '.join(independent_variables)}"
+        model_specification += (
+            f" + {' + '.join([var for var in control_variables if var != 'Intercept'])}"
+            if control_variables
+            else ""
+        )
+        model_specification = model_specification.split(" + ")
+        lines = []
+        line = ""
+        for string in model_specification[:-1]:
+            if len(line) + len(string) < 120:
+                line += f"{string} + "
+            else:
+                lines.append(line + r"\\")
+                line = string + " + "
+        lines.append(model_specification[-1])
+        model_specification = "".join(lines)
+        symbols_pattern = r"([\ \_\-\&\%\$\#])"
+        model_specification = re.sub(
+            symbols_pattern, regex_symbol_replacement, model_specification
+        ).replace("~", "\\sim")
+        print(f"${model_specification}$")
+
+    def abstract_model_specification(self):
+        pass
+
+    def quantile_model_equation(self):
+        print(
+            "$\\min_{\\beta} \\sum_{i:y_g \\geq x_g^T\\beta} q |y_g - x_g^T\\beta| + \\sum_{g:y_g < x_g^T\\beta} (1-q) |y_g - x_g^T\\beta|$"
+        )
+
+    def store(self, folder_path: Path):
+        with open(folder_path / f"{self.id}.reg_coeffs", "wb") as file:
+            pickle.dump(self, file)
