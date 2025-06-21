@@ -288,6 +288,6 @@ def dataframe_to_latex(dataframe: DataFrame, rounding: int = 1):
     table = (
         "\\begin{adjustbox}{width=\\textwidth,center}\n"
         + f"{table}"
-        + "\end{adjustbox}\n"
+        + "\\end{adjustbox}\n"
     )
     return table
