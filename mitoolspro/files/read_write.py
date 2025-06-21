@@ -62,7 +62,7 @@ def store_pkl(obj: Any, filename: Union[str, PathLike]) -> None:
         raise ValueError(f"Failed to pickle object: {e}")
 
 
-def load_pkl(filename: Union[str, PathLike]) -> Any:
+def read_pkl(filename: Union[str, PathLike]) -> Any:
     filename = Path(filename)
     if not filename.exists():
         raise FileNotFoundError(f"File not found: {filename}")

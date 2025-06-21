@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 
 from mitoolspro.files.read_write import (
-    load_pkl,
     read_html,
     read_json,
+    read_pkl,
     read_text,
     store_pkl,
     write_html,
@@ -129,23 +129,23 @@ class TestStoreLoadPkl(unittest.TestCase):
         test_file = self.temp_path / "test.pkl"
         test_data = {"name": "Test", "value": 42, "nested": {"key": "value"}}
         store_pkl(test_data, test_file)
-        self.assertEqual(load_pkl(test_file), test_data)
+        self.assertEqual(read_pkl(test_file), test_data)
 
     def test_store_load_pkl_nonexistent(self):
         with self.assertRaises(FileNotFoundError):
-            load_pkl(self.temp_path / "nonexistent.pkl")
+            read_pkl(self.temp_path / "nonexistent.pkl")
 
     def test_store_load_pkl_invalid(self):
         test_file = self.temp_path / "invalid.pkl"
         test_file.write_bytes(b"invalid pickle data")
         with self.assertRaises(ValueError):
-            load_pkl(test_file)
+            read_pkl(test_file)
 
     def test_store_load_pkl_custom_class(self):
         test_file = self.temp_path / "test.pkl"
         custom_obj = CustomClass(42)
         store_pkl(custom_obj, test_file)
-        loaded_obj = load_pkl(test_file)
+        loaded_obj = read_pkl(test_file)
         self.assertEqual(loaded_obj.value, 42)
 
 
