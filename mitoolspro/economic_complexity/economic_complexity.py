@@ -1,3 +1,4 @@
+from itertools import product
 from os import PathLike
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -34,8 +35,14 @@ def exports_data_to_matrix(
     origins = exports[origin_col].unique()
     exports = exports.set_index([origin_col, *products_cols])
     initial_total_value = exports[value_col].sum()
-    new_index = pd.MultiIndex.from_product(
-        [origins, *[products_codes[col].unique() for col in products_cols]],
+    product_tuples = (
+        products_codes[products_cols]
+        .drop_duplicates()
+        .itertuples(index=False, name=None)
+    )
+    product_tuples = list(product_tuples)
+    new_index = pd.MultiIndex.from_tuples(
+        [(country, *prod) for country, prod in product(origins, product_tuples)],
         names=[origin_col, *products_cols],
     )
     exports = exports.reindex(new_index.drop_duplicates(), fill_value=0)
