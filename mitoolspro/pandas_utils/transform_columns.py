@@ -54,9 +54,11 @@ def transform_columns(
                 names=dataframe.columns.names,
             )
         else:
-            transformed_columns.columns = [
-                f"{col}_{transformation_name}" for col in transformed_columns.columns
-            ]
+            transformed_columns.columns = (
+                [f"{col}_{transformation_name}" for col in transformed_columns.columns]
+                if len(transformed_columns.columns) > 1
+                else [transformation_name]
+            )
     return transformed_columns
 
 
@@ -94,9 +96,11 @@ def growth_columns(
                 names=dataframe.columns.names,
             )
         else:
-            variation_columns.columns = [
-                f"{col}_{variation_name}" for col in variation_columns.columns
-            ]
+            variation_columns.columns = (
+                [f"{col}_{variation_name}" for col in variation_columns.columns]
+                if len(variation_columns.columns) > 1
+                else [variation_name]
+            )
     return variation_columns
 
 
@@ -127,9 +131,11 @@ def shift_columns(
                 names=dataframe.columns.names,
             )
         else:
-            shifted_columns.columns = [
-                f"{col}_{shifted_name}" for col in shifted_columns.columns
-            ]
+            shifted_columns.columns = (
+                [f"{col}_{shifted_name}" for col in shifted_columns.columns]
+                if len(shifted_columns.columns) > 1
+                else [shifted_name]
+            )
     return shifted_columns
 
 
@@ -173,9 +179,11 @@ def add_columns(
                 names=dataframe.columns.names,
             )
         else:
-            plus_columns.columns = [
-                f"{col}_{added_name}" for col in plus_columns.columns
-            ]
+            plus_columns.columns = (
+                [f"{col}_{added_name}" for col in plus_columns.columns]
+                if len(plus_columns.columns) > 1
+                else [added_name]
+            )
     return plus_columns
 
 
@@ -219,9 +227,11 @@ def subtract_columns(
                 names=dataframe.columns.names,
             )
         else:
-            subtracted_columns.columns = [
-                f"{col}_{subtracted_name}" for col in subtracted_columns.columns
-            ]
+            subtracted_columns.columns = (
+                [f"{col}_{subtracted_name}" for col in subtracted_columns.columns]
+                if len(subtracted_columns.columns) > 1
+                else [subtracted_name]
+            )
     return subtracted_columns
 
 
@@ -267,9 +277,11 @@ def divide_columns(
                 names=dataframe.columns.names,
             )
         else:
-            divided_columns.columns = [
-                f"{col}_{divided_name}" for col in divided_columns.columns
-            ]
+            divided_columns.columns = (
+                [f"{col}_{divided_name}" for col in divided_columns.columns]
+                if len(divided_columns.columns) > 1
+                else [divided_name]
+            )
 
     return divided_columns
 
@@ -314,7 +326,9 @@ def multiply_columns(
                 names=dataframe.columns.names,
             )
         else:
-            multiplied_columns.columns = [
-                f"{col}_{multiplied_name}" for col in multiplied_columns.columns
-            ]
+            multiplied_columns.columns = (
+                [f"{col}_{multiplied_name}" for col in multiplied_columns.columns]
+                if len(multiplied_columns.columns) > 1
+                else [multiplied_name]
+            )
     return multiplied_columns
