@@ -6,6 +6,7 @@ from mitoolspro import (
     nlp,
     pandas_utils,
     plotting,
+    regressions,
     scraping,
     utils,
 )
