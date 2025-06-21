@@ -1,4 +1,5 @@
 import sys
+from itertools import cycle
 from os import PathLike
 from typing import (
     Any,
@@ -11,6 +12,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    Union,
 )
 
 import chardet
@@ -19,6 +21,16 @@ from numpy import ndarray
 from pandas import DataFrame, Series
 
 from mitoolspro.exceptions import ArgumentValueError
+
+COLOR_CODES = {
+    "red": "\033[91m",
+    "green": "\033[92m",
+    "yellow": "\033[93m",
+    "blue": "\033[94m",
+    "magenta": "\033[95m",
+    "cyan": "\033[96m",
+    "reset": "\033[0m",  # Reset to default color
+}
 
 
 def iterable_chunks(
@@ -125,3 +137,32 @@ def all_can_be_ints(items: Sequence) -> bool:
         return all(int(item) is not None for item in items)
     except (ValueError, TypeError):
         return False
+
+
+def iprint(
+    iterable: Union[Iterable, str], splitter: Optional[str] = "", c: Optional[str] = ""
+):
+    if not hasattr(iprint, "color_cycler"):
+        iprint.color_cycler = cycle(COLOR_CODES.keys() - {"reset"})
+    color_code = COLOR_CODES.get(
+        c, ""
+    )  # Get the ANSI escape code for the specified color
+    if c == "cycler":
+        color_code = COLOR_CODES[next(iprint.color_cycler)]
+    else:
+        color_code = COLOR_CODES.get(
+            c, ""
+        )  # Get the ANSI escape code for the specified color
+    if isinstance(iterable, str):
+        iterable = [iterable]
+    elif not isinstance(iterable, Iterable):
+        iterable = [repr(iterable)]
+    for item in iterable:
+        if splitter:
+            print(splitter * 40)
+        if color_code:
+            print(f"{color_code}{item}{COLOR_CODES['reset']}")
+        else:
+            print(item)
+        if splitter:
+            print(splitter * 40)
