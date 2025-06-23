@@ -878,6 +878,30 @@ class RegexReplacer:
         return new_doc
 
 
+@Language.factory("entity_replacer")
+def create_entity_replacer(
+    nlp: Language,
+    name: str,
+    entities: Dict[str, list[str]],
+    abbreviations: Dict[str, list[str]],
+    stopwords: Optional[Union[List[str], set[str]]] = None,
+    *,
+    min_overlap: int = 2,
+    fuzzy_threshold: float = 0.85,
+    match_threshold: float = 0.75,
+):
+    return EntityReplacer(
+        nlp,
+        name,
+        entities,
+        abbreviations,
+        stopwords,
+        min_overlap=min_overlap,
+        fuzzy_threshold=fuzzy_threshold,
+        match_threshold=match_threshold,
+    )
+
+
 class EntityReplacer:
     def __init__(
         self,
@@ -897,7 +921,7 @@ class EntityReplacer:
         self.name = name
         self.entities = entities
         self.abbreviations = abbreviations
-        self.stopwords = stopwords
+        self.stopwords = stopwords if stopwords is not None else set()
         self.min_overlap = min_overlap
         self.fuzzy_threshold = fuzzy_threshold
         self.match_threshold = match_threshold
@@ -906,6 +930,8 @@ class EntityReplacer:
     def _fuzzy_match(
         self, span_tokens: List[str], candidate: List[str]
     ) -> tuple[bool, float]:
+        if not span_tokens:
+            return False, 0.0
         total_characters = sum(len(token) for token in candidate)
         matched_token_count = 0
         matched_candidate_count = 0
@@ -922,7 +948,10 @@ class EntityReplacer:
                 if best_score >= self.fuzzy_threshold:
                     matched_candidate_count += 1
                     matched_token_count += len(candidate_token)
-        match_ratio = matched_token_count / total_characters
+        if total_characters != 0:
+            match_ratio = matched_token_count / total_characters
+        else:
+            match_ratio = 0
         match = (
             (matched_candidate_count >= self.min_overlap)
             and match_ratio >= self.match_threshold
@@ -940,10 +969,13 @@ class EntityReplacer:
                 span = doc[i:j]
                 span_tokens = list(chain.from_iterable(norm_tokens[i:j]))
                 for ent in self.entity_index:
-                    match, score = self._fuzzy_match(
-                        doc_tokens, span_tokens, ent["norm_tokens"]
-                    )
+                    start_token = span_tokens[0] in ent["norm_tokens"]
+                    end_token = span_tokens[-1] in ent["norm_tokens"]
+                    if not (start_token and end_token):
+                        continue
+                    match, score = self._fuzzy_match(span_tokens, ent["norm_tokens"])
                     if match:
+                        span = doc[span.start : span.end]
                         matches.append(
                             {
                                 "start": span.start,
@@ -953,6 +985,7 @@ class EntityReplacer:
                                 "score": score,
                             }
                         )
+
         matches.sort(key=lambda m: (m["end"] - m["start"], m["score"]), reverse=True)
         seen = set()
         final_matches = []
@@ -987,7 +1020,7 @@ class EntityReplacer:
         return doc
 
     def _build_entity_index(self):
-        self.entity_index = {}
+        self.entity_index = []
         for label, values in self.entities.items():
             for original in values:
                 norm_tokens = self._tokenize_and_normalize(original)
@@ -1005,7 +1038,9 @@ class EntityReplacer:
         return _strip_accents(text.lower())
 
     def _normalize_rut(self, text: str) -> str:
-        return re.sub(r"[^0-9kK]", "", text.lower())
+        if self._is_valid_rut(text):
+            return re.sub(r"[^0-9kK]", "", text.lower())
+        return text
 
     def _expand_abbreviation(self, text: str) -> str:
         for abbr, expansion in self.abbreviations.items():
@@ -1013,3 +1048,6 @@ class EntityReplacer:
             replacement = " ".join(expansion)
             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
         return text
+
+    def _is_valid_rut(self, text: str) -> bool:
+        return re.match(r"^[0-9kK]+$", text) is not None
