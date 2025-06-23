@@ -1,6 +1,6 @@
 import re
 from collections import Counter
-from itertools import chain
+from itertools import chain, islice
 from typing import Any, Dict, List, Optional, Union
 
 from rapidfuzz.fuzz import ratio
@@ -996,28 +996,52 @@ class EntityReplacer:
         return final_matches
 
     def __call__(self, doc: Doc) -> Doc:
-        replacements = []
         matches = self._find_matches(doc)
-        new_tokens = []
-        i = 0
-        while i < len(doc):
-            match = next((m for m in matches if m["start"] == i), None)
-            if match:
-                new_tokens.append(match["label"])
-                replacements.append(
-                    {
-                        "start": match["start"],
-                        "end": match["end"],
-                        "label": match["label"],
-                        "replaced": match["replaced"],
-                    }
-                )
-                i = match["end"]
-            else:
-                new_tokens.append(doc[i].text)
-                i += 1
-        doc._.entity_replacements = replacements
-        return doc
+
+        matches = sorted(matches, key=lambda m: m["start"])
+        replacements = []
+        new_text = []
+        last_idx = 0
+        original_text = doc.text
+
+        for match in matches:
+            span = doc[match["start"] : match["end"]]
+            start_char = span.start_char
+            end_char = span.end_char
+            label = match["label"]
+            replaced = span.text
+
+            prefix = original_text[last_idx:start_char]
+            suffix = original_text[end_char:] if end_char < len(original_text) else ""
+
+            needs_left_pad = prefix and prefix[-1].isalnum()
+            needs_right_pad = suffix and suffix[0].isalnum()
+
+            replacement = label
+            if needs_left_pad:
+                replacement = " " + replacement
+            if needs_right_pad:
+                replacement = replacement + " "
+
+            new_text.append(original_text[last_idx:start_char])
+            new_text.append(replacement)
+            replacements.append(
+                {
+                    "start": match["start"],
+                    "end": match["end"],
+                    "label": label,
+                    "replaced": replaced,
+                }
+            )
+
+            last_idx = end_char
+
+        new_text.append(original_text[last_idx:])
+        replaced_text = "".join(new_text)
+        new_doc = self.nlp.make_doc(replaced_text)
+        new_doc = doc.from_docs([new_doc])
+        new_doc._.entity_replacements = replacements
+        return new_doc
 
     def _build_entity_index(self):
         self.entity_index = []
