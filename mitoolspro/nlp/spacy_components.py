@@ -1,8 +1,8 @@
 import re
-from collections import Counter, defaultdict
-from itertools import islice
-from typing import Callable, Dict, List, Optional, Union
+from itertools import chain
+from typing import Any, Dict, List, Optional, Union
 
+from rapidfuzz import fuzz
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
 from spacy.tokens import Doc, Span, Token
@@ -797,7 +797,9 @@ class RegexReplacer:
             for label, pats in patterns.items()
         }
 
-    def resolve_overlaps(sefl, matches):
+    def resolve_overlaps(
+        self, matches: list[tuple[int, int, str, str, int]]
+    ) -> list[tuple[int, int, str, str]]:
         # Sort by: longest match first, then highest priority, then earliest start
         matches.sort(key=lambda x: (-(x[1] - x[0]), x[4], x[0]))
 
@@ -837,7 +839,7 @@ class RegexReplacer:
 
         for start, end, label, original in selected:
             prefix = original_text[last_idx:start]
-            suffix = original_text[end : end + 1]
+            suffix = original_text[end] if end < len(original_text) else ""
 
             # Ensure spacing around replacement
             needs_left_pad = prefix and prefix[-1].isalnum()
@@ -873,3 +875,121 @@ class RegexReplacer:
                 pass  # extension errors or span alignment mismatches
 
         return new_doc
+
+
+class EntityReplacer:
+    def __init__(
+        self,
+        nlp: Language,
+        name: str,
+        entities: Dict[str, list[str]],
+        abbreviations: Dict[str, list[str]],
+        stopwords: str,
+        min_overlap: int = 2,
+        fuzzy_threshold: float = 0.8,
+    ):
+        if not Doc.has_extension("entity_replacements"):
+            Doc.set_extension("entity_replacements", default=[])
+        self.nlp = nlp
+        self.name = name
+        self.entities = entities
+        self.abbreviations = abbreviations
+        self.stopwords = stopwords
+        self.min_overlap = min_overlap
+        self.fuzzy_threshold = fuzzy_threshold
+        self._build_entity_index()
+
+    def _fuzzy_match(
+        self, doc_tokens: List[str], span_tokens: List[str], candidate: List[str]
+    ) -> tuple[bool, float]:
+        overlap = len(set(span_tokens) & set(candidate))
+        if overlap < self.min_overlap:
+            return False, 0.0
+        joined_span = " ".join(span_tokens)
+        joined_candidate = " ".join(candidate)
+        score = fuzz.token_set_ratio(joined_span, joined_candidate) / 100.0
+        return score >= self.fuzzy_threshold, score
+
+    def _find_matches(self, doc: Doc) -> List[Dict[str, Any]]:
+        matches = []
+        doc_tokens = [token.text for token in doc]
+        norm_tokens = [self._tokenize_and_normalize(token) for token in doc_tokens]
+        n = len(doc_tokens)
+        for i in range(n):
+            for j in range(i + 1, n + 1):
+                span = doc[i:j]
+                span_tokens = list(chain.from_iterable(norm_tokens[i:j]))
+                for ent in self.entity_index:
+                    match, score = self._fuzzy_match(
+                        doc_tokens, span_tokens, ent["norm_tokens"]
+                    )
+                    if match:
+                        matches.append(
+                            {
+                                "start": span.start,
+                                "end": span.end,
+                                "label": ent["label"],
+                                "replaced": span.text,
+                                "score": score,
+                            }
+                        )
+        matches.sort(key=lambda m: (m["end"] - m["start"], m["score"]), reverse=True)
+        seen = set()
+        final_matches = []
+        for m in matches:
+            if all(i not in seen for i in range(m["start"], m["end"])):
+                seen.update(range(m["start"], m["end"]))
+                final_matches.append(m)
+        return final_matches
+
+    def __call__(self, doc: Doc) -> Doc:
+        replacements = []
+        matches = self._find_matches(doc)
+        new_tokens = []
+        i = 0
+        while i < len(doc):
+            match = next((m for m in matches if m["start"] == i), None)
+            if match:
+                new_tokens.append(match["label"])
+                replacements.append(
+                    {
+                        "start": match["start"],
+                        "end": match["end"],
+                        "label": match["label"],
+                        "replaced": match["replaced"],
+                    }
+                )
+                i = match["end"]
+            else:
+                new_tokens.append(doc[i].text)
+                i += 1
+        doc._.entity_replacements = replacements
+        return doc
+
+    def _build_entity_index(self):
+        self.entity_index = {}
+        for label, values in self.entities.items():
+            for original in values:
+                norm_tokens = self._tokenize_and_normalize(original)
+                self.entity_index.append(
+                    {"label": label, "original": original, "norm_tokens": norm_tokens}
+                )
+
+    def _tokenize_and_normalize(self, text: str) -> list[str]:
+        text = self._normalize_text(text)
+        text = self._normalize_rut(text)
+        text = self._expand_abbreviation(text)
+        return [token for token in text.split() if token.lower() not in self.stopwords]
+
+    def _normalize_text(self, text: str) -> str:
+        return _strip_accents(text.lower())
+
+    def _normalize_rut(self, text: str) -> str:
+        return re.sub(r"[^0-9kK]", "", text.lower())
+
+    def _expand_abbreviation(self, text: str) -> str:
+        for abbr, expansion in self.abbreviations.items():
+            pattern = re.escape(abbr.lower())
+            replacement = " ".join(expansion)
+            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        return text
