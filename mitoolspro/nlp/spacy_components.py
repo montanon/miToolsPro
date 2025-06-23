@@ -1,8 +1,9 @@
 import re
+from collections import Counter
 from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 
-from rapidfuzz import fuzz
+from rapidfuzz.fuzz import ratio
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
 from spacy.tokens import Doc, Span, Token
@@ -885,8 +886,10 @@ class EntityReplacer:
         entities: Dict[str, list[str]],
         abbreviations: Dict[str, list[str]],
         stopwords: str,
+        *,
         min_overlap: int = 2,
         fuzzy_threshold: float = 0.8,
+        match_threshold: float = 0.8,
     ):
         if not Doc.has_extension("entity_replacements"):
             Doc.set_extension("entity_replacements", default=[])
@@ -897,18 +900,35 @@ class EntityReplacer:
         self.stopwords = stopwords
         self.min_overlap = min_overlap
         self.fuzzy_threshold = fuzzy_threshold
+        self.match_threshold = match_threshold
         self._build_entity_index()
 
     def _fuzzy_match(
-        self, doc_tokens: List[str], span_tokens: List[str], candidate: List[str]
+        self, span_tokens: List[str], candidate: List[str]
     ) -> tuple[bool, float]:
-        overlap = len(set(span_tokens) & set(candidate))
-        if overlap < self.min_overlap:
-            return False, 0.0
-        joined_span = " ".join(span_tokens)
-        joined_candidate = " ".join(candidate)
-        score = fuzz.token_set_ratio(joined_span, joined_candidate) / 100.0
-        return score >= self.fuzzy_threshold, score
+        total_characters = sum(len(token) for token in candidate)
+        matched_token_count = 0
+        matched_candidate_count = 0
+        for candidate_token in candidate:
+            if len(candidate_token) == 1:
+                if candidate_token in span_tokens:
+                    matched_candidate_count += 1
+                    matched_token_count += 1
+            else:
+                best_score = max(
+                    ratio(candidate_token, span_token) / 100.0
+                    for span_token in span_tokens
+                )
+                if best_score >= self.fuzzy_threshold:
+                    matched_candidate_count += 1
+                    matched_token_count += len(candidate_token)
+        match_ratio = matched_token_count / total_characters
+        match = (
+            (matched_candidate_count >= self.min_overlap)
+            and match_ratio >= self.match_threshold
+            and match_ratio > self.match_threshold
+        )
+        return match, match_ratio
 
     def _find_matches(self, doc: Doc) -> List[Dict[str, Any]]:
         matches = []
