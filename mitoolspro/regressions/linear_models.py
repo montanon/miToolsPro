@@ -1,4 +1,7 @@
 from typing import List, Optional, Union
+import logging
+
+logger = logging.getLogger(__name__)
 
 import numpy as np
 import pandas as pd
@@ -112,7 +115,7 @@ class QuantilesRegressionModel(BaseRegressionModel):
             return summaries if len(quantiles) > 1 else summaries[quantiles[0]]
         else:
             summaries = {q: self.results[q].summary() for q in self.quantiles}
-            print(len(self.quantiles))
+            logger.debug("Number of quantiles: %d", len(self.quantiles))
             return (
                 summaries if len(self.quantiles) > 1 else summaries[self.quantiles[0]]
             )

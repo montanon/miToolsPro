@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from logging import Logger
+import logging
+
+logger = logging.getLogger(__name__)
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -177,7 +180,7 @@ class Project:
                 f"Version {version} does not exist in Project {self.name}, with versions: {self.versions}"
             )
         version_path: Path = self.folder / version
-        print(f"About to remove version {version} of Project {self.name}...")
+        logger.info("About to remove version %s of Project %s...", version, self.name)
         if version_path.exists() and version_path.is_dir():
             for item in version_path.glob("**/*"):
                 if item.is_file():
@@ -185,10 +188,12 @@ class Project:
                 elif item.is_dir():
                     item.rmdir()
             version_path.rmdir()
-        print(f"Removed version {version} of Project {self.name}")
+        logger.info("Removed version %s of Project %s", version, self.name)
         if self.version == version:
-            print(
-                f"Changing current version of Project {self.name} to {self.versions[0]}"
+            logger.info(
+                "Changing current version of Project %s to %s",
+                self.name,
+                self.versions[0],
             )
             self.update_version(self.versions[0])
 
@@ -318,7 +323,7 @@ class Project:
             )
             if version_folder:
                 obj.update_version(version_folder.stem)
-                print(f"Updated Project version to current {obj.version} version.")
+                logger.info("Updated Project version to current %s version.", obj.version)
         return obj
 
     def __repr__(self) -> str:
@@ -382,14 +387,14 @@ class Project:
                 return
         self.vars[key] = value
         self.store_project()
-        print(f"Added '{key}' to project variables and stored the project.")
+        logger.info("Added '%s' to project variables and stored the project.", key)
 
     def remove_var(self, key: str) -> None:
         if key not in self.vars:
             raise ProjectError(f"Key '{key}' does not exist in self.vars")
         del self.vars[key]
         self.store_project()
-        print(f"Removed '{key}' from project variables and stored the project.")
+        logger.info("Removed '%s' from project variables and stored the project.", key)
 
     def update_var(self, key: str, value: Any, create: bool = False) -> None:
         if key not in self.vars and not create:
@@ -398,7 +403,7 @@ class Project:
             )
         self.vars[key] = value
         self.store_project()
-        print(f"Updated '{key}' of project variables and stored the project.")
+        logger.info("Updated '%s' of project variables and stored the project.", key)
 
     def add_path(
         self, key: str, path: PathLike, update: bool = False, exist_ok: bool = False
@@ -429,7 +434,7 @@ class Project:
                     return
             self.paths[key] = path_resolved
         self.store_project()
-        print(f"Added '{key}' to project paths and stored the project.")
+        logger.info("Added '%s' to project paths and stored the project.", key)
 
     def update_path(self, key: str, new_path: PathLike) -> None:
         if (
@@ -441,7 +446,7 @@ class Project:
             raise ProjectError(
                 f"Cannot update '{key}' because it does not exist in version '{self.version}' or global paths."
             )
-        print(f"Updated '{key}' of project paths and stored the project.")
+        logger.info("Updated '%s' of project paths and stored the project.", key)
 
     def get_path(self, key: str) -> Path:
         if (
@@ -465,12 +470,14 @@ class Project:
             if not self.version_paths[self.version]:
                 del self.version_paths[self.version]  # Clean up empty dict
             self.store_project()
-            print(f"Removed path '{key}' from version '{self.version}' version_paths.")
+            logger.info(
+                "Removed path '%s' from version '%s' version_paths.", key, self.version
+            )
             return
         if key in self.paths:
             del self.paths[key]
             self.store_project()
-            print(f"Removed path '{key}' from global paths.")
+            logger.info("Removed path '%s' from global paths.", key)
         raise ProjectError(
             f"Cannot remove '{key}' because it does not exist in current version '{self.version}' or global paths."
         )
