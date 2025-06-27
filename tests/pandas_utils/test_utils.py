@@ -345,6 +345,17 @@ class TestCheckIfDataFrameSequence(TestCase):
         )
         self.assertFalse(result)
 
+    def test_sequence_with_string_ids(self):
+        string_data = {
+            "a": DataFrame({"A": [1, 2]}),
+            "b": DataFrame({"B": [3, 4]}),
+        }
+        store_dataframe_sequence(string_data, "string_sequence", self.test_dir)
+        result = check_if_dataframe_sequence(
+            self.test_dir, "string_sequence", sequence_values=["a", "b"]
+        )
+        self.assertTrue(result)
+
 
 class TestSelectIndex(TestCase):
     def setUp(self):

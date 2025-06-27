@@ -164,8 +164,6 @@ def check_if_dataframe_sequence(
             ]
         except (ValueError, TypeError, IndexError) as e:
             raise ArgumentValueError(f"Invalid sequence value in filenames: {e}")
-        sequence_files = sequence_dir.glob("*.parquet")
-        sequence_files = [int(file.stem.split("_")[-1]) for file in sequence_files]
         return set(sequence_values) == set(sequence_files)
     return False
 
