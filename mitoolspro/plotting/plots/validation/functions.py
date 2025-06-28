@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Sequence, Type
 
 import numpy as np
-from matplotlib.colors import Normalize, get_named_colors_mapping, is_color_like
+from matplotlib.colors import Normalize, is_color_like
 from matplotlib.markers import MarkerStyle
 from matplotlib.transforms import Transform
 from numpy import floating, integer, ndarray
@@ -16,11 +16,16 @@ from mitoolspro.plotting.plots.validation.types import (
     NumericType,
     SizesType,
 )
+from mitoolspro.plotting.plots.validation.constants import (
+    available_bins,
+    available_colors,
+    available_markers,
+)
 
-COLORS = set(get_named_colors_mapping().keys())
-MARKERS = set(MarkerStyle.markers.keys()).union(set(MarkerStyle.filled_markers))
+COLORS = set(available_colors())
+MARKERS = set(available_markers())
 MARKERS_FILLSTYLES = set(MarkerStyle.fillstyles)
-BINS = ["auto", "fd", "doane", "scott", "stone", "rice", "sturges", "sqrt"]
+BINS = available_bins()
 
 
 def is_valid_model(model_class: Type[BaseModel], **kwargs) -> bool:
