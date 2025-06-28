@@ -4,6 +4,8 @@ from typing import Any, Sequence, Union
 import numpy as np
 from pydantic import ValidationError
 
+from .validator_helper import apply_validators
+
 from mitoolspro.exceptions import ArgumentStructureError
 from mitoolspro.plotting.plots.validation.models import (
     BinsParam,
@@ -117,34 +119,22 @@ class SetterMixIn(ABC):
         multi_param: bool = True,
         structured: bool = True,
     ) -> Any:
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                validated = ColorSequencesParam(
-                    value=colors,
-                    sizes=self.sizes,
-                    sub_sizes=self.sub_sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, validated)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            validated = ColorSequenceParam(
-                value=colors,
-                sizes=self.sizes,
-                structured=structured,
-            ).value
-            setattr(self, param_name, validated)
+            validators.append(ColorSequencesParam)
+        validators.extend([ColorSequenceParam, ColorParam])
+
+        value, errors = apply_validators(
+            colors,
+            validators,
+            sizes=self.sizes,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+        )
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
-        try:
-            validated = ColorParam(value=colors).value
-            setattr(self, param_name, validated)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
 
         if self.multi_data:
             msg = (
@@ -173,64 +163,42 @@ class SetterMixIn(ABC):
         if has_range:
             min_value = min_value if min_value is not None else -np.inf
             max_value = max_value if max_value is not None else np.inf
-        no_range = not has_range
 
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                sequences = (
-                    NumericSequencesParam(
-                        value=sequences,
-                        sizes=self.sizes,
-                        sub_sizes=self.sub_sizes,
-                        structured=structured,
-                    )
-                    if no_range
-                    else RangeSequencesParam(
-                        value=sequences,
-                        sizes=self.sizes,
-                        sub_sizes=self.sub_sizes,
-                        min_value=min_value,
-                        max_value=max_value,
-                        structured=structured,
-                    )
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequences = (
-                NumericSequenceParam(
-                    value=sequences,
-                    sizes=self.sizes if single_param else self.n_sequences,
-                    structured=structured,
-                )
-                if no_range
-                else RangeSequenceParam(
-                    value=sequences,
-                    sizes=self.sizes if single_param else self.n_sequences,
-                    min_value=min_value,
-                    max_value=max_value,
-                    structured=structured,
-                )
-            ).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+            validators.append(
+                RangeSequencesParam if has_range else NumericSequencesParam
+            )
+        validators.append(
+            RangeSequenceParam if has_range else NumericSequenceParam
+        )
         if single_param:
-            try:
-                sequences = (
-                    NumericParam(value=sequences)
-                    if no_range
-                    else RangeParam(
-                        value=sequences, min_value=min_value, max_value=max_value
-                    )
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
+            validators.append(RangeParam if has_range else NumericParam)
+
+        extra = {}
+        if has_range:
+            extra["min_value"] = min_value
+            extra["max_value"] = max_value
+
+        sizes_val = (
+            self.sizes
+            if self.multi_data and multi_param
+            else self.sizes if single_param else self.n_sequences
+        )
+
+        value, errors = apply_validators(
+            sequences,
+            validators,
+            sizes=sizes_val,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+            **extra,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
+            return self
+        last_error = errors[-1] if errors else ""
 
         if self.multi_data:
             msg = (
@@ -253,36 +221,24 @@ class SetterMixIn(ABC):
         multi_param: bool = True,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                sequences = LiteralSequencesParam(
-                    value=sequences,
-                    sizes=self.sizes,
-                    sub_sizes=self.sub_sizes,
-                    options=options,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequences = LiteralSequenceParam(
-                value=sequences,
-                sizes=self.sizes,
-                options=options,
-                structured=structured,
-            ).value
-            setattr(self, param_name, sequences)
+            validators.append(LiteralSequencesParam)
+        validators.extend([LiteralSequenceParam, LiteralParam])
+
+        value, errors = apply_validators(
+            sequences,
+            validators,
+            sizes=self.sizes,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+            options=options,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
-        try:
-            sequences = LiteralParam(value=sequences, options=options).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
 
         if self.multi_data:
             msg = (
@@ -304,34 +260,23 @@ class SetterMixIn(ABC):
         multi_param: bool = True,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                sequences = MarkerSequencesParam(
-                    value=sequences,
-                    sizes=self.sizes,
-                    sub_sizes=self.sub_sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequences = MarkerSequenceParam(
-                value=sequences,
-                sizes=self.sizes,
-                structured=structured,
-            ).value
-            setattr(self, param_name, sequences)
+            validators.append(MarkerSequencesParam)
+        validators.extend([MarkerSequenceParam, MarkerParam])
+
+        value, errors = apply_validators(
+            sequences,
+            validators,
+            sizes=self.sizes,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
-        try:
-            sequences = MarkerParam(value=sequences).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a marker, a sequence of markers, "
@@ -352,34 +297,23 @@ class SetterMixIn(ABC):
         multi_param: bool = True,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                sequences = EdgeColorSequencesParam(
-                    value=sequences,
-                    sizes=self.sizes,
-                    sub_sizes=self.sub_sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequences = EdgeColorSequenceParam(
-                value=sequences,
-                sizes=self.sizes,
-                structured=structured,
-            ).value
-            setattr(self, param_name, sequences)
+            validators.append(EdgeColorSequencesParam)
+        validators.extend([EdgeColorSequenceParam, EdgeColorParam])
+
+        value, errors = apply_validators(
+            sequences,
+            validators,
+            sizes=self.sizes,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
-        try:
-            sequences = EdgeColorParam(value=sequences).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected an edgecolor, a sequence of edgecolors, "
@@ -401,35 +335,29 @@ class SetterMixIn(ABC):
         single_param: bool = True,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                sequences = StrSequencesParam(
-                    value=sequences,
-                    sizes=self.sizes,
-                    sub_sizes=self.sub_sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequences = StrSequenceParam(
-                value=sequences,
-                sizes=self.sizes if single_param else self.n_sequences,
-                structured=structured,
-            ).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+            validators.append(StrSequencesParam)
+        validators.append(StrSequenceParam)
         if single_param:
-            try:
-                sequences = StrParam(value=sequences).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
+            validators.append(StrParam)
+
+        sizes_val = (
+            self.sizes if single_param else self.n_sequences
+        )
+
+        value, errors = apply_validators(
+            sequences,
+            validators,
+            sizes=sizes_val,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
+            return self
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a string, a sequence of strings, "
@@ -451,38 +379,24 @@ class SetterMixIn(ABC):
         multi_param: bool = True,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data and multi_param:
-            try:
-                sequences = NumericTupleSequencesParam(
-                    value=sequences,
-                    sizes=self.sizes,
-                    sub_sizes=self.sub_sizes,
-                    tuple_sizes=tuple_sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequences)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequences = NumericTupleSequenceParam(
-                value=sequences,
-                sizes=self.sizes,
-                tuple_sizes=tuple_sizes,
-                structured=structured,
-            ).value
-            setattr(self, param_name, sequences)
+            validators.append(NumericTupleSequencesParam)
+        validators.extend([NumericTupleSequenceParam, NumericTupleParam])
+
+        value, errors = apply_validators(
+            sequences,
+            validators,
+            sizes=self.sizes,
+            sub_sizes=self.sub_sizes,
+            structured=structured,
+            tuple_sizes=tuple_sizes,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
-        try:
-            sequences = NumericTupleParam(
-                value=sequences, tuple_sizes=tuple_sizes
-            ).value
-            setattr(self, param_name, sequences)
-            return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a numeric tuple, a sequence of numeric tuples, "
@@ -502,23 +416,22 @@ class SetterMixIn(ABC):
         param_name: str,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data:
-            try:
-                sequence = ColormapSequenceParam(
-                    value=sequence,
-                    sizes=self.sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequence = ColormapParam(value=sequence).value
-            setattr(self, param_name, sequence)
+            validators.append(ColormapSequenceParam)
+        validators.append(ColormapParam)
+
+        value, errors = apply_validators(
+            sequence,
+            validators,
+            sizes=self.sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a colormap, a sequence of colormaps, "
@@ -538,23 +451,22 @@ class SetterMixIn(ABC):
         param_name: str,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data:
-            try:
-                sequence = NormalizationSequenceParam(
-                    value=sequence,
-                    sizes=self.sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequence = NormalizationParam(value=sequence).value
-            setattr(self, param_name, sequence)
+            validators.append(NormalizationSequenceParam)
+        validators.append(NormalizationParam)
+
+        value, errors = apply_validators(
+            sequence,
+            validators,
+            sizes=self.sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a normalization, a sequence of normalizations, "
@@ -574,21 +486,22 @@ class SetterMixIn(ABC):
         param_name: str,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data:
-            try:
-                sequence = BinsSequenceParam(
-                    value=sequence, sizes=self.sizes, structured=structured
-                ).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequence = BinsParam(value=sequence).value
-            setattr(self, param_name, sequence)
+            validators.append(BinsSequenceParam)
+        validators.append(BinsParam)
+
+        value, errors = apply_validators(
+            sequence,
+            validators,
+            sizes=self.sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a bin, a sequence of bins, "
@@ -608,23 +521,22 @@ class SetterMixIn(ABC):
         param_name: str,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data:
-            try:
-                sequence = BoolSequenceParam(
-                    value=sequence,
-                    sizes=self.sizes,
-                    structured=structured,
-                ).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequence = BoolParam(value=sequence).value
-            setattr(self, param_name, sequence)
+            validators.append(BoolSequenceParam)
+        validators.append(BoolParam)
+
+        value, errors = apply_validators(
+            sequence,
+            validators,
+            sizes=self.sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a boolean, a sequence of booleans, "
@@ -644,21 +556,22 @@ class SetterMixIn(ABC):
         param_name: str,
         structured: bool = True,
     ):
+        validators = []
         if self.multi_data:
-            try:
-                sequence = DictSequenceParam(
-                    value=sequence, sizes=self.sizes, structured=structured
-                ).value
-                setattr(self, param_name, sequence)
-                return self
-            except ValidationError as e:
-                last_error = str(e)
-        try:
-            sequence = DictParam(value=sequence).value
-            setattr(self, param_name, sequence)
+            validators.append(DictSequenceParam)
+        validators.append(DictParam)
+
+        value, errors = apply_validators(
+            sequence,
+            validators,
+            sizes=self.sizes,
+            structured=structured,
+        )
+
+        if errors == [] or value is not None:
+            setattr(self, param_name, value)
             return self
-        except ValidationError as e:
-            last_error = str(e)
+        last_error = errors[-1] if errors else ""
         if self.multi_data:
             msg = (
                 f"Invalid {param_name}. Expected a dictionary, a sequence of dictionaries, "
