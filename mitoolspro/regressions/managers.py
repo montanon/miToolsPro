@@ -1,5 +1,8 @@
 import re
 from typing import List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 import pandas as pd
 
@@ -235,7 +238,7 @@ class QuantilesRegression:
         )
         table_text = table_text.replace("\_square", r"\textsuperscript{2}")
         table_text = table_text.replace("\_log", r"\textsubscript{log}")
-        print(table_text)
+        logger.info(table_text)
 
     def model_specification(self, str_mapper: Optional[StringMapper] = None):
         if str_mapper:
@@ -273,9 +276,9 @@ class QuantilesRegression:
         model_specification = re.sub(
             symbols_pattern, regex_symbol_replacement, model_specification
         ).replace("~", "\\sim")
-        print(f"${model_specification}$")
+        logger.info(f"${model_specification}$")
 
     def quantile_model_equation(self):
-        print(
+        logger.info(
             "$\\min_{\\beta} \\sum_{i:y_g \\geq x_g^T\\beta} q |y_g - x_g^T\\beta| + \\sum_{g:y_g < x_g^T\\beta} (1-q) |y_g - x_g^T\\beta|$"
         )

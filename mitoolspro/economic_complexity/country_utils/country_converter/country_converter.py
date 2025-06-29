@@ -17,7 +17,7 @@ COUNTRY_DATA_FILE = os.path.join(
     os.path.split(os.path.abspath(__file__))[0], "country_data.tsv"
 )
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def agg_conc(
@@ -233,7 +233,7 @@ def match(
                 match_dict_a[name_a].append(regex)
 
         if len(match_dict_a[name_a]) == 0:
-            log.warning("Could not identify {} in list_a".format(name_a))
+            logger.warning("Could not identify {} in list_a".format(name_a))
             _not_found_entry = name_a if not not_found else not_found
             name_dict_a[name_a].append(_not_found_entry)
             if not enforce_sublist:
@@ -241,7 +241,7 @@ def match(
             continue
 
         if len(match_dict_a[name_a]) > 1:
-            log.warning("Multiple matches for name {} in list_a".format(name_a))
+            logger.warning("Multiple matches for name {} in list_a".format(name_a))
 
         for match_case in match_dict_a[name_a]:
             b_matches = 0
@@ -251,14 +251,14 @@ def match(
                     name_dict_a[name_a].append(name_b)
 
         if b_matches == 0:
-            log.warning(
+            logger.warning(
                 "Could not find any " "correspondence for {} in list_b".format(name_a)
             )
             _not_found_entry = name_a if not not_found else not_found
             name_dict_a[name_a].append(_not_found_entry)
 
         if b_matches > 1:
-            log.warning("Multiple matches for " "name {} in list_b".format(name_a))
+            logger.warning("Multiple matches for " "name {} in list_b".format(name_a))
 
         if not enforce_sublist and (len(name_dict_a[name_a]) == 1):
             name_dict_a[name_a] = name_dict_a[name_a][0]
@@ -413,7 +413,7 @@ class CountryConverter:
         )
 
         def test_for_unique_names(
-            df, data_name="passed dataframe", report_fun=log.error
+            df, data_name="passed dataframe", report_fun=logger.error
         ):
             for name_entry in must_be_unique:
                 if df[name_entry].duplicated().any():
@@ -454,7 +454,7 @@ class CountryConverter:
             [basic_df] + add_data, ignore_index=True, axis=0, sort=True
         )
         test_for_unique_names(
-            self.data, data_name="merged data - keep last one", report_fun=log.warning
+            self.data, data_name="merged data - keep last one", report_fun=logger.warning
         )
 
         for name_entry in must_be_unique:
@@ -583,7 +583,7 @@ class CountryConverter:
                     if ccregex.search(spec_name):
                         result_list.append(self.data.loc[ind_regex, to].values[0])
                     if len(result_list) > 1:
-                        log.warning(
+                        logger.warning(
                             "More than one regular expression "
                             "match for {}".format(spec_name)
                         )
@@ -607,7 +607,7 @@ class CountryConverter:
                 ]
 
             if len(result_list) == 0:
-                log.warning("{} not found in {}".format(spec_name, src_format))
+                logger.warning("{} not found in {}".format(spec_name, src_format))
                 _fillin = not_found or spec_name
                 outlist[ind_names] = [_fillin] if enforce_list else _fillin
             else:
@@ -966,9 +966,9 @@ def cli_output(conv_names, sep):
             conv_names = conv_names.iloc[:, 0].tolist()
         elif len(conv_names.columns) == 2:
             for row in conv_names.iterrows():
-                print(str(row[1].iloc[0]) + sep + str(row[1].iloc[1]))
+                logger.info("%s%s%s", str(row[1].iloc[0]), sep, str(row[1].iloc[1]))
             return
-    print(
+    logger.info(
         sep.join(
             [str(etr) for etr in conv_names]
             if isinstance(conv_names, list)
@@ -998,9 +998,11 @@ def main():
         if name in coco.data.columns:
             res = coco.get_correspondence_dict(name, args.to)
             for k, v in res.items():
+                joined = args.output_sep.join([str(etr) for etr in v])
                 if len(res.keys()) > 1:
-                    print(k + ": ", end="")
-                print(args.output_sep.join([str(etr) for etr in v]))
+                    logger.info("%s: %s", k, joined)
+                else:
+                    logger.info(joined)
             sys.exit()
 
     converted_names = coco.convert(
@@ -1021,5 +1023,5 @@ if __name__ == "__main__":  # pragma: no cover
         coco = CountryConverter()
         coco.data
     except Exception as excep:
-        log.exception(excep)
+        logger.exception(excep)
         raise

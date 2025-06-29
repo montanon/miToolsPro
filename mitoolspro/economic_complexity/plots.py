@@ -6,6 +6,9 @@ from math import ceil
 from pathlib import Path
 from string import ascii_uppercase, digits
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+import logging
+
+logger = logging.getLogger(__name__)
 
 import cairosvg
 import matplotlib.lines as mlines
@@ -1617,8 +1620,11 @@ def resize_image_mm(input_path, output_path, width_mm=None, height_mm=None, dpi=
         dimensions.append(f"{width_mm}mm width")
     if height_mm is not None:
         dimensions.append(f"{height_mm}mm height")
-    print(
-        f"Image resized to {' and '.join(dimensions)} and saved at {output_path} with {dpi} DPI."
+    logger.info(
+        "Image resized to %s and saved at %s with %s DPI.",
+        " and ".join(dimensions),
+        output_path,
+        dpi,
     )
 
 

@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 from threading import Lock
 from typing import Any, ClassVar, Dict, Optional
 
@@ -40,14 +43,14 @@ class Dev:
             raise ValueError("No variables to store!")
         with open(filepath, "w") as f:
             json.dump(self.variables, f)
-        print(f"Variables saved to {filepath}")
+        logger.info("Variables saved to %s", filepath)
 
     def load_variables(self, filepath: str) -> None:
         if not Path(filepath).exists():
             raise FileNotFoundError(f"File '{filepath}' does not exist.")
         with open(filepath, "r") as f:
             self.variables = json.load(f)
-        print(f"Variables loaded from {filepath}")
+        logger.info("Variables loaded from %s", filepath)
 
     def __repr__(self) -> str:
         if not self.variables:

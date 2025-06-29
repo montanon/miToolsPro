@@ -5,6 +5,9 @@ from typing import Any, Dict, List, Optional, Union
 import requests
 from pandas import DataFrame
 from shapely.geometry import Point
+import logging
+
+logger = logging.getLogger(__name__)
 
 from mitoolspro.exceptions import ArgumentTypeError
 from mitoolspro.google_utils.places.models import (
@@ -168,8 +171,10 @@ class GooglePlacesClient:
             places_df = self.get_response_places(response_id, places_response.places)
             return places_df
         except Exception as e:
-            print(
-                f"[search_for_places] Unrecoverable error: {e}\n{traceback.format_exc()}"
+            logger.error(
+                "[search_for_places] Unrecoverable error: %s\n%s",
+                e,
+                traceback.format_exc(),
             )
             return None
 

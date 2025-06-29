@@ -6,6 +6,9 @@ from typing import Dict, List, Optional, Set, Union
 import pandas as pd
 from icalendar import Calendar, Event
 from pandas import DataFrame
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def read_ics_file(filepath: Union[str, Path]) -> Calendar:
@@ -142,14 +145,14 @@ if __name__ == "__main__":
         events = extract_events(calendar)
         event_count_by_date = count_events_by_date(events)
         for date, count in event_count_by_date.items():
-            print(f"{date}: {count} events")
+            logger.info("%s: %s events", date, count)
         df = convert_to_dataframe(events)
-        print(df)
+        logger.info(df)
         organizers = get_unique_organizers(events)
-        print(f"Unique organizers: {organizers}")
+        logger.info("Unique organizers: %s", organizers)
         attendees = get_unique_attendees(events)
-        print(f"Unique attendees: {attendees}")
+        logger.info("Unique attendees: %s", attendees)
         if events:
-            print(format_event_for_display(events[0]))
+            logger.info(format_event_for_display(events[0]))
     else:
-        print(f"File {filepath} not found.")
+        logger.info("File %s not found.", filepath)

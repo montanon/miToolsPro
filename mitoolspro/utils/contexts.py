@@ -79,7 +79,7 @@ class Timing(ContextDecorator):
             output = f"{self.prefix}{elapsed_time_converted:.2f} {self.unit_label}"
             if self.on_exit:
                 output += self.on_exit(elapsed_time_ns)
-            print(output)
+            logger.info(output)
 
 
 def timeit(
