@@ -1,11 +1,3 @@
-"""Top level package for :mod:`mitoolspro`.
-
-This module exposes commonly used subpackages without importing them
-eagerly. Importing :mod:`mitoolspro` will no longer trigger imports of
-all submodules which can be expensive. Instead, submodules are loaded
-on first access using :func:`importlib.import_module`.
-"""
-
 from __future__ import annotations
 
 import importlib
