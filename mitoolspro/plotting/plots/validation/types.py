@@ -97,18 +97,18 @@ LineStyleType = Union[
 ]
 ScaleType = Literal["linear", "log", "symlog", "logit"]
 TickParamsType = Dict[str, Any]
-COLORS = set(get_named_colors_mapping().keys())
-COLORMAPS = [
-    "magma",
-    "inferno",
-    "plasma",
-    "viridis",
-    "cividis",
-    "twilight",
-    "twilight_shifted",
-    "turbo",
-]
-MARKERS = set(MarkerStyle.markers.keys()).union(set(MarkerStyle.filled_markers))
+from mitoolspro.plotting.plots.validation.constants import (
+    available_bins,
+    available_colormaps,
+    available_colors,
+    available_hatches,
+    available_linestyles,
+    available_markers,
+)
+
+COLORS = set(available_colors())
+COLORMAPS = available_colormaps()
+MARKERS = set(available_markers())
 MARKERS_FILLSTYLES = set(MarkerStyle.fillstyles)
 KERNELS = ["gaussian", "tophat", "epanechnikov", "exponential", "linear", "cosine"]
 ORIENTATIONS = ["horizontal", "vertical"]
@@ -123,37 +123,10 @@ NORMALIZATIONS = [
     "function",
     "functionlog",
 ]
-BINS = ["auto", "fd", "doane", "scott", "stone", "rice", "sturges", "sqrt"]
-LINESTYLES = [
-    "-",
-    "--",
-    "-.",
-    ":",
-    "None",
-    "none",
-    " ",
-    "",
-    "dotted",
-    "dashed",
-    "dashdot",
-    "solid",
-]
-LINESTYLES = [
-    "-",
-    "--",
-    "-.",
-    ":",
-    "None",
-    "none",
-    " ",
-    "",
-    "dotted",
-    "dashed",
-    "dashdot",
-    "solid",
-]
+BINS = available_bins()
+LINESTYLES = available_linestyles()
 SCALES = ["linear", "log", "symlog", "logit"]
-HATCHES = ["/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"]
+HATCHES = available_hatches()
 HIST_ALIGN = ["left", "mid", "right"]
 HIST_HISTTYPE = ["bar", "barstacked", "step", "stepfilled"]
 TICKPARAMS = [
