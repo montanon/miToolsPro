@@ -322,6 +322,8 @@ MIT License. See [LICENSE](LICENSE) file.
 
 Copyright (c) 2025 Sebastián Montagna
 
+<!-- Test branch protection rules -->
+
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/montanon/miToolsPro/issues)
