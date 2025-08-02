@@ -33,8 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync
-        uv pip install --system -e .
-        uv pip install --system pytest pytest-cov
+        uv add --dev pytest pytest-cov
         uv run python -m spacy download en_core_web_sm
     
     - name: Run full test suite with coverage

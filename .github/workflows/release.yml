@@ -39,8 +39,7 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync
-        uv pip install --system -e .
-        uv pip install --system pytest pytest-cov build twine
+        uv add --dev pytest pytest-cov build twine
         uv run python -m spacy download en_core_web_sm
     
     - name: Run tests with coverage
