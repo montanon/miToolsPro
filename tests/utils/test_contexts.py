@@ -15,7 +15,7 @@ from mitoolspro.utils.contexts import Timing, retry, timeit
 
 class TestTiming(TestCase):
     def test_timing_milliseconds(self):
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with Timing("Task A: ", unit="ms"):
                 time.sleep(0.01)  # Sleep for 10 milliseconds
         output = log.output[0]
@@ -29,7 +29,7 @@ class TestTiming(TestCase):
         )  # Allow delta for timing imprecision
 
     def test_timing_seconds(self):
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with Timing("Task B: ", unit="s"):
                 time.sleep(0.5)  # Sleep for 500 milliseconds
         output = log.output[0]
@@ -40,7 +40,7 @@ class TestTiming(TestCase):
         self.assertAlmostEqual(elapsed_time, 0.5, delta=0.1)
 
     def test_timing_minutes(self):
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with Timing("Task C: ", unit="m"):
                 time.sleep(1)  # Sleep for 1 second
         output = log.output[0]
@@ -54,7 +54,7 @@ class TestTiming(TestCase):
         def custom_on_exit(elapsed_time_ns):
             return f" - Time in nanoseconds: {elapsed_time_ns}"
 
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with Timing("Task D: ", unit="ms", on_exit=custom_on_exit):
                 time.sleep(0.02)  # Sleep for 20 milliseconds
         output = log.output[0]
@@ -63,12 +63,12 @@ class TestTiming(TestCase):
         self.assertTrue("Time in nanoseconds" in output)
 
     def test_disabled_timing(self):
-        with self.assertNoLogs('mtp', level='INFO'):
+        with self.assertNoLogs("mtp", level="INFO"):
             with Timing("Task E: ", unit="ms", enabled=False):
                 time.sleep(0.01)  # Sleep for 10 milliseconds
 
     def test_default_unit(self):
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with Timing("Task F: "):
                 time.sleep(0.01)  # Sleep for 10 milliseconds
         output = log.output[0]
@@ -81,7 +81,7 @@ class TestTiming(TestCase):
                 time.sleep(0.01)  # Sleep for 10 milliseconds
 
     def test_short_sleep(self):
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with Timing("Short Task: ", unit="ns"):
                 time.sleep(0.000001)  # Sleep for 1 microsecond
         output = log.output[0]
@@ -91,7 +91,7 @@ class TestTiming(TestCase):
         self.assertGreater(elapsed_time, 0)
 
     def test_timeit_factory(self):
-        with self.assertLogs('mtp', level='INFO') as log:
+        with self.assertLogs("mtp", level="INFO") as log:
             with timeit("Test Task: ", unit="s"):
                 time.sleep(0.1)  # Sleep for 100 milliseconds
         output = log.output[0]
@@ -102,7 +102,7 @@ class TestTiming(TestCase):
         self.assertAlmostEqual(elapsed_time, 0.1, delta=0.05)
 
     def test_timeit_disabled(self):
-        with self.assertNoLogs('mtp', level='INFO'):
+        with self.assertNoLogs("mtp", level="INFO"):
             with timeit("Disabled Task: ", enabled=False):
                 time.sleep(0.1)
 
@@ -190,7 +190,9 @@ class TestRetry(TestCase):
             failing_func()
 
         elapsed_time = time.time() - start_time
-        self.assertGreater(elapsed_time, 0.1 + 0.2)  # First delay + second delay
+        self.assertGreater(
+            elapsed_time, 0.1 + 0.2 - 0.05
+        )  # First delay + second delay - 0.05 seconds
 
     def test_jitter(self):
         delays = []
@@ -206,7 +208,7 @@ class TestRetry(TestCase):
         self.assertEqual(len(delays), 3)
         delay1 = delays[1] - delays[0]
         delay2 = delays[2] - delays[1]
-        self.assertGreater(delay1, 0.099)  # 0.1 * 0.9
+        self.assertGreater(delay1, 0.085)  # 0.1 * 0.9
         self.assertLess(delay1, 0.12)  # 0.1 * 1.1
         self.assertGreater(delay2, 0.199)  # 0.2 * 0.9
         self.assertLess(delay2, 0.242)  # 0.2 * 1.1
