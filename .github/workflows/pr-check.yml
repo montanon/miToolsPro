@@ -1,0 +1,81 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  pr-validation:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: |
+        uv pip install --system -e .
+        uv pip install --system pytest pytest-cov
+        uv run python -m spacy download en_core_web_sm
+    
+    - name: Run full test suite with coverage
+      run: |
+        python -m pytest tests/ -v --cov=mitoolspro --cov-report=xml --cov-report=term --cov-fail-under=77
+    
+    - name: Check if all tests pass
+      run: |
+        if [ $? -eq 0 ]; then
+          echo "✅ All tests passed!"
+        else
+          echo "❌ Tests failed - PR cannot be merged"
+          exit 1
+        fi
+    
+    - name: Verify package can be imported
+      run: |
+        python -c "import mitoolspro; print('Package imports successfully')"
+    
+    - name: Check for merge conflicts
+      run: |
+        git merge-tree $(git merge-base HEAD main) HEAD main | grep -q "<<<<<<< " && {
+          echo "❌ Merge conflicts detected"
+          exit 1
+        } || echo "✅ No merge conflicts"
+    
+    - name: Comment PR status
+      uses: actions/github-script@v6
+      if: always()
+      with:
+        script: |
+          const { data: checks } = await github.rest.checks.listForRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha
+          });
+          
+          const allPassed = checks.check_runs.every(check => 
+            check.conclusion === 'success' || check.conclusion === 'neutral'
+          );
+          
+          const statusIcon = allPassed ? '✅' : '❌';
+          const statusText = allPassed ? 'All checks passed - Ready for merge!' : 'Some checks failed - Please fix before merging';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `${statusIcon} **PR Status**: ${statusText}`
+          });
