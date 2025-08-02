@@ -36,22 +36,13 @@ jobs:
         uv add --dev pytest pytest-cov
         uv run python -m spacy download en_core_web_sm
     
-    - name: Run full test suite with coverage
+    - name: Run full test suite with coverage (100% pass required)
       run: |
         uv run python -m pytest tests/ -v --cov=mitoolspro --cov-report=xml --cov-report=term --cov-fail-under=77
     
-    - name: Check if all tests pass
-      run: |
-        if [ $? -eq 0 ]; then
-          echo "✅ All tests passed!"
-        else
-          echo "❌ Tests failed - PR cannot be merged"
-          exit 1
-        fi
-    
     - name: Verify package can be imported
       run: |
-        uv run python -c "import mitoolspro; print('Package imports successfully')"
+        uv run python -c "import mitoolspro; print('✅ Package imports successfully')"
     
     - name: Check for merge conflicts
       run: |
