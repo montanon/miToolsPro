@@ -33,13 +33,14 @@ jobs:
     
     - name: Install dependencies
       run: |
+        uv sync
         uv pip install --system -e .
         uv pip install --system pytest pytest-cov
         uv run python -m spacy download en_core_web_sm
     
     - name: Run tests with coverage
       run: |
-        python -m pytest tests/ -v --cov=mitoolspro --cov-report=xml --cov-report=term
+        uv run python -m pytest tests/ -v --cov=mitoolspro --cov-report=xml --cov-report=term
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
