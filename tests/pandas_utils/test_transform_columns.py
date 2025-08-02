@@ -72,7 +72,7 @@ class TestTransformColumns(TestCase):
 
     def test_transform_with_custom_rename(self):
         result = transform_columns(self.singleidx_df, log, ["one"], rename="custom")
-        expected_columns = ["one_custom"]
+        expected_columns = ["custom"]
         self.assertListEqual(list(result.columns), expected_columns)
 
     def test_transform_with_invalid_column(self):
@@ -208,7 +208,7 @@ class TestGrowthColumns(TestCase):
 
     def test_variation_with_custom_rename(self):
         result = growth_columns(self.singleidx_df, ["one"], t=1, rename="custom_name")
-        expected_columns = ["one_custom_name"]
+        expected_columns = ["custom_name"]
         self.assertListEqual(list(result.columns), expected_columns)
 
     def test_variation_multiidx_with_positional_level(self):
@@ -275,9 +275,9 @@ class TestShiftColumns(TestCase):
 
     def test_shift_singleidx_with_custom_rename(self):
         result = shift_columns(self.singleidx_df, ["one"], t=1, rename="custom_name")
-        expected_columns = ["one_custom_name"]
+        expected_columns = ["custom_name"]
         self.assertListEqual(list(result.columns), expected_columns)
-        expected_values = DataFrame({"one_custom_name": [None, 1, 2]})
+        expected_values = DataFrame({"custom_name": [None, 1, 2]})
         assert_frame_equal(result.reset_index(drop=True), expected_values)
 
     def test_shift_multiidx_with_positional_level(self):
@@ -352,9 +352,9 @@ class TestAddColumns(TestCase):
 
     def test_add_with_custom_rename(self):
         result = add_columns(self.df_single, ["A"], "C", rename="added_custom")
-        expected_columns = ["A_added_custom"]
+        expected_columns = ["added_custom"]
         self.assertListEqual(list(result.columns), expected_columns)
-        expected_values = DataFrame({"A_added_custom": [8, 10, 12]})
+        expected_values = DataFrame({"added_custom": [8, 10, 12]})
         assert_frame_equal(result, expected_values)
 
     def test_add_multiidx_with_positional_level(self):
@@ -435,9 +435,9 @@ class TestSubtractColumns(TestCase):
         result = subtract_columns(
             self.df_single, ["A"], "C", rename="subtracted_custom"
         )
-        expected_columns = ["A_subtracted_custom"]
+        expected_columns = ["subtracted_custom"]
         self.assertListEqual(list(result.columns), expected_columns)
-        expected_values = DataFrame({"A_subtracted_custom": [-6, -6, -6]})
+        expected_values = DataFrame({"subtracted_custom": [-6, -6, -6]})
         assert_frame_equal(result, expected_values)
 
     def test_subtract_multiidx_with_positional_level(self):
@@ -517,9 +517,9 @@ class TestDivideColumns(TestCase):
 
     def test_divide_with_custom_rename(self):
         result = divide_columns(self.df_single, ["A"], "C", rename="divided_custom")
-        expected_columns = ["A_divided_custom"]
+        expected_columns = ["divided_custom"]
         self.assertListEqual(list(result.columns), expected_columns)
-        expected_values = DataFrame({"A_divided_custom": [1.0, 2.0, 3.0]})
+        expected_values = DataFrame({"divided_custom": [1.0, 2.0, 3.0]})
         assert_frame_equal(result, expected_values)
 
     def test_divide_multiidx_with_positional_level(self):
@@ -600,9 +600,9 @@ class TestMultiplyColumns(TestCase):
         result = multiply_columns(
             self.df_single, ["A"], "C", rename="multiplied_custom"
         )
-        expected_columns = ["A_multiplied_custom"]
+        expected_columns = ["multiplied_custom"]
         self.assertListEqual(list(result.columns), expected_columns)
-        expected_values = DataFrame({"A_multiplied_custom": [2, 4, 6]})
+        expected_values = DataFrame({"multiplied_custom": [2, 4, 6]})
         assert_frame_equal(result, expected_values)
 
     def test_multiply_multiidx_with_positional_level(self):
