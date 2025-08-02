@@ -24,7 +24,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libasound2-dev portaudio19-dev pandoc
+        sudo apt-get install -y libasound2-dev portaudio19-dev pandoc texlive-latex-base texlive-latex-recommended
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
