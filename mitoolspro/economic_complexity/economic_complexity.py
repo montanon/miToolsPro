@@ -136,9 +136,24 @@ def calculate_relatedness_matrix(
     return wcp
 
 
+def _get_best_torch_device() -> str:
+    try:
+        if torch.cuda.is_available():
+            return "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return "mps"
+        else:
+            return "cpu"
+    except ImportError:
+        return "cpu"
+
+
 def torch_calculate_economic_complexity(
-    rca_matrix: np.ndarray, device: str = "mps"
+    rca_matrix: np.ndarray, device: str = None
 ) -> Tuple[np.ndarray, np.ndarray]:
+    if device is None:
+        device = _get_best_torch_device()
+
     rca_matrix = torch.from_numpy(rca_matrix.astype(np.float32)).to(device)
 
     diversity = rca_matrix.sum(dim=1)
