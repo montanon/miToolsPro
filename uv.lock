@@ -1765,6 +1765,7 @@ dependencies = [
     { name = "ipywidgets" },
     { name = "jupyter" },
     { name = "linearmodels" },
+    { name = "llvmlite" },
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "moviepy" },
@@ -1781,7 +1782,6 @@ dependencies = [
     { name = "pdfminer-six" },
     { name = "plotly" },
     { name = "pyarrow" },
-    { name = "pycairo" },
     { name = "pydantic" },
     { name = "pymupdf" },
     { name = "pymupdf4llm" },
@@ -1825,6 +1825,7 @@ requires-dist = [
     { name = "ipywidgets", specifier = ">=8.1.5" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "linearmodels", specifier = ">=6.1" },
+    { name = "llvmlite", specifier = ">=0.44.0" },
     { name = "lxml", specifier = ">=5.3.1" },
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "moviepy", specifier = ">=2.1.2" },
@@ -1841,7 +1842,6 @@ requires-dist = [
     { name = "pdfminer-six", specifier = ">=20250506" },
     { name = "plotly", specifier = ">=6.0.1" },
     { name = "pyarrow", specifier = ">=19.0.1" },
-    { name = "pycairo", specifier = ">=1.28.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pymupdf", specifier = ">=1.25.4" },
     { name = "pymupdf4llm", specifier = ">=0.0.17" },
@@ -2661,20 +2661,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/d4/b4a3aa781a2c715520aa8ab4fe2e7fa49d33a1d4e71c8fc6ab7b5de7a3f8/pyarrow-19.0.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a9137cf7e1640dce4c190551ee69d478f7121b5c6f323553b319cac936395f6", size = 42171896, upload-time = "2025-02-18T18:54:49.808Z" },
     { url = "https://files.pythonhosted.org/packages/23/1b/716d4cd5a3cbc387c6e6745d2704c4b46654ba2668260d25c402626c5ddb/pyarrow-19.0.1-cp313-cp313t-manylinux_2_28_aarch64.whl", hash = "sha256:7c1bca1897c28013db5e4c83944a2ab53231f541b9e0c3f4791206d0c0de389a", size = 40464851, upload-time = "2025-02-18T18:54:57.073Z" },
     { url = "https://files.pythonhosted.org/packages/ed/bd/54907846383dcc7ee28772d7e646f6c34276a17da740002a5cefe90f04f7/pyarrow-19.0.1-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:58d9397b2e273ef76264b45531e9d552d8ec8a6688b7390b5be44c02a37aade8", size = 42085744, upload-time = "2025-02-18T18:55:08.562Z" },
-]
-
-[[package]]
-name = "pycairo"
-version = "1.28.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/40/d9/412da520de9052b7e80bfc810ec10f5cb3dbfa4aa3e23c2820dc61cdb3d0/pycairo-1.28.0.tar.gz", hash = "sha256:26ec5c6126781eb167089a123919f87baa2740da2cca9098be8b3a6b91cc5fbc", size = 662477, upload-time = "2025-04-14T20:11:08.218Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/d7/206d7945aac5c6c889e7fea4011410d1311455a1d8dfce66106d8d700b7f/pycairo-1.28.0-cp312-cp312-win32.whl", hash = "sha256:c00cfbb7f30eb7ca1d48886712932e2d91e8835a8496f4e423878296ceba573e", size = 750594, upload-time = "2025-04-14T20:10:53.72Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/ba/259fc9a4d3afdad1e5b9db52b9d8a5df67f70dd787167185e8ec8a1af007/pycairo-1.28.0-cp312-cp312-win_amd64.whl", hash = "sha256:d50d190f5033992b55050b9f337ee42a45c3568445d5e5d7987bab96c278d8a6", size = 841767, upload-time = "2025-04-14T20:10:56.711Z" },
-    { url = "https://files.pythonhosted.org/packages/c0/08/aa0903612ea0e8686ad6af58d4fb9cbab8ee0b0831201cddf7abd578d045/pycairo-1.28.0-cp312-cp312-win_arm64.whl", hash = "sha256:957e0340ee1c279d197d4f7cfa96f6d8b48e453eec711fca999748d752468ff4", size = 691687, upload-time = "2025-04-16T19:30:23.729Z" },
-    { url = "https://files.pythonhosted.org/packages/59/a7/c3e5ed55781dfe1b31eb4a2482aeae707671f3d36b0ea53a1722f4a3dfe9/pycairo-1.28.0-cp313-cp313-win32.whl", hash = "sha256:d13352429d8a08a1cb3607767d23d2fb32e4c4f9faa642155383980ec1478c24", size = 750594, upload-time = "2025-04-14T20:10:59.284Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/1c/ebadd290748aff3b6bc35431114d41e7a42f40a4b988c2aaf2dfed5d8156/pycairo-1.28.0-cp313-cp313-win_amd64.whl", hash = "sha256:082aef6b3a9dcc328fa648d38ed6b0a31c863e903ead57dd184b2e5f86790140", size = 841774, upload-time = "2025-04-14T20:11:01.79Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/ce/a3f5f1946613cd8a4654322b878c59f273c6e9b01dfadadd3f609070e0b9/pycairo-1.28.0-cp313-cp313-win_arm64.whl", hash = "sha256:026afd53b75291917a7412d9fe46dcfbaa0c028febd46ff1132d44a53ac2c8b6", size = 691675, upload-time = "2025-04-16T19:30:26.565Z" },
 ]
 
 [[package]]
