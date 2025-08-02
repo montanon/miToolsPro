@@ -925,6 +925,7 @@ class EntityReplacer:
         self.min_overlap = min_overlap
         self.fuzzy_threshold = fuzzy_threshold
         self.match_threshold = match_threshold
+        self.max_span_length = int(max(len(v) for v in entities.values()) * 1.5)
         self._build_entity_index()
 
     def _fuzzy_match(
@@ -962,20 +963,41 @@ class EntityReplacer:
     def _find_matches(self, doc: Doc) -> List[Dict[str, Any]]:
         matches = []
         doc_tokens = [token.text for token in doc]
-        norm_tokens = [self._tokenize_and_normalize(token) for token in doc_tokens]
+        norm_tokens = [self._tokenize_and_normalize(token.text) for token in doc]
         n = len(doc_tokens)
         for i in range(n):
-            for j in range(i + 1, n + 1):
+            for j in range(i + 1, min(n + 1, i + self.max_span_length)):
                 span = doc[i:j]
                 span_tokens = list(chain.from_iterable(norm_tokens[i:j]))
+
+                if not span_tokens:
+                    continue
+
                 for ent in self.entity_index:
-                    start_token = span_tokens[0] in ent["norm_tokens"]
-                    end_token = span_tokens[-1] in ent["norm_tokens"]
-                    if not (start_token and end_token):
+                    candidate_tokens = ent["norm_tokens"]
+
+                    if span_tokens == candidate_tokens:
+                        matches.append(
+                            {
+                                "start": span.start,
+                                "end": span.end,
+                                "label": ent["label"],
+                                "replaced": span.text,
+                                "score": 1.0,
+                            }
+                        )
                         continue
-                    match, score = self._fuzzy_match(span_tokens, ent["norm_tokens"])
+                    elif (
+                        span_tokens[0] not in candidate_tokens
+                        or span_tokens[-1] not in candidate_tokens
+                        or abs(len(span_tokens) - len(candidate_tokens)) > 3
+                        or len(set(span_tokens) & set(candidate_tokens))
+                        < self.min_overlap
+                    ):
+                        continue
+
+                    match, score = self._fuzzy_match(span_tokens, candidate_tokens)
                     if match:
-                        span = doc[span.start : span.end]
                         matches.append(
                             {
                                 "start": span.start,
@@ -993,6 +1015,7 @@ class EntityReplacer:
             if all(i not in seen for i in range(m["start"], m["end"])):
                 seen.update(range(m["start"], m["end"]))
                 final_matches.append(m)
+
         return final_matches
 
     def __call__(self, doc: Doc) -> Doc:
