@@ -8,6 +8,9 @@ import pandas as pd
 from geopandas import GeoDataFrame
 from pandas import DataFrame
 from shapely.geometry import Polygon
+import logging
+
+logger = logging.getLogger(__name__)
 
 from mitoolspro.google_utils.places.client import GooglePlacesClient
 from mitoolspro.google_utils.places.models import CityGeojson
@@ -77,7 +80,7 @@ class PlacesSamplingWorkflow:
         area_polygon = self.area_polygon
         for i, (radius, step) in enumerate(self.radius_step_pairs):
             tag = f"Step-{i + 1}_{self.city_name}"
-            print(f"\n>>> Sampling: {tag}")
+            logger.info("\n>>> Sampling: %s", tag)
 
             found_places, circles, area_polygon, saturated_circles = places_search_step(
                 project_folder=self.project_folder,
@@ -95,10 +98,11 @@ class PlacesSamplingWorkflow:
 
             self.total_sampled_circles += circles.shape[0]
 
-            print(
-                f"→ Found Places: {found_places.shape[0]} | "
-                f"Sampled Circles: {circles.shape[0]} | "
-                f"Saturated Circles: {saturated_circles.shape[0]}"
+            logger.info(
+                "→ Found Places: %s | Sampled Circles: %s | Saturated Circles: %s",
+                found_places.shape[0],
+                circles.shape[0],
+                saturated_circles.shape[0],
             )
 
             self.all_places = pd.concat(
@@ -125,7 +129,7 @@ class PlacesSamplingWorkflow:
         unique_places.to_parquet(f"{uniq_path}.parquet")
         unique_places.to_excel(f"{uniq_path}.xlsx", index=False)
 
-        print(f"\n✔ Saved {len(all_cleaned)} places ({len(unique_places)} unique)")
+        logger.info("\n✔ Saved %s places (%s unique)", len(all_cleaned), len(unique_places))
 
 
 if __name__ == "__main__":

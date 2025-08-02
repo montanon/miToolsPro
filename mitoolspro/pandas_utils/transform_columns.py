@@ -1,6 +1,9 @@
 from typing import Callable, Iterable, Optional, Tuple, Union
 
 from pandas import DataFrame, MultiIndex
+import logging
+
+logger = logging.getLogger(__name__)
 
 from mitoolspro.exceptions import ArgumentTypeError, ArgumentValueError
 from mitoolspro.pandas_utils.utils import select_columns
@@ -34,7 +37,7 @@ def transform_columns(
     selected_columns = select_columns(dataframe=dataframe, columns=columns, level=level)
     if transformation_name in {"ln", "log"}:
         selected_columns = selected_columns.replace(0, 1e-6)
-        print("Replaced 0.0 values for 1e-6 to avoid -inf values!")
+        logger.info("Replaced 0.0 values for 1e-6 to avoid -inf values!")
     try:
         transformed_columns = selected_columns.apply(transformation)
     except Exception as e:

@@ -21,6 +21,9 @@ from numpy import ndarray
 from pandas import DataFrame, Series
 
 from mitoolspro.exceptions import ArgumentValueError
+import logging
+
+logger = logging.getLogger(__name__)
 
 COLOR_CODES = {
     "red": "\033[91m",
@@ -159,10 +162,10 @@ def iprint(
         iterable = [repr(iterable)]
     for item in iterable:
         if splitter:
-            print(splitter * 40)
+            logger.info(splitter * 40)
         if color_code:
-            print(f"{color_code}{item}{COLOR_CODES['reset']}")
+            logger.info("%s%s%s", color_code, item, COLOR_CODES["reset"])
         else:
-            print(item)
+            logger.info("%s", item)
         if splitter:
-            print(splitter * 40)
+            logger.info(splitter * 40)

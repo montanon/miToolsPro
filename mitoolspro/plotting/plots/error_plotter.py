@@ -2,6 +2,9 @@ from typing import Literal, Union
 
 import numpy as np
 from matplotlib.axes import Axes
+import logging
+
+logger = logging.getLogger(__name__)
 
 from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.plotting.plots.plotter import Plotter
@@ -90,7 +93,7 @@ class ErrorPlotter(Plotter):
             or is_valid_model(NumericSequenceParam, value=xerrs)
             or is_valid_model(NumericParam, value=xerrs)
         ):
-            print("Numeric Sequences Xerr")
+            logger.debug("Numeric Sequences Xerr")
             return self.set_numeric_sequences(xerrs, "xerr")
         elif (
             isinstance(xerrs, np.ndarray)
@@ -99,7 +102,7 @@ class ErrorPlotter(Plotter):
             and xerrs.shape[1] == self.n_sequences
         ):
             self.xerr = xerrs
-            print("Numeric Sequence Xerr 1")
+            logger.debug("Numeric Sequence Xerr 1")
             return self
         elif (
             isinstance(xerrs, np.ndarray)
@@ -108,7 +111,7 @@ class ErrorPlotter(Plotter):
             and xerrs.shape[1] == 2
             and xerrs.shape[2] == self.sizes
         ):
-            print("Numeric Sequence Xerr 2")
+            logger.debug("Numeric Sequence Xerr 2")
             self.xerr = xerrs
             return self
         elif (

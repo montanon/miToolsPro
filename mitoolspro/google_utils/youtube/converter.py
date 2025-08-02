@@ -2,6 +2,9 @@ from os import PathLike
 from pathlib import Path
 
 from moviepy import VideoFileClip
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def video_to_audio(video_path: PathLike, audio_path: Path):
@@ -10,6 +13,6 @@ def video_to_audio(video_path: PathLike, audio_path: Path):
         clip = VideoFileClip(str(video_path))
         clip.audio.write_audiofile(str(audio_path))
         clip.close()
-        print(f"Audio saved to {audio_path}")
+        logger.info("Audio saved to %s", audio_path)
     except Exception as e:
-        print(f"Error converting video to audio: {str(e)}")
+        logger.error("Error converting video to audio: %s", str(e))

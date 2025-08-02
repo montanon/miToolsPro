@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from treelib import Tree
+import logging
+
+logger = logging.getLogger(__name__)
 
 from mitoolspro.exceptions import ArgumentValueError
 from mitoolspro.utils.string_functions import remove_characters_from_string
@@ -138,17 +141,22 @@ def rename_folders_in_folder(
             if folder == new_path:
                 continue
             if new_path.exists() and not overwrite:
-                print(
-                    f"Skipping '{folder.name}' → '{new_name}' (target already exists)"
+                logger.info(
+                    "Skipping '%s' → '%s' (target already exists)",
+                    folder.name,
+                    new_name,
                 )
                 continue
             if attempt:
-                print(
-                    f"[Attempt] Renaming '{folder.name}' to '{new_name}' results in {can_move_file_or_folder(folder, new_path)}"
+                logger.info(
+                    "[Attempt] Renaming '%s' to '%s' results in %s",
+                    folder.name,
+                    new_name,
+                    can_move_file_or_folder(folder, new_path),
                 )
 
             else:
-                print(f"Renaming '{folder.name}' to '{new_name}'")
+                logger.info("Renaming '%s' to '%s'", folder.name, new_name)
                 shutil.move(str(folder), str(new_path))
 
 
@@ -193,12 +201,15 @@ def rename_file(
         handle_duplicated_filenames(sanitized_name) if not overwrite else sanitized_name
     )
     if attempt:
-        print(
-            f"[Attempt] Renaming '{file}' to '{new_name_str}' results in {can_move_file_or_folder(file, new_file, overwrite=overwrite)}"
+        logger.info(
+            "[Attempt] Renaming '%s' to '%s' results in %s",
+            file,
+            new_name_str,
+            can_move_file_or_folder(file, new_file, overwrite=overwrite),
         )
     elif can_move_file_or_folder(file, new_file, overwrite=overwrite):
         shutil.move(str(file), str(new_file))
-        print(f"Renamed '{file.name}' to '{new_file.name}'")
+        logger.info("Renamed '%s' to '%s'", file.name, new_file.name)
 
 
 def rename_files_in_folder(
@@ -227,6 +238,9 @@ def rename_files_in_folder(
                 overwrite=overwrite,
             )
         except Exception as e:
-            print(
-                f"Error processing '{file.name}' with 'renaming_function'={renaming_function}: {e}"
+            logger.error(
+                "Error processing '%s' with 'renaming_function'=%s: %s",
+                file.name,
+                renaming_function,
+                e,
             )

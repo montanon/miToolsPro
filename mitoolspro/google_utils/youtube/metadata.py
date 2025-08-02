@@ -2,6 +2,9 @@ import json
 from pathlib import Path
 
 from pytubefix import YouTube
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def extract_metadata(url: str) -> dict:
@@ -26,4 +29,4 @@ def save_metadata(url: str, output_file: Path):
     metadata = extract_metadata(url)
     with output_file.open("w") as f:
         json.dump(metadata, f, indent=4)
-    print(f"Metadata saved to {output_file}")
+    logger.info("Metadata saved to %s", output_file)

@@ -2,6 +2,9 @@ import argparse
 from pathlib import Path
 
 from mitoolspro.project import Project
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def init_project(args):
@@ -10,7 +13,7 @@ def init_project(args):
         root=args.root,
         version=args.version,
     )
-    print(f"Initialized project '{args.name}' in {args.root}")
+    logger.info("Initialized project '%s' in %s", args.name, args.root)
 
 
 def main():

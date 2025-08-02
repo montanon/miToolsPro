@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import List
 
 from pytubefix import YouTube
+import logging
+
+logger = logging.getLogger(__name__)
 
 from mitoolspro.exceptions import ArgumentValueError
 
@@ -18,9 +21,9 @@ def download_video(
         stream = yt.streams.filter(res=resolution, file_extension="mp4").first()
         if not stream:
             raise ArgumentValueError(f"Resolution {resolution} not available.")
-        print(f"Downloading: {yt.title}")
+        logger.info("Downloading: %s", yt.title)
         stream.download(output_path)
-        print("Download completed successfully!")
+        logger.info("Download completed successfully!")
     except Exception as e:
         raise RuntimeError(f"Error downloading video: {str(e)}")
 
@@ -31,9 +34,9 @@ def download_audio_video(url: str, output_path: PathLike):
         stream = yt.streams.filter(only_audio=True).first()
         if not stream:
             raise ArgumentValueError("Couldn't get audio stream.")
-        print(f"Downloading: {yt.title}")
+        logger.info("Downloading: %s", yt.title)
         stream.download(output_path)
-        print("Download completed successfully!")
+        logger.info("Download completed successfully!")
     except Exception as e:
         raise RuntimeError(f"Error downloading audio: {str(e)}")
 
@@ -48,4 +51,4 @@ def batch_download(urls: List[str], output_path: Path, resolution: str = "720p")
             try:
                 future.result()
             except Exception as e:
-                print(f"Error during batch download: {str(e)}")
+                logger.error("Error during batch download: %s", str(e))
