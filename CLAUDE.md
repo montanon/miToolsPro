@@ -8,6 +8,22 @@ miToolsPro is a comprehensive Python toolkit for data analysis, visualization, a
 
 ## Core Principles
 
+### Plan & Review
+
+#### Before Starting Work
+- Always in plan mode to make a plan
+- After making a plan, make sure to Write the plan to .claude/tasks/TASK_NAME.md
+- The plan should be a detailed implementation plan and the reasoning behind them, as well as tasks broken down.
+- If the task requires external knowledge, use the 'research' task tool to get the information.
+- Don't overengineer the plan or the solution, be concise.
+- Once you've written the plan, ask me to review it.
+- Don't start working in the task until I approve the plan.
+
+#### While Working
+- You should always update the plan as you work.
+- After you complete a task of the plan, you should update and append detailed descriptions of the changes you made, so following tasks are informed. 
+
+
 ### Code Quality Standards
 - **SOLID & DRY**: Maintain single responsibility, avoid tight coupling, abstract duplicated code
 - **Strong Typing**: All code must have comprehensive type annotations (enforced by IDE linter)
