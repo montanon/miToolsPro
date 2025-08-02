@@ -236,8 +236,8 @@ class QuantilesRegression:
             if note
             else table_text
         )
-        table_text = table_text.replace("\_square", r"\textsuperscript{2}")
-        table_text = table_text.replace("\_log", r"\textsubscript{log}")
+        table_text = table_text.replace("\\_square", r"\textsuperscript{2}")
+        table_text = table_text.replace("\\_log", r"\textsubscript{log}")
         logger.info(table_text)
 
     def model_specification(self, str_mapper: Optional[StringMapper] = None):

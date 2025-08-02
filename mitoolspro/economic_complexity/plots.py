@@ -1000,7 +1000,7 @@ def calculate_regression_predictions(
     predictions = []
     for q, color in zip(var_coeffs.columns.get_level_values("Quantile"), colors):
         q_coeffs = var_coeffs.loc[:, [(group, q)]].droplevel([0, 1, 2, 3, 4])
-        significances = q_coeffs[(group, q)].str.count("\*")
+        significances = q_coeffs[(group, q)].str.count("\\*")
 
         x_value = float(q_coeffs.loc[v, :].str.split("(", expand=True)[0].values[0])
         x_sq_value = float(
@@ -1643,7 +1643,7 @@ def extract_coefficients(
         float
     )
     if significance:
-        coeffs_significances = variable_coeffs.apply(lambda x: x.str.count("\*"))
+        coeffs_significances = variable_coeffs.apply(lambda x: x.str.count("\\*"))
         coeffs_values = coeffs_values.where(
             coeffs_significances >= significance_threshold, 0.0
         )
@@ -1718,16 +1718,16 @@ def plot_predictions_vs_actuals(
         lw=2,
         label="x=y",
     )
-    var_title = predicted_var.replace("_log", "").replace(" ", "\ ").split("\ (")[0]
+    var_title = predicted_var.replace("_log", "").replace(" ", "\\ ").split("\\ (")[0]
     ax.set_xlabel(
-        "Predicted $\mathrm{" + var_title + "}_{log}$", fontsize=axis_label_fontsize
+        "Predicted $\\mathrm{" + var_title + "}_{log}$", fontsize=axis_label_fontsize
     )
     ax.set_ylabel(
-        "Actual $\mathrm{" + var_title + "}_{log}$", fontsize=axis_label_fontsize
+        "Actual $\\mathrm{" + var_title + "}_{log}$", fontsize=axis_label_fontsize
     )
     ax.grid(True, linestyle="--", alpha=0.7)
     ax.set_title(
-        "Predicted vs. Actual $\mathrm{" + var_title + "}_{log}$",
+        "Predicted vs. Actual $\\mathrm{" + var_title + "}_{log}$",
         fontsize=axis_title_fontsize,
     )
 
@@ -1762,13 +1762,13 @@ def plot_error_distribution(
     )
     ax.axvline(0, color="r", linestyle="--", lw=2, label="Error = 0")
 
-    var_title = predicted_var.replace("_log", "").replace(" ", "\ ").split("\ (")[0]
+    var_title = predicted_var.replace("_log", "").replace(" ", "\\ ").split("\\ (")[0]
     ax.set_xlabel("Errors (Actual - Predicted)", fontsize=axis_label_fontsize)
     ax.set_ylabel("Density", fontsize=axis_label_fontsize)
     ax.grid(True, linestyle="--", alpha=0.7)
 
     ax.set_title(
-        "Error Distribution for $\mathrm{" + var_title + "}_{log}$",
+        "Error Distribution for $\\mathrm{" + var_title + "}_{log}$",
         fontsize=axis_title_fontsize,
     )
 

@@ -43,7 +43,7 @@ def read_docx_file(file_path: Union[str, Path], indent: str = "-") -> List[str]:
                     highlighted = True
                 formatted_text += run_text
             if highlighted:
-                formatted_text = f"<highlight>{formatted_text}<\highlight>"
+                formatted_text = f"<highlight>{formatted_text}</highlight>"
             indentation = "\t" * n_tabs + indent
             paragraphs.append(
                 f"{indentation if n_tabs != 0 else ''}{formatted_text} -- ({para.style.name}, {previous_style}, {previous_punctuation})"
