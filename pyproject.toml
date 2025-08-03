@@ -79,5 +79,10 @@ include = [
 include = [
     "mitoolspro/**/*.py",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=6.2.1",
+]
 [project.scripts]
 mitoolspro = "mitoolspro.cli:main"
