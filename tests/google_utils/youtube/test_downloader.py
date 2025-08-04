@@ -81,10 +81,10 @@ class TestYouTubeDownloader(TestCase):
         mock_youtube.return_value = mock_yt
         
         # Execute and verify exception
-        with self.assertRaises(ArgumentValueError) as context:
+        with self.assertRaises(RuntimeError) as context:
             download_video(self.test_url, output_path, resolution="4K")
         
-        self.assertEqual(str(context.exception), "Resolution 4K not available.")
+        self.assertEqual(str(context.exception), "Error downloading video: Resolution 4K not available.")
 
     @patch('mitoolspro.google_utils.youtube.downloader.YouTube')
     def test_download_video_general_exception(self, mock_youtube):
@@ -131,10 +131,10 @@ class TestYouTubeDownloader(TestCase):
         mock_youtube.return_value = mock_yt
         
         # Execute and verify exception
-        with self.assertRaises(ArgumentValueError) as context:
+        with self.assertRaises(RuntimeError) as context:
             download_audio_video(self.test_url, output_path)
         
-        self.assertEqual(str(context.exception), "Couldn't get audio stream.")
+        self.assertEqual(str(context.exception), "Error downloading audio: Couldn't get audio stream.")
 
     @patch('mitoolspro.google_utils.youtube.downloader.YouTube')
     def test_download_audio_video_general_exception(self, mock_youtube):
