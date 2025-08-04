@@ -92,12 +92,12 @@ def plot_df_col_distribution(
         fig, ax = plt.subplots(1, 1, figsize=(14, 6))
     if color is None:
         color = sns.color_palette("husl", 1)[0]
-    df_values = dataframe.iloc[:, column].values
-    col_name = (
-        dataframe.columns[0].title().replace("_", " ")
-        if isinstance(column, int)
-        else column
-    )
+    if isinstance(column, int):
+        df_values = dataframe.iloc[:, column].values
+        col_name = dataframe.columns[column].title().replace("_", " ")
+    else:
+        df_values = dataframe[column].values
+        col_name = column.title().replace("_", " ")
     if not normed:
         if bins:
             ax = sns.histplot(
