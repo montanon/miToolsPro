@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.29.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+      - id: commitizen-branch
+        stages: [push]
+  
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict

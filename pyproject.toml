@@ -1,6 +1,6 @@
 [project]
 name = "mitoolspro"
-version = "0.1.0"
+dynamic = ["version"]
 description = "miToolsPro is a collection of tools for data analysis and visualization."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -64,8 +64,12 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+tag-pattern = "v{version}"
 
 [tool.hatch.build.targets.wheel]
 packages = ["mitoolspro"]
@@ -83,6 +87,21 @@ include = [
 [dependency-groups]
 dev = [
     "pytest-cov>=6.2.1",
+    "commitizen>=3.29.0",
+    "pre-commit>=4.0.0",
 ]
 [project.scripts]
 mitoolspro = "mitoolspro.cli:main"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "scm"
+update_changelog_on_bump = true
+major_version_zero = false
+changelog_file = "CHANGELOG.md"
+changelog_format = "{{ version_title }}\n{% if previous_version %}{% for type, messages in changelog.items() %}{% if messages %}### {{ type | title }}\n{% for scope, message in messages %}{% if scope %}**{{ scope }}**: {{ message }}{% else %}{{ message }}{% endif %}\n{% endfor %}{% endif %}{% endfor %}{% else %}Initial release{% endif %}\n"
+
+[tool.commitizen.settings]
+allowed_prefixes = ["Merge", "Revert", "Pull request", "fixup!", "squash!"]

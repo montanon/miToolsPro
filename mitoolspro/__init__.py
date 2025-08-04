@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import importlib
+from importlib.metadata import PackageNotFoundError, version
 from types import ModuleType
 from typing import Iterable, List
 
+try:
+    __version__ = version("mitoolspro")
+except PackageNotFoundError:
+    __version__ = "0.0.0+dev"
+
 __all__: List[str] = [
+    "__version__",
     "clustering",
     "databases",
     "files",
