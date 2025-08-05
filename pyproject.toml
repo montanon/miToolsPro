@@ -69,7 +69,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"
-tag-pattern = "v{version}"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["mitoolspro"]
@@ -89,6 +91,8 @@ dev = [
     "pytest-cov>=6.2.1",
     "commitizen>=3.29.0",
     "pre-commit>=4.0.0",
+    "hatch-vcs>=0.5.0",
+    "setuptools-scm>=8.2.0",
 ]
 [project.scripts]
 mitoolspro = "mitoolspro.cli:main"
