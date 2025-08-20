@@ -69,6 +69,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"
+tag-regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
 
 [tool.hatch.metadata]
 allow-direct-references = true
