@@ -241,11 +241,14 @@ class TestSetFolderPDFsTitlesAsFilenames(TestCase):
         self.assertFalse(new_file.exists())
 
     def test_dont_overwrite_existing_file(self):
+        # Create a file with the target name (but no title metadata)
         duplicate_pdf = self.test_dir / "Test_Title.pdf"
-        self.create_pdf_with_metadata(duplicate_pdf, title="Test Title")
+        self.create_pdf_with_metadata(duplicate_pdf, title=None)
         set_folder_pdfs_titles_as_filenames(self.test_dir, overwrite=False)
+        # The original with_title.pdf should be renamed to Test_Title_1.pdf
         self.assertTrue((self.test_dir / "Test_Title_1.pdf").exists())
-        self.assertFalse((self.test_dir / "Test_Title.pdf").exists())
+        # The existing Test_Title.pdf should remain unchanged (no title to rename)
+        self.assertTrue((self.test_dir / "Test_Title.pdf").exists())
 
     def test_overwrite_existing_file(self):
         duplicate_pdf = self.test_dir / "Test_Title.pdf"

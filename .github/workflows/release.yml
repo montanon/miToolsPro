@@ -65,12 +65,16 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment: mitoolspro
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+    permissions:
+      id-token: write
     
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        ref: ${{ github.event.inputs.version || github.ref }}
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -85,6 +89,4 @@ jobs:
     - name: Build and publish package
       run: |
         uv build
-        uv publish
-      env:
-        UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
+        uv publish --trusted-publishing always

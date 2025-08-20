@@ -153,6 +153,7 @@ The plotting module maintains matplotlib API compatibility while providing type-
 - **Utils Module**: Use for general-purpose functions used across modules
 - **Avoid Duplication**: Abstract repeated code into reusable functions
 - **Loose Coupling**: Modules can call other modules but avoid tight dependencies
+- **Commits**: Provide concise commits without attribution
 
 ## Error Handling
 
