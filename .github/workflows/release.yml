@@ -89,6 +89,4 @@ jobs:
     - name: Build and publish package
       run: |
         uv build
-        uv publish --trusted-publishing
-      env:
-        UV_PUBLISH_TOKEN: ""
+        uv publish --trusted-publishing always
